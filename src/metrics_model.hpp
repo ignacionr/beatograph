@@ -1,11 +1,11 @@
 #pragma once
 #include <list>
 #include <string>
-#include <unordered_map>
+#include <map>
 #include "metric_value.hpp"
 
 struct metrics_model {
-    using metrics_map_t = std::unordered_map<metric, std::list<metric_value>>;
+    using metrics_map_t = std::map<metric, std::list<metric_value>>;
 
     void modify_key(std::string_view metric_name, auto modification) {
         auto node = metrics.extract(metric{std::string{metric_name}});
