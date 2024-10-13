@@ -2,12 +2,26 @@
 #include <numeric>
 #include <fstream>
 #include <iostream>
+#include <ranges>
 #include <string>
 #include <unordered_map>
 #include "metric.hpp"
 #include "metric_value.hpp"
 #include "metrics_parser.hpp"
 #include "metrics_model.hpp"
+#include "main_screen.hpp"
+
+void print_metric(const auto& it) {
+    std::cout << "Metric: " << it->first.name << std::endl;
+    std::cout << "Help: " << it->first.help << std::endl;
+    std::cout << "Type: " << it->first.type << std::endl;
+    for (const auto& value : it->second) {
+        std::cout << "Value: " << value.value << std::endl;
+        for (const auto& label : value.labels) {
+            std::cout << "Label: " << label.first << " = " << label.second << std::endl;
+        }
+    }
+}
 
 int main() {
     std::ifstream file("sample/metrics.txt");
@@ -33,13 +47,8 @@ int main() {
         });
     std::cout << "Loaded " << total_values << " values" << std::endl;
 
-    std::cout << "The first metric is " << model.metrics.begin()->first.name << std::endl;
-    std::cout << "  with help " << model.metrics.begin()->first.help << std::endl;
-    std::cout << "  and type " << model.metrics.begin()->first.type << std::endl;
-    std::cout << "The first value is " << model.metrics.begin()->second.front().value << std::endl;
-    std::cout << "  with labels:" << std::endl;
-    for (const auto& pair : model.metrics.begin()->second.front().labels) {
-        std::cout << "    " << pair.first << " = " << pair.second << std::endl;
-    }
+    main_screen screen{model};
+    screen.run();
+
     return 0;
 }

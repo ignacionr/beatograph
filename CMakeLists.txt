@@ -19,11 +19,17 @@ FetchContent_MakeAvailable(googletest)
 enable_testing()
 
 # Add your source files
-add_executable(beatograph src/beatograph.cpp)
+add_executable(beatograph 
+  /usr/share/doc/libimgui-dev/examples/backends/imgui_impl_sdl2.cpp
+  /usr/share/doc/libimgui-dev/examples/backends/imgui_impl_sdlrenderer2.cpp
+  src/beatograph.cpp
+)
 set_target_properties(beatograph PROPERTIES COMPILE_FLAGS "-g")
 
 # Link gtest and gtest_main
-add_executable(beatograph_test src/beatograph_test.cpp)
+add_executable(beatograph_test 
+  src/beatograph_test.cpp
+  )
 # Compile tests with debug symbols
 set_target_properties(beatograph_test PROPERTIES COMPILE_FLAGS "-g")
 target_link_libraries(beatograph_test gtest_main)
@@ -38,5 +44,8 @@ target_link_libraries(beatograph CURL::libcurl)
 # Find and link SDL2
 find_package(SDL2 REQUIRED)
 include_directories(${SDL2_INCLUDE_DIRS})
-target_link_libraries(beatograph ${SDL2_LIBRARIES})
-
+target_include_directories(beatograph PRIVATE 
+  /usr/include/imgui
+  /usr/include/imgui/backends
+)
+target_link_libraries(beatograph ${SDL2_LIBRARIES} imgui stb)
