@@ -20,6 +20,7 @@ enable_testing()
 
 # Add your source files
 add_executable(beatograph src/beatograph.cpp)
+set_target_properties(beatograph PROPERTIES COMPILE_FLAGS "-g")
 
 # Link gtest and gtest_main
 add_executable(beatograph_test src/beatograph_test.cpp)

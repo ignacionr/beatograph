@@ -17,7 +17,7 @@ struct metrics_parser {
                 parse_line(buffer);
                 buffer.clear();
             }
-            start = end + 1;
+            start = (end == std::string::npos) ? contents.size() : (end + 1);
         }
         // save leftovers on the buffer string
         buffer += contents.substr(start);
@@ -111,22 +111,18 @@ struct metrics_parser {
             return &error_state;
         };
         
+        bool in_quotes;
         state read_tags_value_state = [&](char c, character_type t) {
-            if (t == character_type::other) {
-                current_tag_value.push_back(c);
+            if (t == character_type::quote) {
+                if (in_quotes) {
+                    mv.labels[current_tag_name] = current_tag_value;
+                    return read_tags_state_ptr;
+                }
+                in_quotes = true;
                 return &read_tags_value_state;
             }
-            else if (t == character_type::quote) {
-                return &read_tags_value_state;
-            }
-            else if (t == character_type::comma || t == character_type::close_curly) {
-                mv.labels[current_tag_name] = current_tag_value;
-                current_tag_name.clear();
-                current_tag_value.clear();
-                return (t == character_type::comma) ? read_tags_state_ptr : &metric_name_state;
-            }
-            error_message = "Unexpected character in tag value";
-            return &error_state;
+            current_tag_value.push_back(c);
+            return &read_tags_value_state;
         };
 
         state read_tags_state = [&](char c, character_type t) {
@@ -137,7 +133,12 @@ struct metrics_parser {
                 current_tag_name.push_back(c);
                 return &read_tags_state;
             }
+            else if (t == character_type::comma) {
+                current_tag_name.clear();
+                return &read_tags_state;
+            }
             else if (t == character_type::equal) {
+                in_quotes = false;
                 return &read_tags_value_state;
             }
             error_message = "Unexpected character in tags, type: " + std::to_string((int)t) + " char: " + c;
@@ -175,6 +176,7 @@ struct metrics_parser {
             error_message = "Unexpected character after hash of type " + std::to_string((int)t);
             return &error_state;
         };
+
         state read_value = [&](char c, character_type t) {
             if (t == character_type::other) {
                 return &read_value;

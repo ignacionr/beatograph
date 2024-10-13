@@ -77,6 +77,35 @@ TEST(metrics_parser_test, should_parse_multiline) {
   ASSERT_EQ(count, 2);
 }
 
+TEST(metrics_parser_test, should_handle_expontential) {
+  // Create an instance of the beatograph module
+  metrics_parser parser;
+  bool parsed{false};
+  parser.metric_metric_value = [&](std::string_view name, const metric_value& value) {
+    ASSERT_EQ(name, "apt_autoremove_pending");
+    ASSERT_EQ(value.labels.size(), 0);
+    ASSERT_EQ(value.value, 42.0e-3);
+    parsed = true;
+  };
+  parser("apt_autoremove_pending 42.0e-3");
+  ASSERT_TRUE(parsed);
+}
+
+TEST(metrics_parser_test, should_handle_tags_with_spaces) {
+  // Create an instance of the beatograph module
+  metrics_parser parser;
+  bool parsed{false};
+  parser.metric_metric_value = [&](std::string_view name, const metric_value& value) {
+    ASSERT_EQ(name, "apt_autoremove_pending");
+    ASSERT_EQ(value.labels.size(), 1);
+    ASSERT_EQ(value.labels.at("label"), "value with spaces");
+    ASSERT_EQ(value.value, 42.0);
+    parsed = true;
+  };
+  parser("apt_autoremove_pending{label=\"value with spaces\"} 42.0");
+  ASSERT_TRUE(parsed);
+}
+
 // Entry point for running the tests
 int main(int argc, char** argv) {
   // Initialize the testing framework
