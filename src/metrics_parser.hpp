@@ -1,4 +1,5 @@
 #pragma once
+#include <chrono>
 #include <functional>
 #include <string>
 #include "metric_value.hpp"
@@ -80,6 +81,7 @@ struct metrics_parser {
         std::string current_tag_value;
         std::string current_metric_value;
         metric_value mv;
+        mv.timestamp = sample_time;
 
         state error_state = [&](char c, character_type t)  {
             return &error_state;
@@ -219,13 +221,15 @@ struct metrics_parser {
             metric_help(metric_name, comment_value);
         }
         else {
-            metric_metric_value(metric_name, {mv.labels, std::stod(metric_string_value)});
+            mv.value = std::stod(metric_string_value);
+            metric_metric_value(metric_name, std::move(mv));
         }
     
     }
 
     std::function<void(std::string_view,std::string_view)> metric_type;
     std::function<void(std::string_view,std::string_view)> metric_help;
-    std::function<void(std::string_view,metric_value)> metric_metric_value;
+    std::function<void(std::string_view,metric_value&&)> metric_metric_value;
     std::string buffer;
+    std::chrono::system_clock::time_point sample_time;
 };

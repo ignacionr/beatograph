@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <numeric>
 #include <fstream>
+#include <filesystem>
 #include <iostream>
 #include <ranges>
 #include <string>
@@ -29,9 +30,14 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 #else
 int main() {
 #endif
+    // obtain the last modification time of the file
+    std::filesystem::path path("sample/metrics.txt");
+    auto last_write_time = std::filesystem::last_write_time(path);
+
     std::ifstream file("sample/metrics.txt");
     std::string line;
     metrics_parser parser;
+    parser.sample_time = std::chrono::system_clock::now() + (last_write_time - std::filesystem::file_time_type::clock::now());
     metrics_model model;
     parser.metric_help = [&](const std::string_view& name, const std::string_view& help) {
         model.set_help(name, help);
@@ -39,15 +45,15 @@ int main() {
     parser.metric_type = [&](const std::string_view& name, const std::string_view& type) {
         model.set_type(name, type);
     };
-    parser.metric_metric_value = [&](std::string_view name, const metric_value& value) {
-        model.add_value(name, value);
+    parser.metric_metric_value = [&](std::string_view name, metric_value&& value) {
+        model.add_value(name, std::move(value));
     };
     while (std::getline(file, line)) {
         parser(line);
     }
     std::cout << "Loaded " << model.metrics.size() << " metrics" << std::endl;
-    int total_values = std::accumulate(model.metrics.begin(), model.metrics.end(), 0,
-        [](int acc, const auto& pair) {
+    auto total_values = std::accumulate(model.metrics.begin(), model.metrics.end(), size_t{0},
+        [](size_t acc, const auto& pair) -> size_t {
             return acc + pair.second.size();
         });
     std::cout << "Loaded " << total_values << " values" << std::endl;

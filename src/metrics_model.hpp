@@ -32,13 +32,13 @@ struct metrics_model {
         });
     }
 
-    void add_value(std::string_view name, const metric_value& value) {
+    void add_value(std::string_view name, metric_value&& value) {
         auto pos = metrics.find(metric{std::string{name}});
         if (pos == metrics.end()) {
-            metrics.insert({metric{std::string{name}}, {value}});
+            metrics.insert({metric{std::string{name}}, {std::move(value)}});
         }
         else {
-            pos->second.push_back(value);
+            pos->second.emplace_back(std::move(value));
         }
     }
 

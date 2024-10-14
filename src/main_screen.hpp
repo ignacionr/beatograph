@@ -9,6 +9,8 @@
 #include <imgui_impl_sdlrenderer2.h>
 
 #include "metrics_model.hpp"
+#include "metrics_menu.hpp"
+#include "metric_view.hpp"
 
 struct main_screen{
     metrics_model model;
@@ -44,13 +46,12 @@ struct main_screen{
         auto sdl_renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
         ImGui_ImplSDLRenderer2_Init(sdl_renderer);
         ImGui_ImplSDL2_InitForSDLRenderer(window, sdl_renderer);
+
+        metrics_menu menu{model};
         // run the main loop
         SDL_Event event;
         bool running = true;
-        std::string last_search;
-        std::list<const metric*> matches;
-        auto last_time = std::chrono::steady_clock::now();
-        metric const *selected_metric = nullptr;
+        metric_view view;
         while (running) {
             while (SDL_WaitEventTimeout(&event, 1000/60)) {
                 ImGui_ImplSDL2_ProcessEvent(&event);
@@ -63,60 +64,23 @@ struct main_screen{
             ImGui::NewFrame();
             SDL_SetRenderDrawColor(sdl_renderer, 255,255,255, 255);
             SDL_RenderClear(sdl_renderer);
+            auto io = ImGui::GetIO();
+            auto const &display_size = io.DisplaySize;
+            auto size = ImVec2(display_size.x, display_size.y);
+            ImGui::SetNextWindowSize(size);
+            ImGui::SetNextWindowPos(ImVec2(0, 0));
+            ImGui::Begin("Available Metrics", nullptr, 
+                ImGuiWindowFlags_MenuBar| ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse
+                | ImGuiWindowFlags_NoTitleBar);
+            ImGui::BeginChild("MetricsMenu", ImVec2(ImGui::GetWindowWidth(), 230));
+            menu.render();
+            ImGui::EndChild();
 
-            ImGui::Begin("Available Metrics");
-            // let's show an autocomplete text box
-            static char input[256] = "";
-            ImGui::InputText("Search", input, sizeof(input));
-            bool const is_active {ImGui::IsItemActive()};
-
-            // let's show the metrics that match the search
-            std::string input_str{input};
-            if (input_str.size() > 2) {
-                if (last_search != input_str) {
-                    matches.clear();
-                    last_time = std::chrono::steady_clock::now();
-                    last_search = input_str;
-                }
-                else if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - last_time).count() > 500) {
-                    matches.clear();
-                    for (const auto& [metric, values] : model.metrics) {
-                        if (metric.name.find(input_str) != std::string::npos) {
-                            matches.push_back(&metric);
-                            if (matches.size() > 100) {
-                                break;
-                            }
-                        }
-                    }
-                }
-                int count{0};
-                ImGui::BeginChild("Matches", ImVec2(0, 200), ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_AlwaysVerticalScrollbar);
-                for (const auto& metric : matches) {
-                    if (selected_metric == metric) {
-                        ImGui::SetScrollHereY();
-                    }
-                    if (ImGui::Selectable(metric->name.c_str(), selected_metric == metric)) {
-                        selected_metric = metric;
-                    }
-                }
-                ImGui::EndChild();
-                if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_UpArrow))) {
-                    auto pos = std::ranges::find(matches, selected_metric);
-                    if (pos != matches.end() && pos != matches.begin()) {
-                        selected_metric = *std::prev(pos);
-                    }
-                    else {
-                        selected_metric = matches.empty() ? nullptr : matches.front();
-                    }
-                }
-                else if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_DownArrow))) {
-                    auto pos = std::ranges::find(matches, selected_metric);
-                    if (pos != matches.end() && std::next(pos) != matches.end()) {
-                        selected_metric = *std::next(pos);
-                    }
-                    else {
-                        selected_metric = matches.empty() ? nullptr : matches.front();
-                    }
+            if (menu.selected_metric != nullptr) {
+                float const height {ImGui::GetWindowHeight() - ImGui::GetCursorPosY() - 10};
+                if (height > 0 && ImGui::BeginChild("MetricView", ImVec2(ImGui::GetWindowWidth() - 10, height))) {
+                    view.render(*menu.selected_metric, model.metrics.at(*menu.selected_metric));
+                    ImGui::EndChild();
                 }
             }
 
