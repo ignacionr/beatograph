@@ -1,0 +1,18 @@
+{
+    "version": 2,
+  
+    "configurePresets": [
+      {
+        "name": "debug",
+        "cacheVariables": {
+          "CMAKE_TOOLCHAIN_FILE": "E:/vcpkg/scripts/buildsystems/vcpkg.cmake"
+        }
+      },
+      {
+        "name": "release",
+        "cacheVariables": {
+          "CMAKE_TOOLCHAIN_FILE": "E:/vcpkg/scripts/buildsystems/vcpkg.cmake"
+        }
+      }
+    ]
+  }

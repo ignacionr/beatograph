@@ -9,6 +9,8 @@
         "list": "cpp",
         "unordered_set": "cpp",
         "string_view": "cpp",
-        "iostream": "cpp"
-    }
+        "iostream": "cpp",
+        "xutility": "cpp"
+    },
+    "cmake.automaticReconfigure": false
 }

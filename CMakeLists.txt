@@ -1,4 +1,10 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.30)
+
+# Set the path to vcpkg toolchain file
+set(CMAKE_TOOLCHAIN_FILE "E:/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE STRING "Vcpkg toolchain file")
+
+# Enable CMake's find_package to use vcpkg
+set(VCPKG_TARGET_TRIPLET "x64-windows" CACHE STRING "Vcpkg target triplet")
 
 # Set the project name and version
 project(Beatograph VERSION 1.0 LANGUAGES CXX)
@@ -6,46 +12,37 @@ project(Beatograph VERSION 1.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-# Add GoogleTest
-include(FetchContent)
-FetchContent_Declare(
-  googletest
-  URL https://github.com/google/googletest/archive/refs/tags/release-1.11.0.zip
-)
-# For Windows: Prevent overriding the parent project's compiler/linker settings
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(googletest)
-
 enable_testing()
 
 # Add your source files
 add_executable(beatograph 
-  /usr/share/doc/libimgui-dev/examples/backends/imgui_impl_sdl2.cpp
-  /usr/share/doc/libimgui-dev/examples/backends/imgui_impl_sdlrenderer2.cpp
   src/beatograph.cpp
 )
-set_target_properties(beatograph PROPERTIES COMPILE_FLAGS "-g")
+#set_target_properties(beatograph PROPERTIES COMPILE_FLAGS "-g")
+set_target_properties(beatograph PROPERTIES CXX_STANDARD 20)
+# Build to Windows Subsystem on cl.exe
+set_target_properties(beatograph PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS")
 
 # Link gtest and gtest_main
 add_executable(beatograph_test 
   src/beatograph_test.cpp
   )
+
 # Compile tests with debug symbols
-set_target_properties(beatograph_test PROPERTIES COMPILE_FLAGS "-g")
-target_link_libraries(beatograph_test gtest_main)
+
+target_link_libraries(beatograph_test PRIVATE GTest::gtest GTest::gtest_main)
 
 include(GoogleTest)
-gtest_discover_tests(beatograph_test)
+find_package(GTest CONFIG REQUIRED)
 
 # Find and link libcurl
 find_package(CURL REQUIRED)
-target_link_libraries(beatograph CURL::libcurl)
 
 # Find and link SDL2
 find_package(SDL2 REQUIRED)
 include_directories(${SDL2_INCLUDE_DIRS})
-target_include_directories(beatograph PRIVATE 
-  /usr/include/imgui
-  /usr/include/imgui/backends
-)
-target_link_libraries(beatograph ${SDL2_LIBRARIES} imgui stb)
+
+# Find and link imgui
+find_package(imgui REQUIRED)
+
+target_link_libraries(beatograph PRIVATE CURL::libcurl SDL2::SDL2 imgui::imgui)
