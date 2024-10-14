@@ -10,7 +10,8 @@
         "unordered_set": "cpp",
         "string_view": "cpp",
         "iostream": "cpp",
-        "xutility": "cpp"
+        "xutility": "cpp",
+        "xstring": "cpp"
     },
     "cmake.automaticReconfigure": false
 }
