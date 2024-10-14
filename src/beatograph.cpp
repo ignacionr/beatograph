@@ -23,7 +23,12 @@ void print_metric(const auto& it) {
     }
 }
 
+#if defined (_WIN32)
+#include <windows.h>
+int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
+#else
 int main() {
+#endif
     std::ifstream file("sample/metrics.txt");
     std::string line;
     metrics_parser parser;
