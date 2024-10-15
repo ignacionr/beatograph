@@ -2,11 +2,14 @@
     "dependencies": [
         "curl",
         "sdl2",
+        "sdl2-image",
+        "glew",
         {
             "name": "imgui",
             "features": [
                 "sdl2-binding",
-                "sdl2-renderer-binding"
+                "sdl2-renderer-binding",
+                "opengl3-binding"
             ]
         },
         "gtest"

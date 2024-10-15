@@ -14,12 +14,16 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 enable_testing()
 
-# Add your source files
 add_executable(beatograph 
+  src/metric_view.cpp
   src/beatograph.cpp
 )
-#set_target_properties(beatograph PROPERTIES COMPILE_FLAGS "-g")
+
 set_target_properties(beatograph PROPERTIES CXX_STANDARD 20)
+# Enable all possible warnings for cl.exe
+if (MSVC)
+  target_compile_options(beatograph PRIVATE /W4 /WX)
+endif()
 # Build to Windows Subsystem on cl.exe
 set_target_properties(beatograph PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS")
 
@@ -40,9 +44,17 @@ find_package(CURL REQUIRED)
 
 # Find and link SDL2
 find_package(SDL2 REQUIRED)
+find_package(SDL2_image REQUIRED)
 include_directories(${SDL2_INCLUDE_DIRS})
 
 # Find and link imgui
 find_package(imgui REQUIRED)
 
-target_link_libraries(beatograph PRIVATE CURL::libcurl SDL2::SDL2 imgui::imgui)
+
+find_package(GLEW REQUIRED)
+
+target_link_libraries(beatograph PRIVATE 
+  CURL::libcurl 
+  SDL2::SDL2 SDL2_image::SDL2_image 
+  GLEW::GLEW
+  imgui::imgui)
