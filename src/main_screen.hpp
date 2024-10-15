@@ -4,9 +4,10 @@
 #include <string>
 #include <ranges>
 #include <SDL2/SDL.h>
+#include <GL/glew.h>
 #include <imgui.h>
 #include <imgui_impl_sdl2.h>
-#include <imgui_impl_sdlrenderer2.h>
+#include <imgui_impl_opengl3.h>
 
 #include "metrics_model.hpp"
 #include "metrics_menu.hpp"
@@ -35,17 +36,20 @@ struct main_screen{
         // create a main window
         window = SDL_CreateWindow("Beatograph", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, 
             SDL_WINDOW_OPENGL|SDL_WINDOW_RESIZABLE|SDL_WINDOW_ALLOW_HIGHDPI|SDL_WINDOW_SHOWN);
+        gl_context = SDL_GL_CreateContext(window);
+        glewInit();
         if (window == nullptr) {
             SDL_Log("Unable to create window: %s", SDL_GetError());
             return;
         }
         // create the ImGui context
         auto imgui_ctx = ImGui::CreateContext();
+        ImGuiIO& io = ImGui::GetIO(); (void)io;
         ImGui::SetCurrentContext(imgui_ctx);
         // initialize the ImGui SDL2 backend
         auto sdl_renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-        ImGui_ImplSDLRenderer2_Init(sdl_renderer);
-        ImGui_ImplSDL2_InitForSDLRenderer(window, sdl_renderer);
+        ImGui_ImplSDL2_InitForOpenGL(window, gl_context);
+        ImGui_ImplOpenGL3_Init("#version 130");
 
         metrics_menu menu{model};
         // run the main loop
@@ -59,12 +63,13 @@ struct main_screen{
                     running = false;
                 }
             }
+
+            ImGui_ImplOpenGL3_NewFrame();
             ImGui_ImplSDL2_NewFrame();
-            ImGui_ImplSDLRenderer2_NewFrame();
             ImGui::NewFrame();
+
             SDL_SetRenderDrawColor(sdl_renderer, 255,255,255, 255);
             SDL_RenderClear(sdl_renderer);
-            auto io = ImGui::GetIO();
             auto const &display_size = io.DisplaySize;
             auto size = ImVec2(display_size.x, display_size.y);
             ImGui::SetNextWindowSize(size);
@@ -86,12 +91,18 @@ struct main_screen{
 
             ImGui::End();
             ImGui::Render();
-            ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), sdl_renderer);
-            SDL_RenderPresent(sdl_renderer);
+
+            glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
+            glClearColor(0.45f, 0.55f, 0.60f, 1.00f);
+            glClear(GL_COLOR_BUFFER_BIT);
+            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+            SDL_GL_SwapWindow(window);
         }
         // destroy the ImGui SDL2 backend
         ImGui_ImplSDL2_Shutdown();
     }
 private:
     SDL_Window *window;
+    SDL_GLContext gl_context;
 };

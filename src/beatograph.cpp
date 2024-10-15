@@ -26,7 +26,7 @@ void print_metric(const auto& it) {
 
 #if defined (_WIN32)
 #include <windows.h>
-int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
+int WinMain(HINSTANCE , HINSTANCE , LPSTR , int ) {
 #else
 int main() {
 #endif

@@ -83,7 +83,7 @@ struct metrics_parser {
         metric_value mv;
         mv.timestamp = sample_time;
 
-        state error_state = [&](char c, character_type t)  {
+        state error_state = [&](char , character_type )  {
             return &error_state;
         };
 
@@ -148,7 +148,7 @@ struct metrics_parser {
         };
         read_tags_state_ptr = &read_tags_state;
 
-        state read_comment_value_state = [&](char c, character_type t) {
+        state read_comment_value_state = [&](char c, character_type ) {
             comment_value.push_back(c);
             return &read_comment_value_state;
         };
@@ -179,7 +179,7 @@ struct metrics_parser {
             return &error_state;
         };
 
-        state read_value = [&](char c, character_type t) {
+        state read_value = [&](char , character_type t) {
             if (t == character_type::other) {
                 return &read_value;
             }

@@ -15,7 +15,6 @@ struct metrics_menu {
         // let's show an autocomplete text box
         static char input[256] = "";
         ImGui::InputText("Search", input, sizeof(input));
-        bool const is_active {ImGui::IsItemActive()};
 
         // let's show the metrics that match the search
         std::string input_str{input};
@@ -28,7 +27,7 @@ struct metrics_menu {
             else if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - last_time).count() > search_delay) {
                 query(input_str);
             }
-            int count{0};
+
             if (ImGui::BeginChild("Matches", ImVec2(ImGui::GetWindowWidth() - 10, 200), 0, ImGuiWindowFlags_AlwaysVerticalScrollbar)) {
                 for (const auto& metric : matches) {
                     if (selected_metric == metric) {
