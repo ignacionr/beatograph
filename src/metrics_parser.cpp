@@ -25,6 +25,34 @@ void metrics_parser::operator()(std::string_view contents)
     buffer += contents.substr(start);
 }
 
+enum class character_type
+{
+    other,
+    space,
+    equal,
+    quote,
+    comma,
+    hash,
+    open_curly,
+    close_curly,
+};
+
+struct character_classifier {
+    character_type character_types_[255] {character_type::other};
+    character_classifier() {
+        character_types_[' '] = character_type::space;
+        character_types_['='] = character_type::equal;
+        character_types_['"'] = character_type::quote;
+        character_types_[','] = character_type::comma;
+        character_types_['#'] = character_type::hash;
+        character_types_['{'] = character_type::open_curly;
+        character_types_['}'] = character_type::close_curly;
+    }
+    character_type operator()(char c) const {
+        return character_types_[c];
+    }
+};
+
 void metrics_parser::parse_line(std::string_view line)
 {
     // Parse the line and store the metric value
@@ -33,40 +61,7 @@ void metrics_parser::parse_line(std::string_view line)
         return;
     }
 
-    enum class character_type
-    {
-        space,
-        equal,
-        quote,
-        comma,
-        hash,
-        open_curly,
-        close_curly,
-        other
-    };
-
-    auto get_character_type = [](char c) -> character_type
-    {
-        switch (c)
-        {
-        case ' ':
-            return character_type::space;
-        case '=':
-            return character_type::equal;
-        case '"':
-            return character_type::quote;
-        case ',':
-            return character_type::comma;
-        case '#':
-            return character_type::hash;
-        case '{':
-            return character_type::open_curly;
-        case '}':
-            return character_type::close_curly;
-        default:
-            return character_type::other;
-        }
-    };
+    static character_classifier get_character_type;
 
     // Forward declaration of state function type
     using state = std::function<void *(char, character_type)>;
