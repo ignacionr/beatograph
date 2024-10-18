@@ -84,7 +84,7 @@ struct main_screen{
             if (menu.selected_metric != nullptr) {
                 float const height {ImGui::GetWindowHeight() - ImGui::GetCursorPosY() - 10};
                 if (height > 0 && ImGui::BeginChild("MetricView", ImVec2(ImGui::GetWindowWidth() - 10, height))) {
-                    view.render(*menu.selected_metric, model.metrics.at(*menu.selected_metric));
+                    view.render(*menu.selected_metric, model.views[menu.selected_metric], model.metrics.at(*menu.selected_metric));
                     ImGui::EndChild();
                 }
             }

@@ -24,7 +24,7 @@ static unsigned int LoadTexture(const char *file_path)
     return texture;
 }
 
-void metric_view::render(metric const &m, std::list<metric_value> const &values)
+void metric_view::render(metric const &m, metric_view_config &config, std::list<metric_value> const &values)
 {
     ImGui::Text("Name: %s", m.name.c_str());
     ImGui::Text("%s", m.help.c_str());
@@ -40,7 +40,6 @@ void metric_view::render(metric const &m, std::list<metric_value> const &values)
         ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(1.0f, 1.0f, 0.2f, 1.0f));
         ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
         ImGui::BeginChild("Settings", ImVec2(0, 0), ImGuiChildFlags_Border);
-        metric_view_config config;
         metric_view_config_screen config_screen{config};
         config_screen.render();
         ImGui::EndChild();

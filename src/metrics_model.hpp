@@ -3,6 +3,7 @@
 #include <string>
 #include <map>
 #include "metric_value.hpp"
+#include "metric_view_config.hpp"
 
 struct metrics_model {
     using metrics_map_t = std::map<metric, std::list<metric_value>>;
@@ -43,4 +44,5 @@ struct metrics_model {
     }
 
     metrics_map_t metrics;
+    std::map<const metric*, metric_view_config> views;
 };
