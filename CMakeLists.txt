@@ -18,6 +18,7 @@ add_executable(beatograph
   src/metric_view.cpp
   src/beatograph.cpp
   src/main_screen.cpp
+  src/metric_view_config_screen.cpp
 )
 
 set_target_properties(beatograph PROPERTIES CXX_STANDARD 20)
