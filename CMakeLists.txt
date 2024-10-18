@@ -17,6 +17,7 @@ enable_testing()
 add_executable(beatograph 
   src/metric_view.cpp
   src/beatograph.cpp
+  src/main_screen.cpp
 )
 
 set_target_properties(beatograph PROPERTIES CXX_STANDARD 20)
