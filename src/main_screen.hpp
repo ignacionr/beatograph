@@ -72,7 +72,7 @@ struct main_screen
         {
             throw std::runtime_error(std::string("Unable to create renderer: ") + SDL_GetError());
         }
-        Repository<SDL_Renderer *>::onSubsystemAvailable(sdl_renderer);
+        Repository<SDL_Renderer *>::available(sdl_renderer);
     }
     ~main_screen()
     {

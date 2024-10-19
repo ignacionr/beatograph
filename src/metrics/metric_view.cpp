@@ -80,7 +80,7 @@ void metric_view::render(metric const &m, metric_view_config &config, std::list<
 
 metric_view::metric_view()
 {
-    Repository<SDL_Renderer*>::addObserver([this](SDL_Renderer*) {
+    Repository<SDL_Renderer*>::when_available([this](SDL_Renderer*) {
         gear_texture_id = LoadTexture(gear_icon);
     });
 }

@@ -7,7 +7,7 @@ template <typename T>
 class Repository {
 public:
     // Add an observer to the repository
-    static void addObserver(std::function<void(T)> observer) {
+    static void when_available(std::function<void(T)> observer) {
         if (getResolver().has_value()) {
             observer(getResolver().value());
         }
@@ -15,7 +15,7 @@ public:
     }
 
     // Notify observers when a subsystem becomes available
-    static void onSubsystemAvailable(T value) {
+    static void available(T value) {
         for (auto& observer : getObservers()) {
             observer(value);
         }
