@@ -15,12 +15,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 enable_testing()
 
 add_executable(beatograph 
-  src/metric_view.cpp
+  src/metrics/metric_view.cpp
   src/beatograph.cpp
-  src/main_screen.cpp
-  src/metric_view_config_screen.cpp
-  src/metrics_menu.cpp
-  src/metrics_parser.cpp
+  src/metrics/metric_view_config_screen.cpp
+  src/metrics/metrics_menu.cpp
+  src/metrics/metrics_parser.cpp
 )
 
 set_target_properties(beatograph PROPERTIES CXX_STANDARD 20)
@@ -34,7 +33,7 @@ set_target_properties(beatograph PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS")
 # Link gtest and gtest_main
 add_executable(beatograph_test 
   src/beatograph_test.cpp
-  src/metrics_parser.cpp
+  src/metrics/metrics_parser.cpp
   )
 
 # Compile tests with debug symbols

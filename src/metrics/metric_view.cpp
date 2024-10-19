@@ -1,18 +1,36 @@
+#include <stdexcept>
+
 #include "metric_view.hpp"
 #include "metric_view_config.hpp"
 #include "metric_view_config_screen.hpp"
 
+#include "../when_available.hpp"
+
+using namespace std::string_literals;
+
+
+static void CheckOpenGLError()
+{
+    GLenum err;
+    while ((err = glGetError()) != GL_NO_ERROR)
+    {
+        throw std::runtime_error("OpenGL error: "s + std::to_string(err));
+    }
+}
+
 static unsigned int LoadTexture(const char *file_path)
 {
+    CheckOpenGLError();
     SDL_Surface *surface = IMG_Load(file_path);
-    if (!surface)
+    if (surface == nullptr)
     {
-        printf("Failed to load image: %s\n", IMG_GetError());
-        return 0;
+        throw std::runtime_error("Failed to load image: "s + IMG_GetError());
     }
 
     unsigned int texture{0};
     glGenTextures(1, &texture);
+    CheckOpenGLError();
+
     glBindTexture(GL_TEXTURE_2D, texture);
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surface->w, surface->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surface->pixels);
@@ -60,6 +78,9 @@ void metric_view::render(metric const &m, metric_view_config &config, std::list<
     }
 }
 
-metric_view::metric_view() : gear_texture_id{LoadTexture("assets/gear.png")}
+metric_view::metric_view()
 {
+    Repository<SDL_Renderer*>::addObserver([this](SDL_Renderer*) {
+        gear_texture_id = LoadTexture(gear_icon);
+    });
 }

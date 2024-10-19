@@ -19,6 +19,7 @@ void metrics_menu::render()
         else if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - last_time).count() > search_delay)
         {
             query(input_str);
+            last_time = std::chrono::steady_clock::time_point::max();
         }
 
         if (ImGui::BeginChild("Matches", ImVec2(ImGui::GetWindowWidth() - 10, 200), 0, ImGuiWindowFlags_AlwaysVerticalScrollbar))

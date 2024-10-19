@@ -6,23 +6,10 @@
 #include <ranges>
 #include <string>
 #include <unordered_map>
-#include "metric.hpp"
-#include "metric_value.hpp"
-#include "metrics_parser.hpp"
-#include "metrics_model.hpp"
 #include "main_screen.hpp"
-
-void print_metric(const auto& it) {
-    std::cout << "Metric: " << it->first.name << std::endl;
-    std::cout << "Help: " << it->first.help << std::endl;
-    std::cout << "Type: " << it->first.type << std::endl;
-    for (const auto& value : it->second) {
-        std::cout << "Value: " << value.value << std::endl;
-        for (const auto& label : value.labels) {
-            std::cout << "Label: " << label.first << " = " << label.second << std::endl;
-        }
-    }
-}
+#include "metrics/metrics_parser.hpp"
+#include "metrics/metrics_model.hpp"
+#include "metrics/metrics_screen.hpp"
 
 #if defined (_WIN32)
 #include <windows.h>
@@ -58,7 +45,8 @@ int main() {
         });
     std::cout << "Loaded " << total_values << " values" << std::endl;
 
-    main_screen screen{model};
+    auto ms = std::make_unique<metrics_screen>(model);
+    main_screen screen{std::move(ms)};
     screen.run();
 
     return 0;
