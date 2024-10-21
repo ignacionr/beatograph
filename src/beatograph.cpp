@@ -7,25 +7,20 @@
 #include <string>
 #include <unordered_map>
 #include "main_screen.hpp"
+#include "screen_tabs.hpp"
 #include "metrics/metrics_parser.hpp"
 #include "metrics/metrics_model.hpp"
 #include "metrics/metrics_screen.hpp"
 
-#if defined (_WIN32)
-#include <windows.h>
-int WinMain(HINSTANCE , HINSTANCE , LPSTR , int ) {
-#else
-int main() {
-#endif
-    // obtain the last modification time of the file
-    std::filesystem::path path("sample/metrics.txt");
+void load_metrics_file(metrics_model& model, std::string_view filename) {
+        // obtain the last modification time of the file
+    std::filesystem::path path(filename);
     auto last_write_time = std::filesystem::last_write_time(path);
 
-    std::ifstream file("sample/metrics.txt");
+    std::ifstream file(path);
     std::string line;
     metrics_parser parser;
     parser.sample_time = std::chrono::system_clock::now() + (last_write_time - std::filesystem::file_time_type::clock::now());
-    metrics_model model;
     parser.metric_help = [&](const std::string_view& name, const std::string_view& help) {
         model.set_help(name, help);
     };
@@ -38,15 +33,23 @@ int main() {
     while (std::getline(file, line)) {
         parser(line);
     }
-    std::cout << "Loaded " << model.metrics.size() << " metrics" << std::endl;
-    auto total_values = std::accumulate(model.metrics.begin(), model.metrics.end(), size_t{0},
-        [](size_t acc, const auto& pair) -> size_t {
-            return acc + pair.second.size();
-        });
-    std::cout << "Loaded " << total_values << " values" << std::endl;
 
-    auto ms = std::make_unique<metrics_screen>(model);
-    main_screen screen{std::move(ms)};
+}
+
+#if defined (_WIN32)
+#include <windows.h>
+int WinMain(HINSTANCE , HINSTANCE , LPSTR , int ) {
+#else
+int main() {
+#endif
+    metrics_model model;
+    load_metrics_file(model, "sample/metrics.txt");
+
+    metrics_screen ms(model);
+    auto tabs = std::make_unique<screen_tabs>(std::vector<screen_tabs::tab_t>{
+        {"Metrics", [&ms] { ms.render(); }},
+    });
+    main_screen screen{std::move(tabs)};
     screen.run();
 
     return 0;
