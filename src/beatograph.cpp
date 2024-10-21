@@ -11,6 +11,8 @@
 #include "metrics/metrics_parser.hpp"
 #include "metrics/metrics_model.hpp"
 #include "metrics/metrics_screen.hpp"
+#include "toggl/toggl_client.hpp"
+#include "toggl/toggl_screen.hpp"
 
 void load_metrics_file(metrics_model& model, std::string_view filename) {
         // obtain the last modification time of the file
@@ -46,8 +48,19 @@ int main() {
     load_metrics_file(model, "sample/metrics.txt");
 
     metrics_screen ms(model);
+    char* token_env = nullptr;
+    size_t len = 0;
+    if (_dupenv_s(&token_env, &len, "TOGGL_API_TOKEN") || token_env == nullptr) {
+        std::cerr << "Error: TOGGL_API_TOKEN environment variable not set." << std::endl;
+        return 1;
+    }
+    std::string toggle_token = token_env;
+    toggl_client tc(toggle_token);
+    toggl_screen ts(tc);
+
     auto tabs = std::make_unique<screen_tabs>(std::vector<screen_tabs::tab_t>{
         {"Metrics", [&ms] { ms.render(); }},
+        {"Toggl", [&ts] { ts.render(); }},
     });
     main_screen screen{std::move(tabs)};
     screen.run();
