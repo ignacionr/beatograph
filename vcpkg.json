@@ -12,6 +12,7 @@
                 "opengl3-binding"
             ]
         },
-        "gtest"
+        "gtest",
+        "nlohmann-json"
     ]
 }

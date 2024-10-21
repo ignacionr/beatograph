@@ -80,7 +80,12 @@
         "xlocnum": "cpp",
         "xloctime": "cpp",
         "xmemory": "cpp",
-        "xtree": "cpp"
+        "xtree": "cpp",
+        "valarray": "cpp",
+        "csignal": "cpp",
+        "cstdarg": "cpp",
+        "random": "cpp",
+        "regex": "cpp"
     },
     "cmake.automaticReconfigure": false
 }

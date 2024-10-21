@@ -51,14 +51,14 @@ find_package(SDL2 REQUIRED)
 find_package(SDL2_image REQUIRED)
 include_directories(${SDL2_INCLUDE_DIRS})
 
-# Find and link imgui
 find_package(imgui REQUIRED)
-
-
+find_package(nlohmann_json CONFIG REQUIRED)
 find_package(GLEW REQUIRED)
 
 target_link_libraries(beatograph PRIVATE 
   CURL::libcurl 
   SDL2::SDL2 SDL2_image::SDL2_image 
   GLEW::GLEW
-  imgui::imgui)
+  imgui::imgui
+  nlohmann_json::nlohmann_json
+  )
