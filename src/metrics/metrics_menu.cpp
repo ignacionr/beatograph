@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "metrics_menu.hpp"
 
 void metrics_menu::render()

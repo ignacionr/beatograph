@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "metric_view_config_screen.hpp"
 
 void metric_view_config_screen::render()

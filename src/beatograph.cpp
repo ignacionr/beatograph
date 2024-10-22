@@ -1,3 +1,4 @@
+#include "pch.h"
 #include <algorithm>
 #include <numeric>
 #include <fstream>
@@ -13,6 +14,9 @@
 #include "metrics/metrics_screen.hpp"
 #include "toggl/toggl_client.hpp"
 #include "toggl/toggl_screen.hpp"
+#include "jira/screen.hpp"
+#include "calendar/screen.hpp"
+#include "data_offering/screen.hpp"
 
 void load_metrics_file(metrics_model& model, std::string_view filename) {
         // obtain the last modification time of the file
@@ -39,7 +43,6 @@ void load_metrics_file(metrics_model& model, std::string_view filename) {
 }
 
 #if defined (_WIN32)
-#include <windows.h>
 int WinMain(HINSTANCE , HINSTANCE , LPSTR , int ) {
 #else
 int main() {
@@ -54,13 +57,22 @@ int main() {
         std::cerr << "Error: TOGGL_API_TOKEN environment variable not set." << std::endl;
         return 1;
     }
-    std::string toggle_token = token_env;
+    std::string toggle_token{token_env, len-1}; // len returns the count of all copied bytes, including the terminator
     toggl_client tc(toggle_token);
     toggl_screen ts(tc);
 
+    jira_screen js;
+
+    calendar_screen cs;
+
+    dataoffering_screen ds;
+
     auto tabs = std::make_unique<screen_tabs>(std::vector<screen_tabs::tab_t>{
+        {"Data Offering", [&ds] { ds.render(); }},
         {"Metrics", [&ms] { ms.render(); }},
         {"Toggl", [&ts] { ts.render(); }},
+        {"Jira", [&js] { js.render(); }},
+        {"Calendar", [&cs] { cs.render(); }},
     });
     main_screen screen{std::move(tabs)};
     screen.run();

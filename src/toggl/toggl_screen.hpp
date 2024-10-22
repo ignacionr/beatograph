@@ -19,7 +19,12 @@ struct toggl_screen
         if (std::chrono::system_clock::now() - last_update > std::chrono::minutes(1))
         {
             last_update = std::chrono::system_clock::now();
-            time_entries = client.getTimeEntries();
+            try {
+                time_entries = client.getTimeEntries();
+            }
+            catch (const std::exception &e) {
+                time_entries = nlohmann::json::string_t(e.what());
+            }
 
             std::time_t currentTime = std::time(nullptr);
             // Get the UTC time
@@ -41,6 +46,7 @@ struct toggl_screen
         ImGui::Columns(3);
         std::chrono::time_point<std::chrono::system_clock, std::chrono::days> current_day;
         time_t current_day_seconds = 0;
+        if (time_entries.is_array()) {
         for (const auto &entry : time_entries)
         {
             struct std::tm tm = {};
@@ -74,7 +80,7 @@ struct toggl_screen
                 }
                 current_day = day_start;
                 ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 0.0f, 1.0f, 1.0f)); // Light blue color
-                ImGui::Text("Day: %s", std::format("{:%Y-%m-%d}", current_day).c_str());
+                ImGui::LabelText("Day: %s", std::format("{:%Y-%m-%d}", current_day).c_str());
                 ImGui::PopStyleColor();
                 ImGui::NextColumn();
                 ImGui::NextColumn();
@@ -102,6 +108,13 @@ struct toggl_screen
             ImGui::Text("%s", duration_formatted.c_str());
             ImGui::NextColumn();
         }
+        }
+        else {
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.0f, 0.0f, 1.0f)); // Red color
+            ImGui::Text(time_entries.dump().c_str());
+            ImGui::PopStyleColor();
+        }
+        
         ImGui::Columns();
     }
 private:

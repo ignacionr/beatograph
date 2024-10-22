@@ -1,3 +1,4 @@
+#include "pch.h"
 #include <stdexcept>
 
 #include "metric_view.hpp"
