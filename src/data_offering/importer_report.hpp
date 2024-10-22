@@ -1,5 +1,6 @@
 #pragma once
 
+#include <thread>
 #include <imgui.h>
 #include "../host/host.hpp"
 #include "../host/screen.hpp"
@@ -8,7 +9,10 @@ struct importer_report {
     importer_report(host_local &localhost): 
         host_importer_("ignacio-bench"), localhost_{localhost} 
     {
-        host_importer_.resolve_from_ssh_conf(localhost);
+        auto t = std::thread([this] {
+            host_importer_.resolve_from_ssh_conf(localhost_);
+        });
+        t.detach();
     }
     void render() 
     {
