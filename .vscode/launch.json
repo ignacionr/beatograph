@@ -11,7 +11,7 @@
             "program": "${workspaceFolder}/build/Debug/beatograph.exe",
             "args": [],
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder}/build",
+            "cwd": "${workspaceFolder}",
             "environment": [],
             "console": "integratedTerminal"
         },
