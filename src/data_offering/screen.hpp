@@ -4,6 +4,7 @@
 #include "importer_report.hpp"
 
 struct dataoffering_screen {
+    dataoffering_screen(host_local &localhost) : importer(localhost) {}
     void render() {
         ImGui::BeginChild("Data Offering");
         ImGui::Text("* Is OddsMetrix working?");
