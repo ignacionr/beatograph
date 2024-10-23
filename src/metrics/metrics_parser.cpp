@@ -10,17 +10,19 @@ void metrics_parser::operator()(std::string_view contents)
     while (end != std::string::npos)
     {
         end = contents.find('\n', start);
-        if (buffer.empty())
-        {
-            parse_line(contents.substr(start, end - start));
+        if (end != std::string_view::npos) {
+            if (buffer.empty())
+            {
+                parse_line(contents.substr(start, end - start));
+            }
+            else
+            {
+                buffer += contents.substr(start, end - start);
+                parse_line(buffer);
+                buffer.clear();
+            }
+            start = (end == std::string::npos) ? contents.size() : (end + 1);
         }
-        else
-        {
-            buffer += contents.substr(start, end - start);
-            parse_line(buffer);
-            buffer.clear();
-        }
-        start = (end == std::string::npos) ? contents.size() : (end + 1);
     }
     // save leftovers on the buffer string
     buffer += contents.substr(start);
@@ -56,6 +58,7 @@ struct character_classifier {
 
 void metrics_parser::parse_line(std::string_view line)
 {
+    std::cerr << __FILE__ << ":" << __LINE__ << " " << line << std::endl;
     // Parse the line and store the metric value
     if (line.empty())
     {

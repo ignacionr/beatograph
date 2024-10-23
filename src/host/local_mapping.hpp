@@ -38,6 +38,8 @@ struct host_local_mapping
         process_->wait(1000);
         process_->stop();
     }
+    unsigned short mapped_port() const { return mapped_port_; }
+    unsigned short local_port() const { return local_port_; }
 private:
     unsigned short mapped_port_;
     unsigned short local_port_;

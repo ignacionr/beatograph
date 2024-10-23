@@ -1,8 +1,10 @@
 #pragma once
 
+#include <numeric>
 #include <ranges>
 #include <imgui.h>
 #include "host.hpp"
+#include "../metrics/metric_view.hpp"
 
 struct host_screen
 {
@@ -20,6 +22,16 @@ struct host_screen
                 ImGui::LabelText(key.c_str(), "%s", value.c_str());
             }
         }
+        if (ImGui::CollapsingHeader("Performance Metrics")) {
+            std::shared_ptr<metrics_model> model = host.metrics();
+            if (model) {
+                for (auto const &[metric, values] : model->metrics) {
+                    metric_view_.render(metric, model->views[&metric], values);
+                }
+            }
+        }
         ImGui::Unindent();
     }
+private:
+    metric_view metric_view_;
 };

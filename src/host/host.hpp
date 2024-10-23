@@ -43,7 +43,8 @@ struct host {
         if (!nodeexporter_mapping_.load()) {
             nodeexporter_mapping_.store(std::make_shared<host_local_mapping>(9100, name_, localhost));
         }
-        auto metrics = metrics_from_url::fetch("http://localhost:9100/metrics");
+        auto url = std::format("http://localhost:{}/metrics", nodeexporter_mapping_.load()->local_port());
+        auto metrics = metrics_from_url::fetch(url);
         metrics_.store(std::make_shared<metrics_model>(std::move(metrics)));
     }
 

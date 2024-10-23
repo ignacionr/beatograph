@@ -95,10 +95,6 @@ struct host_local
                 WaitForSingleObject(pi.hProcess, milliseconds);
                 GetExitCodeProcess(pi.hProcess, &exitCode);
                 CloseHandle(pi.hProcess), pi.hProcess = INVALID_HANDLE_VALUE;
-                if (exitCode != 0)
-                {
-                    throw std::runtime_error("Child process failed!");
-                }
             }
             return exitCode;
         }
