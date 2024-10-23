@@ -29,7 +29,9 @@ struct cluster_report {
     }
     void render() {
         for (auto &host : hosts_) {
+            ImGui::BeginChild(host.name().c_str());
             host_screen_.render(host);
+            ImGui::EndChild();
         }
     }
 private:

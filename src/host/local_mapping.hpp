@@ -2,6 +2,7 @@
 
 #include <format>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <stdexcept>
 #include "host_local.hpp"
@@ -15,18 +16,25 @@ struct host_local_mapping
     {
         // Find an available port
         local_port_ = 0;
-        for (unsigned short port_candidate = 10000; port_candidate < 65535; ++port_candidate)
         {
+            static unsigned short watermark_{10000};
+            static std::mutex port_mutex;
+            std::lock_guard<std::mutex> lock(port_mutex);
+
+            for (unsigned short port_candidate = watermark_; port_candidate < 65535; ++port_candidate)
+            {
             if (!localhost_.IsPortInUse(port_candidate))
             {
                 local_port_ = port_candidate;
                 break;
             }
-        }
-        // If no port is available, throw an exception
-        if (local_port_ == 0)
-        {
-            throw std::runtime_error("No available ports found!");
+            }
+            // If no port is available, throw an exception
+            if (local_port_ == 0)
+            {
+                throw std::runtime_error("No available ports found!");
+            }
+            watermark_ = local_port_ + 1;
         }
         // Map the port
         std::string command = std::format("ssh -L {0}:localhost:{1} {2} sleep infinity", local_port_, mapped_port_, hostname_);
