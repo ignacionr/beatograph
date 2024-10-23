@@ -91,7 +91,8 @@ struct host_local
 
         DWORD wait(DWORD milliseconds = INFINITE)
         {
-            if (pi.hProcess != INVALID_HANDLE_VALUE) {
+            if (pi.hProcess != INVALID_HANDLE_VALUE)
+            {
                 WaitForSingleObject(pi.hProcess, milliseconds);
                 GetExitCodeProcess(pi.hProcess, &exitCode);
                 CloseHandle(pi.hProcess), pi.hProcess = INVALID_HANDLE_VALUE;
@@ -99,30 +100,38 @@ struct host_local
             return exitCode;
         }
 
-        void stop() {
-            if (pi.hProcess != INVALID_HANDLE_VALUE) {
+        void stop()
+        {
+            if (pi.hProcess != INVALID_HANDLE_VALUE)
+            {
                 TerminateProcess(pi.hProcess, 0);
             }
         }
 
-        void sendQuitSignal() 
+        void sendQuitSignal()
         {
-            if (pi.hProcess != INVALID_HANDLE_VALUE) {
+            if (pi.hProcess != INVALID_HANDLE_VALUE)
+            {
                 // Check if process is a console app, send CTRL_BREAK_EVENT
-                if (AttachConsole(pi.dwProcessId)) {
+                if (AttachConsole(pi.dwProcessId))
+                {
                     // Send CTRL_BREAK_EVENT to console processes
                     GenerateConsoleCtrlEvent(CTRL_BREAK_EVENT, pi.dwProcessId);
-                } else {
+                }
+                else
+                {
                     // For GUI apps, try sending WM_CLOSE
                     HWND hWnd = FindWindow(nullptr, nullptr); // Adjust the window finding as needed
-                    if (hWnd) {
+                    if (hWnd)
+                    {
                         PostMessage(hWnd, WM_CLOSE, 0, 0);
                     }
                 }
             }
         }
 
-        void read_all(sink_t sink) {
+        void read_all(sink_t sink)
+        {
             // Read from the pipe
             char buffer[128];
             DWORD bytesRead;
@@ -140,7 +149,8 @@ struct host_local
         DWORD exitCode{};
     };
 
-    auto run(const char *command) {
+    auto run(const char *command)
+    {
         return std::make_unique<running_process>(command);
     }
 
@@ -160,60 +170,59 @@ struct host_local
 
     bool IsPortInUse(unsigned short port) const
     {
-        bool isInUse = false;
-
         WSADATA wsaData;
-        SOCKET ListenSocket = INVALID_SOCKET;
-
-        struct addrinfo *result = NULL, hints;
+        SOCKET TestSocket = INVALID_SOCKET;
+        struct sockaddr_in service;
 
         // Initialize Winsock
         int iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
         if (iResult != 0)
         {
-            return false;
-        }
-
-        ZeroMemory(&hints, sizeof(hints));
-        hints.ai_family = AF_INET;       // IPv4
-        hints.ai_socktype = SOCK_STREAM; // TCP
-        hints.ai_protocol = IPPROTO_TCP;
-        hints.ai_flags = AI_PASSIVE; // Listen on all interfaces
-
-        char portStr[6];
-        sprintf_s(portStr, "%u", port);
-
-        // Resolve the local address and port to be used by the server
-        iResult = getaddrinfo(NULL, portStr, &hints, &result);
-        if (iResult != 0)
-        {
-            WSACleanup();
-            return false;
+            return false; // Winsock init failed, assume port is not in use
         }
 
         // Create a SOCKET for connecting to the server
-        ListenSocket = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
-        if (ListenSocket == INVALID_SOCKET)
+        TestSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+        if (TestSocket == INVALID_SOCKET)
         {
-            freeaddrinfo(result);
             WSACleanup();
-            return false;
+            return false; // Socket creation failed, assume port is not in use
         }
 
-        // Attempt to bind to the port
-        iResult = bind(ListenSocket, result->ai_addr, (int)result->ai_addrlen);
+        // Set up the sockaddr_in structure
+        service.sin_family = AF_INET;
+        if (inet_pton(AF_INET, "127.0.0.1", &service.sin_addr) <= 0) {
+            closesocket(TestSocket);
+            WSACleanup();
+            return false; // Address conversion failed, assume port is not in use
+        }
+        service.sin_port = htons(port); // Convert port number
+
+        // Attempt to connect to the port
+        iResult = connect(TestSocket, (SOCKADDR *)&service, sizeof(service));
         if (iResult == SOCKET_ERROR)
         {
-            // If bind failed, port is likely in use
-            isInUse = true;
+            // If the error is WSAECONNREFUSED or WSAETIMEDOUT, port is not in use
+            int errCode = WSAGetLastError();
+            if (errCode == WSAECONNREFUSED || errCode == WSAETIMEDOUT)
+            {
+                closesocket(TestSocket);
+                WSACleanup();
+                return false; // Port is not in use
+            }
+        }
+        else
+        {
+            // Connection succeeded, meaning the port is in use
+            closesocket(TestSocket);
+            WSACleanup();
+            return true; // Port is in use
         }
 
         // Cleanup
-        closesocket(ListenSocket);
-        freeaddrinfo(result);
+        closesocket(TestSocket);
         WSACleanup();
-
-        return isInUse;
+        return false; // Port is not in use
     }
 
     std::string HostName()

@@ -19,6 +19,7 @@
 #include "data_offering/screen.hpp"
 #include "host/host_local.hpp"
 #include "host/local_screen.hpp"
+#include "arangodb/cluster_report.hpp"
 
 void load_metrics_file(metrics_model& model, std::string_view filename) {
         // obtain the last modification time of the file
@@ -70,11 +71,14 @@ int main() {
     host_local localhost;
 
     dataoffering_screen ds{localhost};
-    host_local_screen local_screen(localhost);
+    host_local_screen local_screen{localhost};
 
-    auto tabs = std::make_unique<screen_tabs>(std::vector<screen_tabs::tab_t>{
+    cluster_report cr{localhost};
+
+    auto tabs = std::make_unique<screen_tabs>(std::vector<screen_tabs::tab_t> {
         {"This Computer", [&local_screen] { local_screen.render(); }},
         {"Data Offering", [&ds] { ds.render(); }},
+        {"ArangoDB", [&cr] { cr.render(); }},
         {"Metrics", [&ms] { ms.render(); }},
         {"Toggl", [&ts] { ts.render(); }},
         {"Jira", [&js] { js.render(); }},
