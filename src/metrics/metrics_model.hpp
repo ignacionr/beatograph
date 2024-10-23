@@ -1,7 +1,10 @@
 #pragma once
+#include <functional>
 #include <list>
-#include <string>
 #include <map>
+#include <numeric>
+#include <optional>
+#include <string>
 #include "metric_value.hpp"
 #include "metric_view_config.hpp"
 
@@ -40,6 +43,16 @@ struct metrics_model {
         }
         else {
             pos->second.emplace_back(std::move(value));
+        }
+    }
+
+    std::optional<double> sum(std::string_view key) const {
+        auto pos = metrics.find({std::string{key}});
+        if (pos != metrics.end()) {
+            return std::accumulate(pos->second.begin(), pos->second.end(), 0.0, [](auto acc, auto const& mv) { return acc + mv.value; });
+        }
+        else {
+            return std::nullopt;
         }
     }
 

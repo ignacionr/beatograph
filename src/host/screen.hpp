@@ -25,23 +25,29 @@ struct host_screen
         if (ImGui::CollapsingHeader("Performance Metrics")) {
             std::shared_ptr<metrics_model> model = host.metrics();
             if (model) {
-                auto available_bytes_pos = model->metrics.find({"node_memory_MemAvailable_bytes"});
-                if (available_bytes_pos != model->metrics.end()) {
-                    auto &available_bytes = available_bytes_pos->second;
-                    auto total_bytes_pos = model->metrics.find({"node_memory_MemTotal_bytes"});
-                    if (total_bytes_pos != model->metrics.end()) {
-                        auto &total_bytes = total_bytes_pos->second;
-                        auto available = std::accumulate(available_bytes.begin(), available_bytes.end(), 0.0, [](auto acc, auto const &mv) { return acc + mv.value; });
-                        auto total = std::accumulate(total_bytes.begin(), total_bytes.end(), 0.0, [](auto acc, auto const &mv) { return acc + mv.value; });
-                        if (total > 0.1) {
-                            ImGui::ProgressBar(static_cast<float>(available / total), ImVec2(0.0f, 0.0f));
-                            ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-                            ImGui::Text("Memory Usage: %.2f%%", 100.0 * available / total);
-                        }
-                    }
+                // Memory
+                auto available_bytes = model->sum("node_memory_MemAvailable_bytes");
+                auto total_bytes = model->sum("node_memory_MemTotal_bytes");
+                if (total_bytes.has_value() && available_bytes.has_value() && total_bytes.value() > 0) {
+                    double const ratio{1.0 - available_bytes.value() / total_bytes.value()};
+                    ImGui::ProgressBar(static_cast<float>(ratio), ImVec2(0.0f, 0.0f));
+                    ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+                    ImGui::Text("Memory Usage: %.2f%%", 100.0 * ratio);
                 }
                 else {
                     ImGui::Text("Memory Usage: N/A");
+                }
+                // Disk
+                auto disk_free = model->sum("node_filesystem_free_bytes");
+                auto disk_total = model->sum("node_filesystem_size_bytes");
+                if (disk_total.has_value() && disk_free.has_value() && disk_total.value() > 0) {
+                    double const ratio{1.0 - disk_free.value() / disk_total.value()};
+                    ImGui::ProgressBar(static_cast<float>(ratio), ImVec2(0.0f, 0.0f));
+                    ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+                    ImGui::Text("Disk Usage: %.2f%%", 100.0 * ratio);
+                }
+                else {
+                    ImGui::Text("Disk Usage: N/A");
                 }
             }
             else {
