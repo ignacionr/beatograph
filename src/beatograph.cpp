@@ -50,7 +50,7 @@ int WinMain(HINSTANCE , HINSTANCE , LPSTR , int ) {
 int main() {
 #endif
     metrics_model model;
-    load_metrics_file(model, "sample/metrics.txt");
+    // load_metrics_file(model, "sample/metrics.txt");
 
     metrics_screen ms(model);
     char* token_env = nullptr;
