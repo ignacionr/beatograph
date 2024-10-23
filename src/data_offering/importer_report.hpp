@@ -11,6 +11,7 @@ struct importer_report {
     {
         auto t = std::thread([this] {
             host_importer_.resolve_from_ssh_conf(localhost_);
+            host_importer_.fetch_metrics(localhost_);
         });
         t.detach();
     }
