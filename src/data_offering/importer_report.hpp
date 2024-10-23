@@ -66,6 +66,17 @@ struct importer_report {
                             }
                             ImGui::EndTable();
                         }
+                        if (ImGui::Button("Refresh")) {
+                            auto t = std::thread([this] {
+                                try {
+                                    docker_ps_.store(std::make_shared<nlohmann::json>(std::move(docker_host_.ps(localhost_))));
+                                }
+                                catch(std::exception const &e) {
+                                    std::cerr << "Error: " << e.what() << std::endl;
+                                }
+                            });
+                            t.detach();
+                        }
                     }
                     else {
                         ImGui::Text("N/A");
