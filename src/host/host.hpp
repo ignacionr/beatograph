@@ -12,6 +12,10 @@ struct host {
     using properties_t = std::map<std::string, std::string>;
 
     host(std::string_view name) : name_{name} {}
+    ~host() {
+        // at this point, the nodeexporter_mapping_ should have a count of 1 only
+        nodeexporter_mapping_.store(nullptr);
+    }
 
     void resolve_from_ssh_conf(host_local &host_local) 
     {

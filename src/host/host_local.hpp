@@ -71,21 +71,26 @@ struct host_local
         }
         ~running_process()
         {
-            if (hReadPipe != INVALID_HANDLE_VALUE)
-            {
-                CloseHandle(hReadPipe);
-            }
-            if (hWritePipe != INVALID_HANDLE_VALUE)
-            {
-                CloseHandle(hWritePipe);
-            }
+            close_pipes();
             if (pi.hProcess != INVALID_HANDLE_VALUE)
             {
-                CloseHandle(pi.hProcess);
+                CloseHandle(pi.hProcess), pi.hProcess = INVALID_HANDLE_VALUE;
             }
             if (pi.hThread != INVALID_HANDLE_VALUE)
             {
-                CloseHandle(pi.hThread);
+                CloseHandle(pi.hThread), pi.hThread = INVALID_HANDLE_VALUE;
+            }
+        }
+
+        void close_pipes()
+        {
+            if (hReadPipe != INVALID_HANDLE_VALUE)
+            {
+                CloseHandle(hReadPipe), hReadPipe = INVALID_HANDLE_VALUE;
+            }
+            if (hWritePipe != INVALID_HANDLE_VALUE)
+            {
+                CloseHandle(hWritePipe), hWritePipe = INVALID_HANDLE_VALUE;
             }
         }
 
@@ -93,7 +98,11 @@ struct host_local
         {
             if (pi.hProcess != INVALID_HANDLE_VALUE)
             {
-                WaitForSingleObject(pi.hProcess, milliseconds);
+                auto const res = WaitForSingleObject(pi.hProcess, milliseconds);
+                if (res == WAIT_TIMEOUT)
+                {
+                    return res;
+                }
                 GetExitCodeProcess(pi.hProcess, &exitCode);
                 CloseHandle(pi.hProcess), pi.hProcess = INVALID_HANDLE_VALUE;
             }
@@ -104,29 +113,24 @@ struct host_local
         {
             if (pi.hProcess != INVALID_HANDLE_VALUE)
             {
-                TerminateProcess(pi.hProcess, 0);
+                close_pipes();
+                if (!TerminateProcess(pi.hProcess, 0))
+                {
+                    // get the error code
+                    DWORD error = GetLastError();
+                    // get the error description
+                    char error_description[256];
+                    FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, 0, error_description, 256, NULL);
+                    throw std::runtime_error(std::format("TerminateProcess failed! Error code: {} Error description: {}", error, error_description));
+                }
             }
         }
 
-        void sendQuitSignal()
+        void sendQuitSignal(DWORD code = CTRL_BREAK_EVENT)
         {
             if (pi.hProcess != INVALID_HANDLE_VALUE)
             {
-                // Check if process is a console app, send CTRL_BREAK_EVENT
-                if (AttachConsole(pi.dwProcessId))
-                {
-                    // Send CTRL_BREAK_EVENT to console processes
-                    GenerateConsoleCtrlEvent(CTRL_BREAK_EVENT, pi.dwProcessId);
-                }
-                else
-                {
-                    // For GUI apps, try sending WM_CLOSE
-                    HWND hWnd = FindWindow(nullptr, nullptr); // Adjust the window finding as needed
-                    if (hWnd)
-                    {
-                        PostMessage(hWnd, WM_CLOSE, 0, 0);
-                    }
-                }
+                GenerateConsoleCtrlEvent(code, pi.dwProcessId);
             }
         }
 
@@ -191,7 +195,8 @@ struct host_local
 
         // Set up the sockaddr_in structure
         service.sin_family = AF_INET;
-        if (inet_pton(AF_INET, "127.0.0.1", &service.sin_addr) <= 0) {
+        if (inet_pton(AF_INET, "127.0.0.1", &service.sin_addr) <= 0)
+        {
             closesocket(TestSocket);
             WSACleanup();
             return false; // Address conversion failed, assume port is not in use

@@ -23,11 +23,11 @@ struct host_local_mapping
 
             for (unsigned short port_candidate = watermark_; port_candidate < 65535; ++port_candidate)
             {
-            if (!localhost_.IsPortInUse(port_candidate))
-            {
-                local_port_ = port_candidate;
-                break;
-            }
+                if (!localhost_.IsPortInUse(port_candidate))
+                {
+                    local_port_ = port_candidate;
+                    break;
+                }
             }
             // If no port is available, throw an exception
             if (local_port_ == 0)
@@ -37,17 +37,21 @@ struct host_local_mapping
             watermark_ = local_port_ + 1;
         }
         // Map the port
-        std::string command = std::format("ssh -L {0}:localhost:{1} {2} sleep infinity", local_port_, mapped_port_, hostname_);
+        std::string command = std::format("ssh -N -L {0}:localhost:{1} {2}", local_port_, mapped_port_, hostname_);
         process_ = localhost.run(command.c_str());
     }
     ~host_local_mapping()
     {
-        process_->sendQuitSignal();
+        process_->sendQuitSignal(CTRL_C_EVENT);
+        process_->wait(1000);
+        process_->sendQuitSignal(CTRL_BREAK_EVENT);
         process_->wait(1000);
         process_->stop();
+        process_->wait(1000);
     }
     unsigned short mapped_port() const { return mapped_port_; }
     unsigned short local_port() const { return local_port_; }
+
 private:
     unsigned short mapped_port_;
     unsigned short local_port_;
