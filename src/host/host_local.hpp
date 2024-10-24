@@ -48,8 +48,7 @@ struct host_local
             si.hStdError = hWritePipe;
 
             // Construct the command line
-            std::string command_str = "cmd /c ";
-            command_str += command;
+            std::string command_str = command;
 
             // Create a mutable buffer for lpCommandLine
             std::vector<char> command_line_vec(command_str.begin(), command_str.end());
