@@ -7,6 +7,7 @@
 #include "host_local.hpp"
 #include "local_mapping.hpp"
 #include "../metrics/from_url.hpp"
+#include "../docker/host.hpp"
 
 struct host {
     using properties_t = std::map<std::string, std::string>;
@@ -66,9 +67,17 @@ public:
         metrics_.store(std::make_shared<metrics_model>(std::move(metrics)));
     }
 
+    auto &docker() {
+        if (!docker_host_) {
+            docker_host_ = std::make_unique<docker_host<ptr>>(by_name(name_));
+        }
+        return *docker_host_;
+    }
+
 private:
     std::string name_;
     std::atomic<std::shared_ptr<properties_t>> properties_ = std::make_shared<properties_t>();
     std::atomic<std::shared_ptr<host_local_mapping>> nodeexporter_mapping_;
     std::atomic<std::shared_ptr<metrics_model>> metrics_;
+    std::unique_ptr<docker_host<ptr>> docker_host_;
 };

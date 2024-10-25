@@ -4,11 +4,13 @@
 #include <ranges>
 #include <imgui.h>
 #include "host.hpp"
+#include "host_local.hpp"
 #include "../metrics/metric_view.hpp"
+#include "../docker/screen.hpp"
 
 struct host_screen
 {
-    void render(host::ptr host)
+    void render(host::ptr host, host_local &localhost)
     {
         if (ImGui::BeginChild(std::format("host-{}", host->name()).c_str(), {0, 0}, ImGuiChildFlags_FrameStyle | ImGuiChildFlags_AutoResizeY))
         {
@@ -65,6 +67,7 @@ struct host_screen
                     ImGui::Text("Metrics not available");
                 }
             }
+            docker_screen_.render([host]() -> docker_host<host::ptr> & { return host->docker(); }, localhost);
             ImGui::Unindent();
         }
         ImGui::EndChild();
@@ -72,4 +75,5 @@ struct host_screen
 
 private:
     metric_view metric_view_;
+    docker_screen docker_screen_;
 };

@@ -22,18 +22,21 @@ struct cluster_report {
                         std::cerr << "Error: " << e.what() << std::endl;
                     }
                 }
-                std::this_thread::sleep_for(std::chrono::seconds(15));
+                std::this_thread::sleep_for(std::chrono::seconds(5));
             }
         });
     }
+
     ~cluster_report() {
         quit_ = true;
     }
+
     void render() {
         for (auto &host : hosts_) {
-            host_screen_.render(host);
+            host_screen_.render(host, host_local_);
         }
     }
+    
 private:
     std::array<host::ptr, 3> hosts_ {host::by_name("arangodb1"), host::by_name("arangodb2"), host::by_name("arangodb3")};
     host_screen host_screen_;

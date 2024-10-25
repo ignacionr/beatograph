@@ -1,11 +1,17 @@
+#pragma once
+
+#include <functional>
+#include <ranges>
+#include <imgui.h>
 #include "host.hpp"
 #include "../host/host.hpp"
 #include "../host/host_local.hpp"
-#include <imgui.h>
 
 struct docker_screen {
-    void render(docker_host<host> &host, host_local &localhost) {
+    void render(auto getter, host_local &localhost)
+    {
         if (ImGui::CollapsingHeader("Containers")) {
+            auto& host{getter()};
             auto const &ps = host.ps();
             if (ps) {
                 auto const &array {ps->get<nlohmann::json::array_t>()};
@@ -13,6 +19,7 @@ struct docker_screen {
                     ImGui::Text("No containers.");
                 }
                 else {
+                    ImGui::Checkbox("Only running", &only_running);
                     // get the columns from the first container
                     auto cols = array.front().items() | 
                         std::views::transform([](auto const &item) { return item.key(); });
@@ -26,29 +33,42 @@ struct docker_screen {
                         ImGui::TableSetColumnIndex(ImGui::TableGetColumnIndex() + 1);
                     }
                     for (auto const &container : array) {
-                        ImGui::TableNextRow();
+                        if (container.contains("State") && container["State"].get<std::string>() == "running") {
+                            ImGui::TableNextRow();
+                            if (!only_running) {
+                                ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, IM_COL32(0, (ImGui::TableGetRowIndex() %2 == 0) ? 0xd0 : 0xa0, 0, 255));
+                            }
+                        }
+                        else if (only_running) {
+                            continue;
+                        }
+                        else {
+                            ImGui::TableNextRow();
+                        }
                         for (auto const&[key, value]: container.items()) {
-                            ImGui::Text("%s", value.dump().c_str());
+                            ImGui::Text("%s", value.get<std::string>().c_str());
                             ImGui::TableSetColumnIndex(ImGui::TableGetColumnIndex() + 1);
                         }
                     }
                     ImGui::EndTable();
                 }
-                if (ImGui::Button("Refresh")) {
-                    auto t = std::thread([&localhost, &host] {
-                        try {
-                            host.fetch_ps(localhost);
-                        }
-                        catch(std::exception const &e) {
-                            std::cerr << "Error: " << e.what() << std::endl;
-                        }
-                    });
-                    t.detach();
-                }
             }
             else {
                 ImGui::Text("N/A");
             }
+            if (ImGui::Button("Refresh")) {
+                auto t = std::thread([&localhost, &host] {
+                    try {
+                        host.fetch_ps(localhost);
+                    }
+                    catch(std::exception const &e) {
+                        std::cerr << "Error: " << e.what() << std::endl;
+                    }
+                });
+                t.detach();
+            }
         }
     }
+
+    bool only_running{true};
 };

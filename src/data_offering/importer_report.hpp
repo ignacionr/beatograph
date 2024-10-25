@@ -11,17 +11,17 @@
 #include "../host/host.hpp"
 #include "../host/screen.hpp"
 #include "../docker/host.hpp"
+#include "../docker/screen.hpp"
 
 struct importer_report {
     importer_report(host_local &localhost): 
-        docker_host_{host_importer_},
         localhost_{localhost} 
     {
         auto t = std::thread([this] {
             host_importer_->resolve_from_ssh_conf(localhost_);
             try {
                 host_importer_->fetch_metrics(localhost_);
-                docker_host_.fetch_ps(localhost_);
+                host_importer_->docker().fetch_ps(localhost_);
             }
             catch(std::exception const &e) {
                 std::cerr << "Error: " << e.what() << std::endl;
@@ -29,18 +29,20 @@ struct importer_report {
         });
         t.detach();
     }
+
     void render() 
     {
         if (ImGui::CollapsingHeader("Importer Report", ImGuiTreeNodeFlags_DefaultOpen)) {
             ImGui::Text("Our importer runs on a docker container");
             if (ImGui::CollapsingHeader("Importer Docker Host Status")) {
-                host_screen_.render(host_importer_);
+                host_screen_.render(host_importer_, localhost_);
             }
         }
     }
+    
 private:
     host::ptr host_importer_ {host::by_name("ignacio-bench")};
-    docker_host<host::ptr> docker_host_;
+    docker_screen docker_screen_;
     host_screen host_screen_;
     host_local &localhost_;
 };
