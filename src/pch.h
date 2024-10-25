@@ -8,6 +8,8 @@
 #include <winsock2.h>
 #include <Windows.h>
 #include <ws2tcpip.h>
+#include <Shlobj.h>
+#include <Shlobj_core.h>
 #endif
 
 // Standard library headers

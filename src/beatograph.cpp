@@ -20,6 +20,7 @@
 #include "host/host_local.hpp"
 #include "host/local_screen.hpp"
 #include "arangodb/cluster_report.hpp"
+#include "ssh/screen_all.hpp"
 
 void load_metrics_file(metrics_model &model, std::string_view filename)
 {
@@ -82,6 +83,7 @@ int main()
         host_local_screen local_screen{localhost};
 
         cluster_report cr{localhost};
+        ssh_screen ssh_screen;
 
         auto tabs = std::make_unique<screen_tabs>(std::vector<screen_tabs::tab_t>{
             {"This Computer", [&local_screen]
@@ -98,6 +100,8 @@ int main()
              { js.render(); }},
             {"Calendar", [&cs]
              { cs.render(); }},
+            {"Configured SSH Hosts", [&ssh_screen, &localhost]
+             { ssh_screen.render(localhost); }},
         });
         main_screen screen{std::move(tabs)};
         screen.run();
