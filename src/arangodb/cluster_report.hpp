@@ -10,13 +10,13 @@
 struct cluster_report {
     cluster_report(host_local &host_local) : host_local_{host_local} {
         for (auto &host : hosts_) {
-            host.resolve_from_ssh_conf(host_local_);
+            host->resolve_from_ssh_conf(host_local_);
         }
         refresh_thread = std::jthread([this] {
             while (!quit_) {
                 for (auto &host : hosts_) {
                     try {
-                        host.fetch_metrics(host_local_);
+                        host->fetch_metrics(host_local_);
                     }
                     catch(std::exception const &e) {
                         std::cerr << "Error: " << e.what() << std::endl;
@@ -31,14 +31,11 @@ struct cluster_report {
     }
     void render() {
         for (auto &host : hosts_) {
-            if (ImGui::BeginChild(std::format("host-{}", host.name()).c_str(), {0,0}, ImGuiChildFlags_FrameStyle | ImGuiChildFlags_AutoResizeY)) {
-                host_screen_.render(host);
-            }
-            ImGui::EndChild();
+            host_screen_.render(host);
         }
     }
 private:
-    std::array<host, 3> hosts_ {host("arangodb1"), host("arangodb2"), host("arangodb3")};
+    std::array<host::ptr, 3> hosts_ {host::by_name("arangodb1"), host::by_name("arangodb2"), host::by_name("arangodb3")};
     host_screen host_screen_;
     host_local &host_local_;
     std::atomic<bool> quit_{false};

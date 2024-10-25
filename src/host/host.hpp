@@ -10,8 +10,22 @@
 
 struct host {
     using properties_t = std::map<std::string, std::string>;
+    using ptr = std::shared_ptr<host>;
 
+    static ptr by_name(std::string const &name) 
+    {
+        static std::map<std::string, std::weak_ptr<host>> hosts;
+        auto it = hosts.find(name);
+        if (it != hosts.end() && !it->second.expired()) {
+            return it->second.lock();
+        }
+        auto h = std::shared_ptr<host>(new host(name));
+        hosts[name] = h;
+        return h;
+    }
+private:
     host(std::string_view name) : name_{name} {}
+public:
     ~host() {
         // at this point, the nodeexporter_mapping_ should have a count of 1 only
         nodeexporter_mapping_.store(nullptr);

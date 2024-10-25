@@ -40,7 +40,7 @@ struct host_local
             }
 
             // Set up the STARTUPINFO structure
-            STARTUPINFO si;
+            STARTUPINFOA si;
             ZeroMemory(&si, sizeof(si));
             si.cb = sizeof(si);
             si.dwFlags = STARTF_USESTDHANDLES;

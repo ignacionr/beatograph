@@ -4,14 +4,14 @@
 #include <nlohmann/json.hpp>
 
 #include "../host/host_local.hpp"
-#include "../host/host.hpp"
 
+template<typename host_ptr_t>
 struct docker_host {
-    docker_host(host& host) : host_{host} {}
+    docker_host(host_ptr_t& host) : host_{host} {}
     std::string execute_command(std::string const &command, host_local &localhost) const {
-        return localhost.execute_command(std::format("ssh {} {}", host_.name(), command).c_str());
+        return localhost.execute_command(std::format("ssh {} {}", host_->name(), command).c_str());
     }
-    nlohmann::json ps(host_local &localhost) const {
+    void fetch_ps(host_local &localhost) {
         auto result = execute_command("docker ps -a --format json", localhost);
         // the result is not a json, but a succession of json lines
         // we need to add the missing commas to make it a valid json array
@@ -28,8 +28,12 @@ struct docker_host {
         json_array.pop_back();
         json_array += "]";
         
-        return nlohmann::json::parse(json_array);
+        docker_ps_.store(std::make_shared<nlohmann::json>(nlohmann::json::parse(json_array)));
+    }
+    std::shared_ptr<nlohmann::json> ps() const {
+        return docker_ps_.load();
     }
 private:
-    host& host_;
+    host_ptr_t& host_;
+    std::atomic<std::shared_ptr<nlohmann::json>> docker_ps_;
 };
