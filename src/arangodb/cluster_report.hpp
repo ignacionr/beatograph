@@ -1,6 +1,8 @@
 #pragma once
 #include <array>
 #include <atomic>
+#include <chrono>
+#include <format>
 #include <thread>
 #include "../host/host.hpp"
 #include "../host/screen.hpp"
@@ -29,8 +31,9 @@ struct cluster_report {
     }
     void render() {
         for (auto &host : hosts_) {
-            ImGui::BeginChild("cluster-node-data");
-            host_screen_.render(host);
+            if (ImGui::BeginChild(std::format("host-{}", host.name()).c_str(), {0,0}, ImGuiChildFlags_FrameStyle | ImGuiChildFlags_AutoResizeY)) {
+                host_screen_.render(host);
+            }
             ImGui::EndChild();
         }
     }
