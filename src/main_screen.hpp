@@ -48,7 +48,8 @@ struct main_screen
         }
         // create a main window
         window = SDL_CreateWindow("Beatograph", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600,
-                                  SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_SHOWN);
+                                  SDL_WINDOW_OPENGL | SDL_WINDOW_BORDERLESS | SDL_WINDOW_RESIZABLE | 
+                                  SDL_WINDOW_ALWAYS_ON_TOP | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_SHOWN);
         gl_context = SDL_GL_CreateContext(window);
         SDL_GL_MakeCurrent(window, gl_context);
         SDL_GL_SetSwapInterval(1); // Enable vsync
@@ -90,7 +91,7 @@ struct main_screen
 
         // run the main loop
         SDL_Event event;
-        bool running = true;
+        running = true;
         while (running)
         {
             while (SDL_WaitEventTimeout(&event, 1000 / 60))
@@ -100,14 +101,6 @@ struct main_screen
                     running = false;
                 }
                 ImGui_ImplSDL2_ProcessEvent(&event);
-                // Handle window resize event
-                if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED)
-                {
-                    int width = event.window.data1;
-                    int height = event.window.data2;
-                    glViewport(0, 0, width, height);
-                    do_frame();
-                }
             }
             do_frame();
         }
@@ -120,18 +113,42 @@ private:
         ImGui_ImplSDL2_NewFrame();
         ImGui::NewFrame();
 
-        SDL_SetRenderDrawColor(sdl_renderer, 255, 255, 255, 255);
-        SDL_RenderClear(sdl_renderer);
+        // SDL_SetRenderDrawColor(sdl_renderer, 0, 0, 0, 255);
+        // SDL_RenderClear(sdl_renderer);
         ImGuiIO &io{ImGui::GetIO()};
         auto const &display_size = io.DisplaySize;
         auto size = ImVec2(display_size.x, display_size.y);
-        ImGui::SetNextWindowSize(size);
-        ImGui::SetNextWindowPos(ImVec2(0, 0));
-
-
-        ImGui::Begin("Available Metrics", nullptr,
-                     ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
-                         ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
+        // ImGui::SetNextWindowSize(size);
+        // ImGui::SetNextWindowPos(ImVec2(0, 0));
+        ImGui::Begin("Beat-o-Graph", nullptr,
+                    //  ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
+                    //      ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
+                     ImGuiWindowFlags_MenuBar);
+        auto main_window_size {ImGui::GetWindowSize()};
+        if (main_window_size.x != display_size.x || main_window_size.y != display_size.y) {
+            SDL_SetWindowSize(window, 
+                static_cast<int>(main_window_size.x), 
+                static_cast<int>(main_window_size.y));
+        }
+        auto main_window_pos {ImGui::GetWindowPos()};
+        if (main_window_pos.x != 0 || main_window_pos.y != 0) {
+            int cur_x, cur_y;
+            SDL_GetWindowPosition(window, &cur_x, &cur_y);
+            SDL_SetWindowPosition(window, 
+                static_cast<int>(cur_x + main_window_pos.x), 
+                static_cast<int>(cur_y + main_window_pos.y));
+            ImGui::SetWindowPos(ImVec2(0, 0));
+        }
+        ImGui::BeginMenuBar();
+        if (ImGui::BeginMenu("File"))
+        {
+            if (ImGui::MenuItem("Exit"))
+            {
+                running = false;
+            }
+            ImGui::EndMenu();
+        }
+        ImGui::EndMenuBar();
         screen->render();
         ImGui::End();
         ImGui::Render();
@@ -148,4 +165,5 @@ private:
     SDL_GLContext gl_context;
     SDL_Renderer *sdl_renderer;
     std::unique_ptr<screen_t> screen;
+    bool running;
 };

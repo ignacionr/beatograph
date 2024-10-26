@@ -102,6 +102,18 @@ int main()
              { cs.render(); }},
             {"Configured SSH Hosts", [&ssh_screen, &localhost]
              { ssh_screen.render(localhost); }},
+             {"GitHub", [] {
+                 ImGui::Text("GitHub");
+             }},
+             {"Bitbucket", [] {
+                 ImGui::Text("Bitbucket");
+             }},
+             {"Zookeeper", [] {
+                 ImGui::Text("Zookeeper");
+             }},
+             {"RabbitMQ", [] {
+                 ImGui::Text("RabbitMQ");
+             }},
         });
         main_screen screen{std::move(tabs)};
         screen.run();
