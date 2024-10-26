@@ -1,5 +1,6 @@
 #pragma once
 
+#include <format>
 #include <numeric>
 #include <ranges>
 #include <imgui.h>
@@ -68,6 +69,14 @@ struct host_screen
                 }
             }
             docker_screen_.render([host]() -> docker_host<host::ptr> & { return host->docker(); }, localhost);
+            if (ImGui::Button("Connect...")) {
+                // just spawn a new process
+                std::string command = std::format("ssh {}", host->name());
+                // use the Windows API with a simple shell command
+                if (auto result = reinterpret_cast<long long>(ShellExecuteA(NULL, "open", "cmd", std::format("/c {}", command).c_str(), NULL, SW_SHOW)); result <= 32) {
+                    throw std::runtime_error(std::format("ShellExecute failed with error code {}", result));
+                }
+            }
             ImGui::Unindent();
         }
         ImGui::EndChild();
