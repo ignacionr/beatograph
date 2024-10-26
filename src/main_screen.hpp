@@ -88,19 +88,52 @@ struct main_screen
 
     void run()
     {
-
         // run the main loop
         SDL_Event event;
         running = true;
+        bool dragging_window{false};
+        int drag_start_x{}, drag_start_y{};
         while (running)
         {
             while (SDL_WaitEventTimeout(&event, 1000 / 60))
             {
+                auto handled {false};
                 if (event.type == SDL_QUIT)
                 {
                     running = false;
                 }
-                ImGui_ImplSDL2_ProcessEvent(&event);
+                else if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT) {
+                    // decide if it's happening on the title, and outside the collapse and the close buttons
+                    SDL_GetMouseState(&drag_start_x, &drag_start_y);
+                    int width;
+                    SDL_GetWindowSizeInPixels(window, &width, nullptr);
+                    if (drag_start_y < 16 && drag_start_x > 16 && drag_start_x < (width - 16)) {
+                        SDL_SetWindowGrab(window, SDL_TRUE);
+                        SDL_CaptureMouse(SDL_TRUE);
+                        handled = true;
+                        dragging_window = true;
+                    }
+                }
+                else if (dragging_window && event.type == SDL_MOUSEBUTTONUP) {
+                    if (event.button.button == SDL_BUTTON_LEFT) {
+                        SDL_SetWindowGrab(window, SDL_FALSE);
+                        SDL_CaptureMouse(SDL_FALSE);
+                        handled = true;
+                        dragging_window = false;
+                    }
+                }
+                else if (dragging_window && event.type == SDL_MOUSEMOTION) {
+                    // get the relative mouse move
+                    int x, y;
+                    SDL_GetMouseState(&x, &y);
+                    // get the current window position
+                    int cur_x, cur_y;
+                    SDL_GetWindowPosition(window, &cur_x, &cur_y);
+                    // move the window
+                    SDL_SetWindowPosition(window, cur_x + x - drag_start_x, cur_y + y - drag_start_y);
+                    handled = true;
+                }
+                if (!handled) ImGui_ImplSDL2_ProcessEvent(&event);
             }
             do_frame();
         }
@@ -119,25 +152,14 @@ private:
         auto const &display_size = io.DisplaySize;
         auto size = ImVec2(display_size.x, display_size.y);
         // ImGui::SetNextWindowSize(size);
-        // ImGui::SetNextWindowPos(ImVec2(0, 0));
-        ImGui::Begin("Beat-o-Graph", nullptr,
-                    //  ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
-                    //      ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
-                     ImGuiWindowFlags_MenuBar);
+        ImGui::SetNextWindowPos({0, 0});
+        ImGui::Begin("Beat-o-Graph", &running,
+                     ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoMove);
         auto main_window_size {ImGui::GetWindowSize()};
         if (main_window_size.x != display_size.x || main_window_size.y != display_size.y) {
             SDL_SetWindowSize(window, 
                 static_cast<int>(main_window_size.x), 
                 static_cast<int>(main_window_size.y));
-        }
-        auto main_window_pos {ImGui::GetWindowPos()};
-        if (main_window_pos.x != 0 || main_window_pos.y != 0) {
-            int cur_x, cur_y;
-            SDL_GetWindowPosition(window, &cur_x, &cur_y);
-            SDL_SetWindowPosition(window, 
-                static_cast<int>(cur_x + main_window_pos.x), 
-                static_cast<int>(cur_y + main_window_pos.y));
-            ImGui::SetWindowPos(ImVec2(0, 0));
         }
         ImGui::BeginMenuBar();
         if (ImGui::BeginMenu("File"))
