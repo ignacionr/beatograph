@@ -22,7 +22,12 @@ struct cluster_report {
                         std::cerr << "Error: " << e.what() << std::endl;
                     }
                 }
-                std::this_thread::sleep_for(std::chrono::seconds(30));
+                for (int i = 0; i < 30; ++i) {
+                    if (quit_) {
+                        break;
+                    }
+                    std::this_thread::sleep_for(std::chrono::seconds(1));
+                }
             }
         });
     }
