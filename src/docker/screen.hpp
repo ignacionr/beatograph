@@ -24,7 +24,7 @@ struct docker_screen {
                     auto cols = array.front().items() | 
                         std::views::transform([](auto const &item) { return item.key(); });
                     ImGui::BeginTable("Docker Containers", 
-                        static_cast<int>(std::ranges::distance(cols)), 
+                        static_cast<int>(std::ranges::distance(cols)) + 1, 
                         ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_Sortable | 
                         ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable);
                     ImGui::TableNextRow(ImGuiTableRowFlags_Headers);
@@ -48,6 +48,12 @@ struct docker_screen {
                         for (auto const&[key, value]: container.items()) {
                             ImGui::Text("%s", value.get<std::string>().c_str());
                             ImGui::TableSetColumnIndex(ImGui::TableGetColumnIndex() + 1);
+                        }
+                        if (ImGui::Button("Shell")) {
+                            host.open_shell(container["ID"].get<std::string>(), localhost);
+                        }
+                        if (ImGui::Button("Logs")) {
+                            host.open_logs(container["ID"].get<std::string>());
                         }
                     }
                     ImGui::EndTable();

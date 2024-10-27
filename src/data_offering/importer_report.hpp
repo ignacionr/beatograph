@@ -12,6 +12,7 @@
 #include "../host/screen.hpp"
 #include "../docker/host.hpp"
 #include "../docker/screen.hpp"
+#include "../views/assertion.hpp"
 
 struct importer_report {
     importer_report(host_local &localhost): 
@@ -37,6 +38,19 @@ struct importer_report {
             if (ImGui::CollapsingHeader("Importer Docker Host Status")) {
                 host_screen_.render(host_importer_, localhost_);
             }
+            views::Assertion("Is the importer-odds-java-container-1 running?", [this] {
+                auto ps = host_importer_->docker().ps();
+                if (!ps) {
+                    return false;
+                }
+                auto const &array {ps->get<nlohmann::json::array_t>()};
+                return std::any_of(array.begin(), array.end(), [](auto const &container) {
+                    return container.contains("Names") && container["Names"].get<std::string>().find("importer-odds-java-container-1") != std::string::npos;
+                });
+            });
+            views::Assertion("Is the Java process running in the importer-odds-java-container-1 container?", [this] {
+                return host_importer_->docker().is_process_running("importer-odds-java-container-1", "java", localhost_);
+            });
         }
     }
     
