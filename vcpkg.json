@@ -13,6 +13,7 @@
             ]
         },
         "gtest",
-        "nlohmann-json"
+        "nlohmann-json",
+        "utf8h"
     ]
 }

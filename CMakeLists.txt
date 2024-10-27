@@ -98,3 +98,6 @@ target_link_libraries(beatograph_test PRIVATE
   imgui::imgui
   nlohmann_json::nlohmann_json
 )
+
+find_path(UTF8H_INCLUDE_DIRS "utf8h/utf8.h")
+target_include_directories(beatograph PRIVATE ${UTF8H_INCLUDE_DIRS})
