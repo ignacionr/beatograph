@@ -59,7 +59,13 @@ int main()
 #endif
     {
         metrics_model model;
-        // load_metrics_file(model, "sample/metrics.txt");
+
+#if defined(_DEBUG)
+    // attach a console, so I can check what comes out of std::cerr
+    AllocConsole();
+    FILE *stream;
+    freopen_s(&stream, "CONOUT$", "w", stderr);
+#endif
 
         metrics_screen ms(model);
         char *token_env = nullptr;
