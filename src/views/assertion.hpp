@@ -54,7 +54,7 @@ namespace views
         }
         ImGui::SameLine();
         if (ImGui::Button("Refresh")) {
-            state.load(assertion);
+            state.load([&]{ return assertion(); });
         }
     }
 } // namespace views
