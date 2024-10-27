@@ -29,8 +29,8 @@ public:
     {
         auto url = std::format("{}workspaces/{}/time_entries/{}", 
             baseUrl,
-            entry.get<std::string>("workspace_id"),
-            entry.get<long long>("id"));
+            entry["workspace_id"].get<std::string>(),
+            entry["id"].get<long long>());
         auto data = std::format("{{\"time_entry\":{{\"stop\":\"{}\"}}}}", std::format("{:%FT%T%z}", std::chrono::system_clock::now()));
         return performRequest(url, "PUT", data);
     }
