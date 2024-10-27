@@ -25,9 +25,14 @@ public:
     {
         return performRequest(baseUrl + "time_entries/start", "POST", "{\"time_entry\":{\"description\":\"" + description + "\"}}");
     }
-    std::string stopTimeEntry(int entryId)
+    std::string stopTimeEntry(auto &entry)
     {
-        return performRequest(baseUrl + "time_entries/" + std::to_string(entryId) + "/stop", "PUT");
+        auto url = std::format("{}workspaces/{}/time_entries/{}", 
+            baseUrl,
+            entry.get<std::string>("workspace_id"),
+            entry.get<long long>("id"));
+        auto data = std::format("{{\"time_entry\":{{\"stop\":\"{}\"}}}}", std::format("{:%FT%T%z}", std::chrono::system_clock::now()));
+        return performRequest(url, "PUT", data);
     }
 
 private:
@@ -101,6 +106,10 @@ private:
             if (!data.empty())
             {
                 curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data.c_str());
+            }
+            else if (method != "GET")
+            {
+                curl_easy_setopt(curl, CURLOPT_POSTFIELDS, "");
             }
             curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
             std::string response;

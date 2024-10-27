@@ -107,7 +107,7 @@ struct main_screen
                     SDL_GetMouseState(&drag_start_x, &drag_start_y);
                     int width;
                     SDL_GetWindowSizeInPixels(window, &width, nullptr);
-                    if (drag_start_y < 16 && drag_start_x > 16 && drag_start_x < (width - 16)) {
+                    if (drag_start_y < 18 && drag_start_x > 16 && drag_start_x < (width - 18)) {
                         SDL_SetWindowGrab(window, SDL_TRUE);
                         SDL_CaptureMouse(SDL_TRUE);
                         handled = true;
