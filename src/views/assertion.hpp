@@ -38,7 +38,7 @@ namespace views
         // is the assertion already in the map?
         if (states.find(full_id) == states.end()) {
             // if not, add it
-            states[full_id].load(assertion);
+            states[full_id].load([&]{ return assertion(); });
         }
         // get the state
         auto &state{states[full_id]};
