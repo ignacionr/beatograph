@@ -58,7 +58,6 @@ struct character_classifier {
 
 void metrics_parser::parse_line(std::string_view line)
 {
-    std::cerr << __FILE__ << ":" << __LINE__ << " " << line << std::endl;
     // Parse the line and store the metric value
     if (line.empty())
     {
