@@ -36,7 +36,11 @@ struct docker_screen {
                         if (container.contains("State") && container["State"].get<std::string>() == "running") {
                             ImGui::TableNextRow();
                             if (!only_running) {
-                                ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, IM_COL32(0, (ImGui::TableGetRowIndex() %2 == 0) ? 0xd0 : 0xa0, 0, 255));
+                                ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, 
+                                    (ImGui::TableGetRowIndex() %2 == 0) ? 
+                                        IM_COL32(0xd0,  0xd0, 0, 255) :
+                                        IM_COL32(0xa0,  0xa0, 0, 255)
+                                        );
                             }
                         }
                         else if (only_running) {
