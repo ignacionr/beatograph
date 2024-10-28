@@ -40,21 +40,25 @@ struct docker_screen {
                             }
                         }
                         else if (only_running) {
-                            continue;
+                            continue; // Skip this row, since we are only showing running containers
                         }
                         else {
                             ImGui::TableNextRow();
                         }
+                        auto const container_id {container["ID"].get<std::string>()};
+                        ImGui::PushID(container_id.c_str());
                         for (auto const&[key, value]: container.items()) {
+                            ImGui::TableNextColumn();
                             ImGui::Text("%s", value.get<std::string>().c_str());
-                            ImGui::TableSetColumnIndex(ImGui::TableGetColumnIndex() + 1);
                         }
+                        ImGui::TableNextColumn();
                         if (ImGui::Button("Shell")) {
-                            host.open_shell(container["ID"].get<std::string>(), localhost);
+                            host.open_shell(container_id, localhost);
                         }
                         if (ImGui::Button("Logs")) {
-                            host.open_logs(container["ID"].get<std::string>());
+                            host.open_logs(container_id);
                         }
+                        ImGui::PopID();
                     }
                     ImGui::EndTable();
                 }

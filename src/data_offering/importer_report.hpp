@@ -42,9 +42,6 @@ struct importer_report {
     {
         if (ImGui::CollapsingHeader("Importer Report", ImGuiTreeNodeFlags_DefaultOpen)) {
             ImGui::Text("Our importer runs on a docker container");
-            if (ImGui::CollapsingHeader("Importer Docker Host Status")) {
-                host_screen_.render(host_importer_, localhost_);
-            }
             views::Assertion("Importer Container running", [this] {
                 return host_importer_->docker().is_container_running(importer_container_name, localhost_);
             });
@@ -68,7 +65,5 @@ struct importer_report {
     
 private:
     host::ptr host_importer_;
-    docker_screen docker_screen_;
-    host_screen host_screen_;
     host_local &localhost_;
 };
