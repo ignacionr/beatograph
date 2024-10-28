@@ -14,6 +14,7 @@ struct host_local_mapping
     host_local_mapping(unsigned short port, const std::string &hostname, host_local &localhost)
         : mapped_port_{port}, hostname_{hostname}, localhost_{localhost}
     {
+        std::cerr << "Starting port mapping for " << hostname_ << " port " << mapped_port_ << std::endl;
         // Find an available port
         local_port_ = 0;
         {
@@ -42,10 +43,11 @@ struct host_local_mapping
     }
     ~host_local_mapping()
     {
+        std::cerr << "Stopping port mapping for " << hostname_ << " port " << mapped_port_ << std::endl;
         process_->sendQuitSignal(CTRL_C_EVENT);
-        process_->wait(1000);
+        process_->wait(400);
         process_->sendQuitSignal(CTRL_BREAK_EVENT);
-        process_->wait(1000);
+        process_->wait(400);
         process_->stop();
         process_->wait(1000);
     }

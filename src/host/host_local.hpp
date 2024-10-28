@@ -85,6 +85,12 @@ struct host_local
         {
             if (hReadPipe != INVALID_HANDLE_VALUE)
             {
+                try {
+                    read_all([](std::string_view){});
+                }
+                catch(...) {
+                    // ignore since we might be just inside a destructor
+                }
                 CloseHandle(hReadPipe), hReadPipe = INVALID_HANDLE_VALUE;
             }
             if (hWritePipe != INVALID_HANDLE_VALUE)
@@ -133,14 +139,50 @@ struct host_local
             }
         }
 
-        void read_all(sink_t sink)
+        void read_all(sink_t sink, DWORD timeout = 5000)
         {
             // Read from the pipe
             char buffer[128];
             DWORD bytesRead;
-            while (ReadFile(hReadPipe, buffer, sizeof(buffer), &bytesRead, NULL) && bytesRead != 0)
+            for (;;)
             {
-                sink(std::string_view{buffer, bytesRead});
+                // Wait for data to be available on the pipe with a 5 second timeout
+                DWORD waitResult = WaitForSingleObject(hReadPipe, timeout);
+                if (waitResult == WAIT_TIMEOUT)
+                {
+                    throw std::runtime_error("Read operation timed out!");
+                }
+                else if (waitResult == WAIT_OBJECT_0)
+                {
+                    // check that the pipe has data
+                    if (PeekNamedPipe(hReadPipe, NULL, 0, NULL, &bytesRead, NULL) == 0)
+                    {
+                        // obtain the error code
+                        DWORD error = GetLastError();
+                        if (error == ERROR_BROKEN_PIPE)
+                        {
+                            break; // Pipe is broken, no more data to read
+                        }
+                        // obtain the error description
+                        char error_description[256];
+                        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, 0, error_description, 256, NULL);
+                        throw std::runtime_error(std::format("PeekNamedPipe failed! Error code: {} Error description: {}", error, error_description));
+                    }
+                    if (bytesRead > 0) {
+                        if (ReadFile(hReadPipe, buffer, sizeof(buffer), &bytesRead, NULL) && bytesRead != 0)
+                        {
+                            sink(std::string_view{buffer, bytesRead});
+                        }
+                        else
+                        {
+                            break; // No more data to read
+                        }
+                    }
+                }
+                else
+                {
+                    throw std::runtime_error("WaitForSingleObject failed!");
+                }
             }
             // Close the read end of the pipe
             CloseHandle(hReadPipe), hReadPipe = INVALID_HANDLE_VALUE;

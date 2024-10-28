@@ -68,7 +68,7 @@ struct host_screen
                     ImGui::Text("Metrics not available");
                 }
             }
-            docker_screen_.render([host]() -> docker_host<host::ptr> & { return host->docker(); }, localhost);
+            docker_screen_.render([host]() -> docker_host & { return host->docker(); }, localhost);
             if (ImGui::Button("Connect...")) {
                 // just spawn a new process
                 std::string command = std::format("ssh {}", host->name());

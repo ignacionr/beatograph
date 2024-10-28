@@ -17,6 +17,7 @@
 #include "jira/screen.hpp"
 #include "calendar/screen.hpp"
 #include "data_offering/screen.hpp"
+#include "host/host.hpp"
 #include "host/host_local.hpp"
 #include "host/local_screen.hpp"
 #include "arangodb/cluster_report.hpp"

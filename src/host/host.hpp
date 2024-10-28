@@ -13,24 +13,27 @@ struct host {
     using properties_t = std::map<std::string, std::string>;
     using ptr = std::shared_ptr<host>;
 
+    using hosts_by_name_t = std::map<std::string, std::weak_ptr<host>>;
     static ptr by_name(std::string const &name) 
     {
-        static std::map<std::string, std::weak_ptr<host>> hosts;
-        auto it = hosts.find(name);
-        if (it != hosts.end() && !it->second.expired()) {
+        auto it = hosts_().find(name);
+        if (it != hosts_().end() && !it->second.expired()) {
             return it->second.lock();
         }
-        auto h = std::shared_ptr<host>(new host(name));
-        hosts[name] = h;
-        return h;
+        return hosts_().emplace(
+            name, 
+            std::shared_ptr<host>(new host{name})).first->second.lock();
+    }
+    static void destroy_all() {
+        for (auto &h : hosts_()) {
+            if (!h.second.expired()) {
+                h.second.reset();
+            }
+        }
     }
 private:
     host(std::string_view name) : name_{name} {}
 public:
-    ~host() {
-        // at this point, the nodeexporter_mapping_ should have a count of 1 only
-        nodeexporter_mapping_.store(nullptr);
-    }
 
     void resolve_from_ssh_conf(host_local &host_local) 
     {
@@ -67,17 +70,24 @@ public:
         metrics_.store(std::make_shared<metrics_model>(std::move(metrics)));
     }
 
-    auto &docker() {
+    auto &docker() 
+    {
         if (!docker_host_) {
-            docker_host_ = std::make_unique<docker_host<ptr>>(by_name(name_));
+            docker_host_ = std::make_unique<docker_host>(name_);
         }
         return *docker_host_;
     }
 
 private:
+
+    static hosts_by_name_t &hosts_() {
+        static hosts_by_name_t hosts;
+        return hosts;
+    }
+
     std::string name_;
     std::atomic<std::shared_ptr<properties_t>> properties_ = std::make_shared<properties_t>();
     std::atomic<std::shared_ptr<host_local_mapping>> nodeexporter_mapping_;
     std::atomic<std::shared_ptr<metrics_model>> metrics_;
-    std::unique_ptr<docker_host<ptr>> docker_host_;
+    std::unique_ptr<docker_host> docker_host_;
 };

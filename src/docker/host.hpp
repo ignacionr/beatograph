@@ -5,12 +5,11 @@
 
 #include "../host/host_local.hpp"
 
-template<typename host_ptr_t>
 struct docker_host {
-    docker_host(host_ptr_t host) : host_{host} {}
+    docker_host(std::string const &host_name) : host_name_{host_name} {}
 
     std::string execute_command(std::string const &command, host_local &localhost) const {
-        return localhost.execute_command(std::format("ssh {} sudo {}", host_->name(), command).c_str());
+        return localhost.execute_command(std::format("ssh {} sudo {}", host_name_, command).c_str());
     }
 
     void fetch_ps(host_local &localhost) {
@@ -51,7 +50,7 @@ struct docker_host {
         if (shell.empty()) {
             return;
         }
-        auto cmd = std::format("/c ssh -t {} sudo docker exec -it {} {}", host_->name(), container_id, shell);
+        auto cmd = std::format("/c ssh -t {} sudo docker exec -it {} {}", host_name_, container_id, shell);
         ShellExecuteA(nullptr, 
             "open", 
             "cmd.exe", 
@@ -61,7 +60,7 @@ struct docker_host {
     }
 
     void open_logs(std::string const &container_id) const {
-        auto cmd = std::format("/c ssh {} sudo docker logs {}", host_->name(), container_id);
+        auto cmd = std::format("/c ssh {} sudo docker logs {}", host_name_, container_id);
         ShellExecuteA(nullptr, 
             "open", 
             "cmd.exe", 
@@ -74,11 +73,38 @@ struct docker_host {
         return execute_command(std::format("docker exec {} ps aux", container_id), localhost);
     }
 
+    bool is_container_running(std::string const &container_id_or_name, host_local &localhost) {
+        auto ps = this->ps();
+        if (!ps) {
+            fetch_ps(localhost);
+            ps = this->ps();
+            if (!ps) {
+                throw std::runtime_error("Error: could not fetch ps");
+            }
+        }
+        if (!ps->is_array()) {
+            throw std::runtime_error(std::format("Error: expected array, got {}", ps->dump()));
+        }
+        auto const &array {ps->get<nlohmann::json::array_t>()};
+        return std::any_of(array.begin(), array.end(), [&container_id_or_name](auto const &container) {
+            bool found{false};
+            if (container.contains("Names")) {
+                auto names = container["Names"].get<std::string>();
+                found = names.find(container_id_or_name) != std::string::npos;
+            }
+            if (!found && container.contains("ID")) {
+                auto id = container["ID"].get<std::string>();
+                found = id.find(container_id_or_name) != std::string::npos;
+            }
+            return found;
+        });
+    }
+
     bool is_process_running(std::string const &container_id, std::string const &process_name, host_local &localhost) const {
         auto processes = all_processes(container_id, localhost);
         return processes.find(process_name) != std::string::npos;
     }
 private:
-    host_ptr_t host_;
+    std::string host_name_;
     std::atomic<std::shared_ptr<nlohmann::json>> docker_ps_;
 };

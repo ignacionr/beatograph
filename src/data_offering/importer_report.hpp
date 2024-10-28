@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <format>
 #include <memory>
 #include <ranges>
 #include <thread>
@@ -13,6 +14,7 @@
 #include "../docker/host.hpp"
 #include "../docker/screen.hpp"
 #include "../views/assertion.hpp"
+#include "../views/cached_view.hpp"
 
 struct importer_report {
     static auto constexpr host_importer_name = "ignacio-bench";
@@ -22,11 +24,12 @@ struct importer_report {
     importer_report(host_local &localhost): 
         localhost_{localhost} 
     {
-        auto t = std::thread([this] {
-            host_importer_->resolve_from_ssh_conf(localhost_);
+        host_importer_ = host::by_name(host_importer_name);
+        auto t = std::thread([host = host_importer_, &localhost] {
+            host->resolve_from_ssh_conf(localhost);
             try {
-                host_importer_->fetch_metrics(localhost_);
-                host_importer_->docker().fetch_ps(localhost_);
+                host->fetch_metrics(localhost);
+                host->docker().fetch_ps(localhost);
             }
             catch(std::exception const &e) {
                 std::cerr << "Error: " << e.what() << std::endl;
@@ -43,44 +46,28 @@ struct importer_report {
                 host_screen_.render(host_importer_, localhost_);
             }
             views::Assertion("Importer Container running", [this] {
-                auto ps = host_importer_->docker().ps();
-                if (!ps) {
-                    return false;
-                }
-                auto const &array {ps->get<nlohmann::json::array_t>()};
-                return std::any_of(array.begin(), array.end(), [](auto const &container) {
-                    if (container.contains("Names")) {
-                        auto names = container["Names"].get<std::string>();
-                        return names.find(importer_container_name) != std::string::npos;
-                    }
-                    return false;
-                });
+                return host_importer_->docker().is_container_running(importer_container_name, localhost_);
             });
             views::Assertion("Java process running in the importer container", [this] {
                 return host_importer_->docker().is_process_running(importer_container_name, "java", localhost_);
             });
             views::Assertion("RabbitMQ container running", [this] {
-                auto ps = host_importer_->docker().ps();
-                if (!ps) {
-                    return false;
-                }
-                auto const &array {ps->get<nlohmann::json::array_t>()};
-                return std::any_of(array.begin(), array.end(), [](auto const &container) {
-                    if (container.contains("Names")) {
-                        auto names = container["Names"].get<std::string>();
-                        return names.find(importer_rabbitmq) != std::string::npos;
-                    }
-                    return false;
-                });
+                return host_importer_->docker().is_container_running(importer_rabbitmq, localhost_);
             });
             views::Assertion("RabbitMQ process running in the container", [this] {
                 return host_importer_->docker().is_process_running(importer_rabbitmq, "rabbitmq", localhost_);
+            });
+            views::cached_view<std::string>("RabbitMQ Queues", [this] {
+                return host_importer_->docker().execute_command(
+                    "docker exec importing-odds-rabbitmq-1 rabbitmqctl list_queues", localhost_);
+            }, [](std::string const &output) {
+                ImGui::Text("%s", output.c_str());
             });
         }
     }
     
 private:
-    host::ptr host_importer_ {host::by_name(host_importer_name)};
+    host::ptr host_importer_;
     docker_screen docker_screen_;
     host_screen host_screen_;
     host_local &localhost_;

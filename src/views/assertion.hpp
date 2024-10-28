@@ -31,17 +31,16 @@ namespace views
     
     void Assertion(std::string_view title, std::function<bool()> assertion) 
     {
-        static std::unordered_map<std::string, state_t> states;
-        // get the full ImGui id
-        auto const container{ImGui::GetItemID()};
-        auto const full_id{std::format("{}##{}", title, container)};
+        static std::unordered_map<int, state_t> states;
+        auto id = ImGui::GetID(title.data(), title.data() + title.size());
+        ImGui::PushID(id);
         // is the assertion already in the map?
-        if (states.find(full_id) == states.end()) {
+        if (states.find(id) == states.end()) {
             // if not, add it
-            states[full_id].load([&]{ return assertion(); });
+            states[id].load([&]{ return assertion(); });
         }
         // get the state
-        auto &state{states[full_id]};
+        auto &state{states[id]};
         // set the color
         auto const color{state ? ImVec4(0, 255, 0, 255) : ImVec4(255, 0, 0, 255)};
         // render the assertion
@@ -56,5 +55,6 @@ namespace views
         if (ImGui::Button("Refresh")) {
             state.load([&]{ return assertion(); });
         }
+        ImGui::PopID();
     }
 } // namespace views
