@@ -103,7 +103,7 @@ struct dataoffering_screen
                                                                on_nimbus,
                                                                localhost_);
                             topology_install_result_ = "Installing topology...";
-                            auto cmd = std::format("storm jar {} {} {}", on_nimbus, topology_class, topology_name);
+                            auto cmd = std::format("docker exec {} storm jar {} {} {}", nimbus_name, on_nimbus, topology_class, topology_name);
                             topology_install_result_ = host::by_name("storm1")->docker().execute_command(cmd, localhost_);
                         }
                         catch (std::exception const &e)
