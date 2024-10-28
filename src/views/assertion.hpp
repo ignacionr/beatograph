@@ -69,13 +69,15 @@ namespace views
         ImGui::Text("%s", state ? "[x]" : "[ ]");
         ImGui::SameLine();
         ImGui::TextColored(color, "%s", title.data());
-        ImGui::SameLine();
         if (state.exception) {
+            ImGui::SameLine();
             ImGui::TextColored(ImVec4(255, 0, 0, 255), "Error: %s", state.exception->c_str());
         }
-        ImGui::SameLine();
-        if (ImGui::Button("Refresh")) {
-            state.load([&]{ return assertion(); });
+        if (!state.waiting) {
+            ImGui::SameLine();
+            if (ImGui::Button("Refresh")) {
+                state.load([&]{ return assertion(); });
+            }
         }
         ImGui::PopID();
     }
