@@ -19,8 +19,10 @@ extern "C"
 
 struct dataoffering_screen
 {
-    static constexpr auto zookeeper_name = "ubuntu-zookeeper-1";
-    static constexpr auto nimbus_name = "ubuntu-nimbus-1";
+    static constexpr auto zookeeper_name = "storm-zookeeper";
+    static constexpr auto nimbus_name = "storm-nimbus";
+    static constexpr auto supervisor_name = "storm-supervisor";
+    static constexpr auto ui_name = "storm-ui";
     static constexpr auto topology_name = "betmavrik-topology";
     static constexpr auto topology_class = "com.betmavrik.storm.TopologyMain";
 
@@ -44,11 +46,11 @@ struct dataoffering_screen
                 }
                 return true; });
             views::Assertion("storm1 docker is running a storm supervisor", [this]
-                             { return host::by_name("storm1")->docker().is_container_running("supervisor-1", localhost_); });
+                             { return host::by_name("storm1")->docker().is_container_running(supervisor_name, localhost_); });
             views::Assertion("storm1 docker is running a storm nimbus", [this]
-                             { return host::by_name("storm1")->docker().is_container_running("nimbus-1", localhost_); });
+                             { return host::by_name("storm1")->docker().is_container_running(nimbus_name, localhost_); });
             views::Assertion("storm1 docker is running a storm UI", [this]
-                             { return host::by_name("storm1")->docker().is_container_running("ui-1", localhost_); });
+                             { return host::by_name("storm1")->docker().is_container_running(ui_name, localhost_); });
             if (storm_ui_mapping_)
             {
                 auto const url{std::format("http://localhost:{}", storm_ui_mapping_->local_port())};
@@ -76,28 +78,25 @@ struct dataoffering_screen
                                             { ImGui::Text("%s", output.c_str()); });
             if (!installing_topology_ && ImGui::Button("Install Storm Topology"))
             {
-                // ask the user for a file
-                auto file_path_str = tinyfd_openFileDialog("Select a JAR file", nullptr, 1,
-                                                           std::array{"*.jar"}.data(), "JAR Topology file", 0);
-                if (file_path_str)
-                {
-                    std::thread([this, file_path_str]
+                    std::thread([this]
                                 {
                         try
                         {
                             installing_topology_ = true;
-                            std::filesystem::path file_path{file_path_str};
-                            // upload the file to storm1
+                            // upload the file to storm1 from ignacio-bench
+                            // from the path /home/ubuntu/arangodb-infra/storm-topology/target/storm-topology-1.0-SNAPSHOT.jar
                             auto storm1{host::by_name("storm1")};
-                            auto const filename{file_path.filename().string()};
+                            auto const filename{"storm-topology-1.0-SNAPSHOT.jar"};
                             auto on_storm1 = std::format("/tmp/{}", filename);
                             auto on_nimbus = on_storm1;
                             topology_install_result_ = "Uploading file...";
-                            storm1->upload_file(file_path.string(),
-                                                on_storm1,
-                                                localhost_);
+
+                            std::string cmd_upload_from_ignacio_bench = std::format(
+                                "scp /home/ubuntu/arangodb-infra/storm-topology/target/{} storm1:/tmp/{}", filename, filename);
+                            topology_install_result_ = host::by_name("ignacio-bench")->docker().execute_command(cmd_upload_from_ignacio_bench, localhost_, false);
+
                             // now upload it into the nimbus container
-                            topology_install_result_ = "Copying file to nimbus...";
+                            topology_install_result_ += "\n\nCopying file to nimbus...";
                             storm1->docker().copy_to_container(on_storm1,
                                                                nimbus_name,
                                                                on_nimbus,
@@ -114,9 +113,20 @@ struct dataoffering_screen
                         installing_topology_ = false; })
                         .detach();
                 }
-            }
             if (!topology_install_result_.empty())
                 ImGui::Text(topology_install_result_.c_str());
+            views::Assertion("Storm Topology can resolve rabbitmq", [this]
+                             {
+                                // verify that the container running nimbus can resolve its way into ignacio-bench host, using curl
+                                auto const cmd = std::format("docker exec {} curl http://rabbitmq", nimbus_name);
+                                auto const result = host::by_name("storm1")->docker().execute_command(cmd, localhost_);
+                                // if curl says it can't resolve the host, it means we can't connect
+                                if (result.find("curl: (6) Could not resolve host") != std::string::npos)
+                                {
+                                    throw std::runtime_error("Error: storm topology can't resolve rabbitmq");
+                                }
+                                return true;
+                             });
             ImGui::Text("* Hadoop Status");
             ImGui::Text("* Hbase Status");
             ImGui::EndChild();
