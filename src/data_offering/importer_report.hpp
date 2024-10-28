@@ -56,7 +56,8 @@ struct importer_report {
             });
             views::cached_view<std::string>("RabbitMQ Queues", [this] {
                 return host_importer_->docker().execute_command(
-                    "docker exec importing-odds-rabbitmq-1 rabbitmqctl list_queues", localhost_);
+                    std::format("docker exec {} rabbitmqctl list_queues", importer_rabbitmq),
+                    localhost_);
             }, [](std::string const &output) {
                 ImGui::Text("%s", output.c_str());
             });
