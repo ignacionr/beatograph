@@ -102,6 +102,9 @@ target_link_libraries(beatograph_test PRIVATE
 find_path(UTF8H_INCLUDE_DIRS "utf8h/utf8.h")
 target_include_directories(beatograph PRIVATE ${UTF8H_INCLUDE_DIRS})
 
+find_package(tinyfiledialogs CONFIG REQUIRED)
+target_link_libraries(beatograph PRIVATE tinyfiledialogs::tinyfiledialogs)
+
 # Enable Unity builds
 set_target_properties(beatograph PROPERTIES UNITY_BUILD ON)
 set_target_properties(beatograph_test PROPERTIES UNITY_BUILD ON)
