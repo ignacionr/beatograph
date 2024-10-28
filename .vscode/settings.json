@@ -85,7 +85,12 @@
         "csignal": "cpp",
         "cstdarg": "cpp",
         "random": "cpp",
-        "regex": "cpp"
+        "regex": "cpp",
+        "coroutine": "cpp",
+        "resumable": "cpp",
+        "future": "cpp",
+        "queue": "cpp"
     },
-    "cmake.automaticReconfigure": false
+    "cmake.automaticReconfigure": false,
+    "C_Cpp.default.cppStandard": "c++23"
 }

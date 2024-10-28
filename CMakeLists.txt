@@ -10,7 +10,7 @@ set(VCPKG_TARGET_TRIPLET "x64-windows" CACHE STRING "Vcpkg target triplet")
 project(Beatograph VERSION 1.0 LANGUAGES CXX)
 
 # Specify the C++ standard
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 enable_testing()
@@ -81,6 +81,8 @@ find_package(nlohmann_json CONFIG REQUIRED)
 # Find and link GLEW
 find_package(GLEW REQUIRED)
 
+find_package(cpr CONFIG REQUIRED)
+
 # Link external libraries to beatograph
 target_link_libraries(beatograph PRIVATE 
   CURL::libcurl 
@@ -88,6 +90,7 @@ target_link_libraries(beatograph PRIVATE
   GLEW::GLEW
   imgui::imgui
   nlohmann_json::nlohmann_json
+  cpr::cpr
 )
 
 # Link external libraries to beatograph_test
@@ -101,6 +104,9 @@ target_link_libraries(beatograph_test PRIVATE
 
 find_path(UTF8H_INCLUDE_DIRS "utf8h/utf8.h")
 target_include_directories(beatograph PRIVATE ${UTF8H_INCLUDE_DIRS})
+
+target_include_directories(beatograph PRIVATE external)
+target_include_directories(beatograph_test PRIVATE external)
 
 find_package(tinyfiledialogs CONFIG REQUIRED)
 target_link_libraries(beatograph PRIVATE tinyfiledialogs::tinyfiledialogs)

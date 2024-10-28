@@ -15,6 +15,14 @@
         "gtest",
         "nlohmann-json",
         "utf8h",
-        "tinyfiledialogs"
+        "tinyfiledialogs",
+        "cpr"
+    ],
+    "overrides": [
+        {
+            "name": "curl",
+            "version": "7.80.0",
+            "$reason": "https://github.com/microsoft/vcpkg/issues/23417"
+        }
     ]
 }
