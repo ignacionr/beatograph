@@ -26,6 +26,7 @@ struct dataoffering_screen
     static constexpr auto topology_name = "betmavrik-topology";
     static constexpr auto topology_class = "com.betmavrik.storm.TopologyMain";
     static constexpr auto hadoop_host {"hadoop1"};
+    static constexpr auto hadoop_zookeeper_name {"hadoop-zookeeper-1"};
 
     dataoffering_screen(host_local &localhost) : importer{localhost}, localhost_{localhost} {}
     void render()
@@ -130,8 +131,10 @@ struct dataoffering_screen
                              });
             ImGui::Text("* Hadoop Status");
             ImGui::Text("* Hbase Status");
+            views::Assertion("Zookeeper is running on hadoop1", [this]
+                             { return host::by_name(hadoop_host)->docker().is_container_running(hadoop_zookeeper_name, localhost_); });
             views::Assertion("Hadoop is running", [this]
-                             { return host::by_name(hadoop_host)->docker().is_container_running("hadoop", localhost_); });
+                             { return host::by_name(hadoop_host)->docker().is_container_running("hadoop-hadoop-1", localhost_); });
             views::Assertion("Hbase is running", [this]
                              { return host::by_name(hadoop_host)->docker().is_container_running("hbase", localhost_); });
             ImGui::EndChild();

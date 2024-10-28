@@ -18,8 +18,8 @@
 
 struct importer_report {
     static auto constexpr host_importer_name = "storm1";
-    static auto constexpr importer_container_name = "storm-java-producer";
-    static auto constexpr importer_rabbitmq = "storm-rabbitmq";
+    static auto constexpr importer_container_name = "storm-java-producer-1";
+    static auto constexpr importer_rabbitmq = "storm-rabbitmq-1";
 
     importer_report(host_local &localhost): 
         localhost_{localhost} 
