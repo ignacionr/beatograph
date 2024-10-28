@@ -73,6 +73,11 @@ struct docker_host {
         return execute_command(std::format("docker exec {} ps aux", container_id), localhost);
     }
 
+    void copy_to_container(std::string const &file_path, std::string const &container_id, std::string const &destination, host_local &localhost) const {
+        auto cmd = std::format("docker cp {} {}:{}", file_path, container_id, destination);
+        execute_command(cmd, localhost);
+    }
+
     bool is_container_running(std::string const &container_id_or_name, host_local &localhost) {
         auto ps = this->ps();
         if (!ps) {

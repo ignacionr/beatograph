@@ -50,6 +50,11 @@ public:
         properties_.store(std::move(properties));
     }
 
+    void upload_file(std::string const &local_path, std::string const &remote_path, host_local &host_local) 
+    {
+        host_local.execute_command(std::format("scp {} {}:{}", local_path, name_, remote_path).c_str());
+    }
+
     std::string const &name() const { return name_; }
 
     properties_t const &properties() const {

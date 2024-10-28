@@ -1,5 +1,6 @@
 #pragma once
 
+#include <filesystem>
 #include <format>
 #include <memory>
 #include <string>
@@ -11,8 +12,16 @@
 #include "../views/assertion.hpp"
 #include "../host/local_mapping.hpp"
 
+extern "C" {
+    #include <tinyfiledialogs.h>
+}
+
 struct dataoffering_screen {
     static constexpr auto zookeeper_name = "ubuntu-zookeeper-1";
+    static constexpr auto nimbus_name = "ubuntu-nimbus-1";
+    static constexpr auto topology_name = "betmavrik-topology";
+    static constexpr auto topology_class = "com.betmavrik.storm.TopologyMain";
+
     dataoffering_screen(host_local &localhost) : importer{localhost}, localhost_{localhost} {}
     void render() {
         ImGui::BeginChild("Data Offering");
@@ -56,6 +65,41 @@ struct dataoffering_screen {
                     storm_ui_mapping_ = std::make_unique<host_local_mapping>(8080, "storm1", localhost_);
                 }
             }
+            views::cached_view<std::string>("Storm Topology", [this] {
+                auto cmd = std::format("docker exec {} storm list", nimbus_name);
+                return host::by_name("storm1")->docker().execute_command(cmd, localhost_);
+            }, [](std::string const &output) {
+                ImGui::Text("%s", output.c_str());
+            });
+            if (ImGui::Button("Install Storm Topology")) {
+                // ask the user for a file
+                auto file_path_str = tinyfd_openFileDialog("Select a JAR file", nullptr, 1, 
+                    std::array{"*.jar"}.data(), "JAR Topology file", 0);
+                if (file_path_str) {
+                    try {
+                        std::filesystem::path file_path{file_path_str};
+                        // upload the file to storm1
+                        auto storm1 {host::by_name("storm1")};
+                        auto const filename {file_path.filename().string()};
+                        auto on_storm1 = std::format("/tmp/{}", filename);
+                        auto on_nimbus = on_storm1;
+                        storm1->upload_file(file_path.string(), 
+                            on_storm1, 
+                            localhost_);
+                        // now upload it into the nimbus container
+                        storm1->docker().copy_to_container(on_storm1, 
+                            nimbus_name, 
+                            on_nimbus,
+                            localhost_);
+                        auto cmd = std::format("storm jar {} {} {}", on_nimbus, topology_class, topology_name);
+                        topology_install_result_ = host::by_name("storm1")->docker().execute_command(cmd, localhost_);
+                    }
+                    catch(std::exception const &e) {
+                        topology_install_result_ = e.what();
+                    }
+                }
+            }
+            if (!topology_install_result_.empty()) ImGui::Text(topology_install_result_.c_str());
         }
         ImGui::Text("* Hadoop Status");
         ImGui::Text("* Hbase Status");
@@ -66,4 +110,5 @@ private:
     host_local &localhost_;
     host_screen host_screen_;
     std::unique_ptr<host_local_mapping> storm_ui_mapping_;
+    std::string topology_install_result_;
 };
