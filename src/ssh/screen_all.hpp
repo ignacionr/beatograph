@@ -31,7 +31,6 @@ struct ssh_screen {
     void render(host_local &localhost) {
         for (auto const &[name, host] : hosts) {
             if (ImGui::CollapsingHeader(name.c_str())) {
-                host->resolve_from_ssh_conf(localhost);
                 host_screen_.render(host, localhost);
             }
         }
