@@ -31,9 +31,9 @@ if (MSVC)
     target_precompile_headers(beatograph PRIVATE "src/pch.h")
     
     # Set warnings and other options
-    target_compile_options(beatograph PRIVATE /W4 /WX)
+    target_compile_options(beatograph PRIVATE /W4 /WX /MP /Zi /Od)
     # Set the subsystem to Windows
-    target_link_options(beatograph PRIVATE /SUBSYSTEM:WINDOWS)
+    target_link_options(beatograph PRIVATE /SUBSYSTEM:WINDOWS /INCREMENTAL)
 
     # Include the source directory
     target_include_directories(beatograph PRIVATE "src")
@@ -52,7 +52,7 @@ if (MSVC)
     target_precompile_headers(beatograph_test PRIVATE "src/pch.h")
     
     # Set warnings and other options
-    target_compile_options(beatograph_test PRIVATE /W4 /WX)  # Treat warnings as errors
+    target_compile_options(beatograph_test PRIVATE /W4 /WX /MP /Zi /Od)  # Treat warnings as errors
 
     # Include the source directory
     target_include_directories(beatograph_test PRIVATE "src")
@@ -101,3 +101,7 @@ target_link_libraries(beatograph_test PRIVATE
 
 find_path(UTF8H_INCLUDE_DIRS "utf8h/utf8.h")
 target_include_directories(beatograph PRIVATE ${UTF8H_INCLUDE_DIRS})
+
+# Enable Unity builds
+set_target_properties(beatograph PROPERTIES UNITY_BUILD ON)
+set_target_properties(beatograph_test PROPERTIES UNITY_BUILD ON)
