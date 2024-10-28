@@ -19,6 +19,7 @@ struct host_local
 
         running_process(const char *command)
         {
+            std::cerr << std::format("Process@{} running {}\n", reinterpret_cast<void*>(this), command);
             ZeroMemory(&pi, sizeof(pi));
             pi.hProcess = INVALID_HANDLE_VALUE;
             pi.hThread = INVALID_HANDLE_VALUE;
@@ -171,12 +172,17 @@ struct host_local
                     if (bytesRead > 0) {
                         if (ReadFile(hReadPipe, buffer, sizeof(buffer), &bytesRead, NULL) && bytesRead != 0)
                         {
-                            sink(std::string_view{buffer, bytesRead});
+                            auto contents {std::string_view{buffer, bytesRead}};
+                            std::cerr << std::format("Proces@{} received << \n{}\n >>\n({} bytes)\n", reinterpret_cast<void*>(this), std::string{contents}, bytesRead);
+                            sink(contents);
                         }
                         else
                         {
                             break; // No more data to read
                         }
+                    }
+                    else {
+                        // this is odd, the handle was signaled but there's nothing to read; for the time being, do nothing
                     }
                 }
                 else
