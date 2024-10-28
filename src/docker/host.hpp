@@ -95,7 +95,7 @@ struct docker_host {
             bool found{false};
             if (container.contains("Names")) {
                 auto names = container["Names"].get<std::string>();
-                found = names.find(container_id_or_name) != std::string::npos;
+                found = names == container_id_or_name;
             }
             if (!found && container.contains("ID")) {
                 auto id = container["ID"].get<std::string>();
