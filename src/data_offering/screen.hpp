@@ -6,6 +6,7 @@
 #include <string>
 
 #include <imgui.h>
+#include <cppgpt/cppgpt.hpp>
 #include "importer_report.hpp"
 #include "../host/host.hpp"
 #include "../host/screen.hpp"
@@ -28,7 +29,9 @@ struct dataoffering_screen
     static constexpr auto hadoop_host {"hadoop1"};
     static constexpr auto hadoop_zookeeper_name {"hadoop-zookeeper-1"};
 
-    dataoffering_screen(host_local &localhost) : importer{localhost}, localhost_{localhost} {}
+    dataoffering_screen(host_local &localhost, std::string const &groq_api_key) : 
+        importer{localhost}, localhost_{localhost}, groq_api_key_{groq_api_key} {}
+    
     void render()
     {
         ImGui::BeginChild("Data Offering");
@@ -133,10 +136,31 @@ struct dataoffering_screen
             ImGui::Text("* Hbase Status");
             views::Assertion("Zookeeper is running on hadoop1", [this]
                              { return host::by_name(hadoop_host)->docker().is_container_running(hadoop_zookeeper_name, localhost_); });
-            views::Assertion("Hadoop is running", [this]
-                             { return host::by_name(hadoop_host)->docker().is_container_running("hadoop-hadoop-1", localhost_); });
-            views::Assertion("Hbase is running", [this]
-                             { return host::by_name(hadoop_host)->docker().is_container_running("hbase", localhost_); });
+            views::Assertion("Hadoop Resource Manager is running", [this]
+                             { return host::by_name(hadoop_host)->docker().is_container_running("hadoop-resourcemanager-1", localhost_); });
+            views::Assertion("Hadoop Node Manager is running", [this]
+                             { return host::by_name(hadoop_host)->docker().is_container_running("hadoop-nodemanager-1", localhost_); });
+            views::Assertion("Hadoop Name Node is running", [this]
+                             { return host::by_name(hadoop_host)->docker().is_container_running("hadoop-namenode-1", localhost_); });
+            views::Assertion("Hadoop Data Node is running", [this]
+                             { return host::by_name(hadoop_host)->docker().is_container_running("hadoop-datanode-1", localhost_); });
+            views::Assertion("Hbase Region Server is running", [this]
+                             { return host::by_name(hadoop_host)->docker().is_container_running("hadoop-hbase-regionserver-1", localhost_); });
+            views::Assertion("Hbase Master is running", [this]
+                             { return host::by_name(hadoop_host)->docker().is_container_running("hadoop-hbase-master-1", localhost_); });
+            views::cached_view<std::string>("Hadoop Assessment", 
+                [this] {
+                    auto logs = host::by_name(hadoop_host)->docker().logs("hadoop-datanode-1", localhost_);
+                    // cut down to the last 1000 characters
+                    logs = logs.substr(std::max(static_cast<unsigned long>(logs.size() - 1000), 0ul));
+                    std::string const prompt = std::format("Given the following logs, please assess the status of the Hadoop cluster.\n{}", logs);
+                    ignacionr::cppgpt gpt_{groq_api_key_, ignacionr::cppgpt::groq_base};
+                    return gpt_.sendMessage(prompt, "user", "llama-3.2-90b-text-preview")["choices"][0]["message"]["content"].get<std::string>();
+                },
+                [](std::string const &output)
+                {
+                    ImGui::Text("%s", output.c_str());
+                });
             ImGui::EndChild();
         }
     }
@@ -148,4 +172,5 @@ struct dataoffering_screen
         std::unique_ptr<host_local_mapping> storm_ui_mapping_;
         std::string topology_install_result_;
         bool installing_topology_{false};
+        std::string groq_api_key_;
 };

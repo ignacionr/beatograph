@@ -69,6 +69,10 @@ struct docker_host {
             SW_SHOW);
     }
 
+    std::string logs(std::string const &container_id, host_local &localhost) const {
+        return execute_command(std::format("docker logs {}", container_id), localhost);
+    }
+
     std::string all_processes(std::string const &container_id, host_local &localhost) const {
         return execute_command(std::format("docker exec {} ps aux", container_id), localhost);
     }

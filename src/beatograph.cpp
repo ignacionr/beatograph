@@ -22,6 +22,7 @@
 #include "host/local_screen.hpp"
 #include "arangodb/cluster_report.hpp"
 #include "ssh/screen_all.hpp"
+#include <cppgpt/cppgpt.hpp>
 
 void load_metrics_file(metrics_model &model, std::string_view filename)
 {
@@ -59,6 +60,16 @@ int main()
 {
 #endif
     {
+        // get the Groq API key from GROQ_API_KEY
+        char *groq_env = nullptr;
+        size_t len = 0;
+        if (_dupenv_s(&groq_env, &len, "GROQ_API_KEY") || groq_env == nullptr)
+        {
+            std::cerr << "Error: GROQ_API_KEY environment variable not set." << std::endl;
+            return 1;
+        }
+        std::string groq_api_key{groq_env, len - 1}; // len returns the count of all copied bytes, including the terminator
+        ignacionr::cppgpt gpt{groq_api_key, ignacionr::cppgpt::groq_base};
         metrics_model model;
 
 #if defined(_DEBUG)
@@ -70,7 +81,7 @@ int main()
 
         metrics_screen ms(model);
         char *token_env = nullptr;
-        size_t len = 0;
+        len = 0;
         if (_dupenv_s(&token_env, &len, "TOGGL_API_TOKEN") || token_env == nullptr)
         {
             std::cerr << "Error: TOGGL_API_TOKEN environment variable not set." << std::endl;
@@ -86,7 +97,7 @@ int main()
 
         host_local localhost;
 
-        dataoffering_screen ds{localhost};
+        dataoffering_screen ds{localhost, groq_api_key};
         host_local_screen local_screen{localhost};
 
         cluster_report cr{localhost};
