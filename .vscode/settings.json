@@ -89,7 +89,8 @@
         "coroutine": "cpp",
         "resumable": "cpp",
         "future": "cpp",
-        "queue": "cpp"
+        "queue": "cpp",
+        "expected": "cpp"
     },
     "cmake.automaticReconfigure": false,
     "C_Cpp.default.cppStandard": "c++23"
