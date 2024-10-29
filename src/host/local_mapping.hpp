@@ -38,7 +38,7 @@ struct host_local_mapping
             watermark_ = local_port_ + 1;
         }
         // Map the port
-        std::string command = std::format("ssh -N -L {0}:localhost:{1} {2}", local_port_, mapped_port_, hostname_);
+        std::string command = std::format("ssh -o ConnectTimeout=10 -N -L {0}:localhost:{1} {2}", local_port_, mapped_port_, hostname_);
         process_ = localhost.run(command.c_str());
     }
     ~host_local_mapping()

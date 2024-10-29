@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <filesystem>
 #include <format>
 #include <memory>
@@ -148,19 +149,42 @@ struct dataoffering_screen
                              { return host::by_name(hadoop_host)->docker().is_container_running("hadoop-hbase-regionserver-1", localhost_); });
             views::Assertion("Hbase Master is running", [this]
                              { return host::by_name(hadoop_host)->docker().is_container_running("hadoop-hbase-master-1", localhost_); });
-            views::cached_view<std::string>("Hadoop Assessment", 
-                [this] {
-                    auto logs = host::by_name(hadoop_host)->docker().logs("hadoop-datanode-1", localhost_);
-                    // cut down to the last 4000 characters
-                    logs = logs.substr(std::max(static_cast<unsigned long>(logs.size() - 4000), 0ul));
-                    std::string const prompt = std::format("Given the following logs, please assess the status of the Hadoop cluster.\n{}", logs);
-                    ignacionr::cppgpt gpt_{groq_api_key_, ignacionr::cppgpt::groq_base};
-                    return gpt_.sendMessage(prompt, "user", "llama-3.2-90b-text-preview")["choices"][0]["message"]["content"].get<std::string>();
-                },
-                [](std::string const &output)
+            auto retrieve_assessment_and_logs = [this](std::string const &service_type, std::vector<std::string> const &servers) -> std::array<std::string,2> {
+                std::string logs;
+                auto const per_log_limit {5000/ servers.size()};
+                for (auto const &server : servers)
                 {
-                    ImGui::TextWrapped("%s", output.c_str());
-                });
+                    auto server_logs = host::by_name(hadoop_host)->docker().logs(server, localhost_);
+                    server_logs = server_logs.substr(std::max(static_cast<long>(server_logs.size() - per_log_limit), 0l));
+                    logs += std::format("Service: {}\n{}\n\n", server, server_logs);
+                }
+                auto const prompt = std::format("You are a {} expert. Given the following logs, please assess the status of the service.\n\n{}", service_type, logs);
+                ignacionr::cppgpt gpt_{groq_api_key_, ignacionr::cppgpt::groq_base};
+                return {
+                    gpt_.sendMessage(prompt, "user", "llama-3.2-90b-text-preview")["choices"][0]["message"]["content"].get<std::string>(),
+                    logs };
+            };
+            auto show_assessment = [](std::array<std::string,2> const &output)
+                {
+                    ImGui::TextWrapped("%s", output[0].c_str());
+                    if (ImGui::CollapsingHeader("Logs"))
+                    {
+                        if (ImGui::BeginChild("Logs", {ImGui::GetWindowWidth() - 20,300}, ImGuiChildFlags_None, ImGuiWindowFlags_AlwaysVerticalScrollbar)) {
+                            ImGui::TextWrapped("%s", output[1].c_str());
+                        }
+                        ImGui::EndChild();
+                    }
+                };
+            views::cached_view<std::array<std::string,2>>("Hadoop Assessment", 
+                [this, retrieve_assessment_and_logs] {
+                    return retrieve_assessment_and_logs("Hadoop", 
+                        {"hadoop-resourcemanager-1", "hadoop-nodemanager-1", "hadoop-namenode-1", "hadoop-datanode-1"});
+                }, show_assessment);
+            views::cached_view<std::array<std::string,2>>("Hbase Assessment", 
+                [this, retrieve_assessment_and_logs] {
+                    return retrieve_assessment_and_logs("Hbase", 
+                        {"hadoop-hbase-regionserver-1", "hadoop-hbase-master-1"});
+                }, show_assessment);
             ImGui::EndChild();
         }
     }

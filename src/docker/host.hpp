@@ -9,7 +9,7 @@ struct docker_host {
     docker_host(std::string const &host_name) : host_name_{host_name} {}
 
     std::string execute_command(std::string const &command, host_local &localhost, bool sudo = true) const {
-        return localhost.execute_command(std::format("ssh {} {} {}", host_name_, sudo ? "sudo" : "", command).c_str());
+        return localhost.execute_command(std::format("ssh -o ConnectTimeout=5 {} {} {}", host_name_, sudo ? "sudo" : "", command).c_str());
     }
 
     void fetch_ps(host_local &localhost) {

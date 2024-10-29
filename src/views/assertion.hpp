@@ -30,13 +30,22 @@ namespace views
             }
         }
     };
+
+    static bool &quitting() {
+        static bool quitting{false};
+        return quitting;
+    }
+
+    static void quitting(bool value) {
+        quitting() = value;
+    }
     
     void Assertion(std::string_view title, std::function<bool()> assertion) 
     {
         static std::unordered_map<int, state_t> states;
         static std::queue<std::function<void()>> updates;
         static std::thread update_thread([] {
-            for (;;) {
+            while (!quitting()) {
                 if (updates.empty()) {
                     std::this_thread::sleep_for(std::chrono::milliseconds(100));
                     continue;

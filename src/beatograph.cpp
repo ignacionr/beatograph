@@ -23,6 +23,7 @@
 #include "arangodb/cluster_report.hpp"
 #include "ssh/screen_all.hpp"
 #include <cppgpt/cppgpt.hpp>
+#include "views/assertion.hpp"
 
 void load_metrics_file(metrics_model &model, std::string_view filename)
 {
@@ -135,6 +136,7 @@ int main()
         });
         main_screen screen{std::move(tabs)};
         screen.run();
+        views::quitting(true);
     }
     std::cerr << "Terminating.\n";
 
