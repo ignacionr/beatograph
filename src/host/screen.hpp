@@ -31,7 +31,7 @@ struct host_screen
             }
             if (ImGui::CollapsingHeader("Performance Metrics"))
             {
-                std::shared_ptr<metrics_model> model = host->metrics();
+                std::shared_ptr<metrics_model> model = host->metrics(localhost);
                 if (model)
                 {
                     // Memory

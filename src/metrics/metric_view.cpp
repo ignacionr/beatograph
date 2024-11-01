@@ -58,10 +58,11 @@ void metric_view::render(metric const &m, metric_view_config &config, std::list<
     {
         ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(1.0f, 1.0f, 0.2f, 1.0f));
         ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
-        ImGui::BeginChild("Settings", ImVec2(0, 0), ImGuiChildFlags_Border);
-        metric_view_config_screen config_screen{config};
-        config_screen.render();
-        ImGui::EndChild();
+        if (ImGui::BeginChild("Settings", ImVec2(0, 0), ImGuiChildFlags_Border)) {
+            metric_view_config_screen config_screen{config};
+            config_screen.render();
+            ImGui::EndChild();
+        }
         ImGui::PopStyleColor();
         ImGui::PopStyleColor();
     }

@@ -10,16 +10,17 @@ struct screen_tabs {
     screen_tabs(std::vector<tab_t> tabs) : tabs{std::move(tabs)} {}
     void render()
     {
-        ImGui::BeginTabBar("Tabs");
-        for (const auto &[name, render] : tabs)
-        {
-            if (ImGui::BeginTabItem(name.c_str()))
+        if (ImGui::BeginTabBar("Tabs")) {
+            for (const auto &[name, render] : tabs)
             {
-                render();
-                ImGui::EndTabItem();
+                if (ImGui::BeginTabItem(name.c_str()))
+                {
+                    render();
+                    ImGui::EndTabItem();
+                }
             }
+            ImGui::EndTabBar();
         }
-        ImGui::EndTabBar();
     }
 private:
     std::vector<tab_t> tabs;

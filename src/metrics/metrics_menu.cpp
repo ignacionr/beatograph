@@ -60,8 +60,8 @@ void metrics_menu::render()
                     selected_metric = matches.empty() ? nullptr : matches.front();
                 }
             }
+            ImGui::EndChild();
         }
-        ImGui::EndChild();
     }
 }
 

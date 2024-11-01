@@ -1,9 +1,10 @@
 #pragma once
-#include <string>
+#include <atomic>
+#include <chrono>
+#include <format>
 #include <map>
 #include <memory>
-#include <atomic>
-#include <format>
+#include <string>
 #include "host_local.hpp"
 #include "local_mapping.hpp"
 #include "../metrics/from_url.hpp"
@@ -62,7 +63,19 @@ public:
         return *p;
     }
 
-    auto metrics() {
+    auto metrics(host_local &localhost) {
+        auto const now = std::chrono::system_clock::now();
+        if ((now - last_metrics_fetch_) > std::chrono::seconds(30)) {
+            std::thread{[this, &localhost] {
+                try {
+                    fetch_metrics(localhost);
+                }
+                catch (std::exception const &e) {
+                    std::cerr << "Failed to fetch metrics for " << name_ << ": " << e.what() << std::endl;
+                }
+            }}.detach();
+            last_metrics_fetch_ = now;
+        }
         return metrics_.load();
     }
 
@@ -95,4 +108,5 @@ private:
     std::atomic<std::shared_ptr<host_local_mapping>> nodeexporter_mapping_;
     std::atomic<std::shared_ptr<metrics_model>> metrics_;
     std::unique_ptr<docker_host> docker_host_;
+    std::chrono::system_clock::time_point last_metrics_fetch_;
 };

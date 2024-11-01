@@ -12,24 +12,6 @@ struct cluster_report {
         for (auto &host : hosts_) {
             host->resolve_from_ssh_conf(host_local_);
         }
-        refresh_thread = std::jthread([this] {
-            while (!quit_) {
-                for (auto &host : hosts_) {
-                    try {
-                        host->fetch_metrics(host_local_);
-                    }
-                    catch(std::exception const &e) {
-                        std::cerr << "Error: " << e.what() << std::endl;
-                    }
-                }
-                for (int i = 0; i < 30; ++i) {
-                    if (quit_) {
-                        break;
-                    }
-                    std::this_thread::sleep_for(std::chrono::seconds(1));
-                }
-            }
-        });
     }
 
     ~cluster_report() {
@@ -47,5 +29,5 @@ private:
     host_screen host_screen_;
     host_local &host_local_;
     std::atomic<bool> quit_{false};
-    std::jthread refresh_thread;
+    std::unique_ptr<std::jthread> refresh_thread;
 };

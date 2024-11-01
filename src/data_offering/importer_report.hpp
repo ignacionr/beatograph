@@ -28,7 +28,6 @@ struct importer_report {
         auto t = std::thread([host = host_importer_, &localhost] {
             host->resolve_from_ssh_conf(localhost);
             try {
-                host->fetch_metrics(localhost);
                 host->docker().fetch_ps(localhost);
             }
             catch(std::exception const &e) {

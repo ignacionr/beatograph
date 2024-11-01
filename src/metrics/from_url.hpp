@@ -25,16 +25,31 @@ struct metrics_from_url {
             throw std::runtime_error("Failed to initialize curl");
         }
         struct curl_slist *headers = nullptr;
-        headers = curl_slist_append(headers, "Accept: application/json");
+        headers = curl_slist_append(headers, "Accept: text/plain");
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
         curl_easy_setopt(curl, CURLOPT_URL, url.data());
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &parser);
-        CURLcode res = curl_easy_perform(curl);
+        CURLcode res;
+        try {
+            res = curl_easy_perform(curl);
+        }
+        catch (...) {
+            curl_slist_free_all(headers);
+            curl_easy_cleanup(curl);
+            throw;
+        }
         curl_slist_free_all(headers);
-        curl_easy_cleanup(curl);
         if (res != CURLE_OK) {
+            curl_easy_cleanup(curl);
             throw std::runtime_error("Failed to perform request: " + std::string(curl_easy_strerror(res)));
+        }
+        // check the status code
+        long response_code;
+        curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
+        curl_easy_cleanup(curl);
+        if (response_code >= 400) {
+            throw std::runtime_error("Failed to fetch metrics: " + std::to_string(response_code));
         }
         return model;
     }

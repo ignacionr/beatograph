@@ -2,14 +2,14 @@
 
 struct calendar_screen {
     void render() {
-        ImGui::BeginChild("Calendar");
-
-        static const char* days[] = { "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" };
-        ImGui::Columns(7);
-        for (int i = 0; i < 7; ++i) {
-            ImGui::Text("%s", days[i]);
-            ImGui::NextColumn();
+        if (ImGui::BeginChild("Calendar")) {
+            static const char* days[] = { "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" };
+            ImGui::Columns(7);
+            for (int i = 0; i < 7; ++i) {
+                ImGui::Text("%s", days[i]);
+                ImGui::NextColumn();
+            }
+            ImGui::EndChild();
         }
-        ImGui::EndChild();
     }
 };

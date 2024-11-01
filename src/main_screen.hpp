@@ -47,9 +47,10 @@ struct main_screen
             throw std::runtime_error(std::string("Unable to initialize SDL: ") + SDL_GetError());
         }
         // create a main window
-        window = SDL_CreateWindow("Beatograph", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600,
-                                  SDL_WINDOW_OPENGL | SDL_WINDOW_BORDERLESS | SDL_WINDOW_RESIZABLE | 
-                                  SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_SHOWN);
+        window = SDL_CreateWindow("Beat-o-Graph", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600,
+                                  SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE |
+                                      SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_SHOWN);
+        // | SDL_WINDOW_BORDERLESS
         gl_context = SDL_GL_CreateContext(window);
         SDL_GL_MakeCurrent(window, gl_context);
         SDL_GL_SetSwapInterval(1); // Enable vsync
@@ -91,49 +92,15 @@ struct main_screen
         // run the main loop
         SDL_Event event;
         running = true;
-        bool dragging_window{false};
-        int drag_start_x{}, drag_start_y{};
         while (running)
         {
             while (SDL_WaitEventTimeout(&event, 1000 / 60))
             {
-                auto handled {false};
                 if (event.type == SDL_QUIT)
                 {
                     running = false;
                 }
-                else if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT) {
-                    // decide if it's happening on the title, and outside the collapse and the close buttons
-                    SDL_GetMouseState(&drag_start_x, &drag_start_y);
-                    int width;
-                    SDL_GetWindowSizeInPixels(window, &width, nullptr);
-                    if (drag_start_y < 18 && drag_start_x > 16 && drag_start_x < (width - 18)) {
-                        SDL_SetWindowGrab(window, SDL_TRUE);
-                        SDL_CaptureMouse(SDL_TRUE);
-                        handled = true;
-                        dragging_window = true;
-                    }
-                }
-                else if (dragging_window && event.type == SDL_MOUSEBUTTONUP) {
-                    if (event.button.button == SDL_BUTTON_LEFT) {
-                        SDL_SetWindowGrab(window, SDL_FALSE);
-                        SDL_CaptureMouse(SDL_FALSE);
-                        handled = true;
-                        dragging_window = false;
-                    }
-                }
-                else if (dragging_window && event.type == SDL_MOUSEMOTION) {
-                    // get the relative mouse move
-                    int x, y;
-                    SDL_GetMouseState(&x, &y);
-                    // get the current window position
-                    int cur_x, cur_y;
-                    SDL_GetWindowPosition(window, &cur_x, &cur_y);
-                    // move the window
-                    SDL_SetWindowPosition(window, cur_x + x - drag_start_x, cur_y + y - drag_start_y);
-                    handled = true;
-                }
-                if (!handled) ImGui_ImplSDL2_ProcessEvent(&event);
+                ImGui_ImplSDL2_ProcessEvent(&event);
             }
             do_frame();
         }
@@ -151,28 +118,28 @@ private:
         ImGuiIO &io{ImGui::GetIO()};
         auto const &display_size = io.DisplaySize;
         auto size = ImVec2(display_size.x, display_size.y);
-        // ImGui::SetNextWindowSize(size);
+        ImGui::SetNextWindowSize(size);
         ImGui::SetNextWindowPos({0, 0});
-        ImGui::Begin("Beat-o-Graph", &running,
-                     ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoMove);
-        auto main_window_size {ImGui::GetWindowSize()};
-        if (main_window_size.x != display_size.x || main_window_size.y != display_size.y) {
-            SDL_SetWindowSize(window, 
-                static_cast<int>(main_window_size.x), 
-                static_cast<int>(main_window_size.y));
-        }
-        ImGui::BeginMenuBar();
-        if (ImGui::BeginMenu("File"))
+        if (ImGui::Begin("Beat-o-Graph", nullptr,
+                         ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar))
         {
-            if (ImGui::MenuItem("Exit"))
+
+            if (ImGui::BeginMenuBar())
             {
-                running = false;
+                if (ImGui::BeginMenu("File"))
+                {
+                    if (ImGui::MenuItem("Exit"))
+                    {
+                        running = false;
+                    }
+                    ImGui::EndMenu();
+                }
+                ImGui::EndMenuBar();
             }
-            ImGui::EndMenu();
+            screen->render();
+            ImGui::End();
         }
-        ImGui::EndMenuBar();
-        screen->render();
-        ImGui::End();
+
         ImGui::Render();
 
         glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);

@@ -9,9 +9,10 @@ struct metrics_screen {
     metrics_screen(metrics_model& model) : model{model}, menu{model} {}
 
     void render() {
-        ImGui::BeginChild("MetricsMenu", ImVec2(ImGui::GetWindowWidth(), 230));
-        menu.render();
-        ImGui::EndChild();
+        if (ImGui::BeginChild("MetricsMenu", ImVec2(ImGui::GetWindowWidth(), 230))) {
+            menu.render();
+            ImGui::EndChild();
+        }
 
         if (menu.selected_metric != nullptr)
         {
