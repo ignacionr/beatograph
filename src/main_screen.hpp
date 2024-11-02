@@ -140,6 +140,7 @@ private:
                         FILE *stream;
                         freopen_s(&stream, "CONOUT$", "w", stderr);
                     }
+                    ImGui::Separator();
                     if (ImGui::MenuItem("Exit"))
                     {
                         running = false;

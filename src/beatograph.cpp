@@ -24,34 +24,8 @@
 #include "ssh/screen_all.hpp"
 #include <cppgpt/cppgpt.hpp>
 #include "views/assertion.hpp"
+#include "git/host.hpp"
 
-void load_metrics_file(metrics_model &model, std::string_view filename)
-{
-    // obtain the last modification time of the file
-    std::filesystem::path path(filename);
-    auto last_write_time = std::filesystem::last_write_time(path);
-
-    std::ifstream file(path);
-    std::string line;
-    metrics_parser parser;
-    parser.sample_time = std::chrono::system_clock::now() + (last_write_time - std::filesystem::file_time_type::clock::now());
-    parser.metric_help = [&](const std::string_view &name, const std::string_view &help)
-    {
-        model.set_help(name, help);
-    };
-    parser.metric_type = [&](const std::string_view &name, const std::string_view &type)
-    {
-        model.set_type(name, type);
-    };
-    parser.metric_metric_value = [&](std::string_view name, metric_value &&value)
-    {
-        model.add_value(name, std::move(value));
-    };
-    while (std::getline(file, line))
-    {
-        parser(line);
-    }
-}
 
 #if defined(_WIN32)
 int WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
@@ -73,6 +47,7 @@ int main()
         ignacionr::cppgpt gpt{groq_api_key, ignacionr::cppgpt::groq_base};
         metrics_model model;
 
+
         metrics_screen ms(model);
         char *token_env = nullptr;
         len = 0;
@@ -91,6 +66,7 @@ int main()
 
         host_local localhost;
 
+        git_host git{localhost};
         dataoffering_screen ds{localhost, groq_api_key};
         host_local_screen local_screen{localhost};
 
@@ -114,6 +90,29 @@ int main()
              { cs.render(); }},
             {"Configured SSH Hosts", [&ssh_screen, &localhost]
              { ssh_screen.render(localhost); }},
+             {"Git Repositories", [&git]
+             {
+                 ImGui::Text("Git Repositories");
+                 if (auto repos = git.repos(); repos)
+                 {
+                     for (auto const &repo : *repos)
+                     {
+                         ImGui::Text("%s", repo.c_str());
+                     }
+                 }
+             }},
+             {"GitHub", [] {
+                 ImGui::Text("GitHub");
+             }},
+             {"Bitbucket", [] {
+                 ImGui::Text("Bitbucket");
+             }},
+             {"Zookeeper", [] {
+                 ImGui::Text("Zookeeper");
+             }},
+             {"RabbitMQ", [] {
+                 ImGui::Text("RabbitMQ");
+             }},
              {"GitHub", [] {
                  ImGui::Text("GitHub");
              }},
