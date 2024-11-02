@@ -50,7 +50,13 @@ struct main_screen
         window = SDL_CreateWindow("Beat-o-Graph", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600,
                                   SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE |
                                       SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_SHOWN);
-        // | SDL_WINDOW_BORDERLESS
+        // set the icon from the resources (IDI_ICON1)
+        auto icon = SDL_LoadBMP("assets/beatograph-icon.bmp");
+        if (icon != nullptr)
+        {
+            SDL_SetWindowIcon(window, icon);
+            SDL_FreeSurface(icon);
+        }
         gl_context = SDL_GL_CreateContext(window);
         SDL_GL_MakeCurrent(window, gl_context);
         SDL_GL_SetSwapInterval(1); // Enable vsync
