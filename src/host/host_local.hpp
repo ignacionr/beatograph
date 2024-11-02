@@ -11,6 +11,8 @@
 #include <string_view>
 #include <vector>
 
+#include "ssh_execute.hpp"
+
 struct host_local
 {
     struct running_process
@@ -212,8 +214,10 @@ struct host_local
     }
 
     std::string ssh(std::string_view command, std::string_view host_name, unsigned int timeout_seconds = 5) {
-        auto cmd = std::format("ssh -o ConnectTimeout={} {} {}", timeout_seconds, host_name, command);
-        return execute_command(cmd.c_str());
+        ssh_execute ssh{host_name};
+        return ssh.execute_command(std::string{command}, timeout_seconds);
+        // auto cmd = std::format("ssh -o ConnectTimeout={} {} {}", timeout_seconds, host_name, command);
+        // return execute_command(cmd.c_str());
     }
 
     std::string execute_command(const char *command)
