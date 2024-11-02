@@ -45,6 +45,7 @@ add_executable(beatograph_test
   src/pch.cpp
   src/beatograph_test.cpp
   src/metrics/metrics_parser.cpp
+  assets/assets.rc
 )
 
 # Precompiled headers for Windows/MSVC for the test executable
