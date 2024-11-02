@@ -86,7 +86,7 @@ find_package(GLEW REQUIRED)
 
 find_package(cpr CONFIG REQUIRED)
 
-find_package(Libssh2 CONFIG REQUIRED)
+find_package(libssh CONFIG REQUIRED)
 
 # Link external libraries to beatograph
 target_link_libraries(beatograph PRIVATE 
@@ -97,7 +97,7 @@ target_link_libraries(beatograph PRIVATE
   nlohmann_json::nlohmann_json
   cpr::cpr
   PNG::PNG
-  $<IF:$<TARGET_EXISTS:Libssh2::libssh2_shared>,Libssh2::libssh2_shared,Libssh2::libssh2_static>
+  ssh
 )
 
 # Link external libraries to beatograph_test

@@ -17,7 +17,7 @@
         "utf8h",
         "tinyfiledialogs",
         "cpr",
-        "libssh2",
+        "libssh",
         "zlib",
         "libpng"
     ],
