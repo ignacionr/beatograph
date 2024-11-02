@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.16)
 
 # Set the path to vcpkg toolchain file
-set(CMAKE_TOOLCHAIN_FILE "E:/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE STRING "Vcpkg toolchain file")
+# set(CMAKE_TOOLCHAIN_FILE "E:/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE STRING "Vcpkg toolchain file")
+include("E:/vcpkg/scripts/buildsystems/vcpkg.cmake")
 
 # Enable CMake's find_package to use vcpkg
 set(VCPKG_TARGET_TRIPLET "x64-windows" CACHE STRING "Vcpkg target triplet")
@@ -58,6 +59,9 @@ if (MSVC)
     target_include_directories(beatograph_test PRIVATE "src")
 endif()
 
+# add vcpkg_installed/x64-windows/share/ folder so it is used for finding packages
+list(APPEND CMAKE_PREFIX_PATH "vcpkg_installed/x64-windows/share")
+
 # Find and link GoogleTest (for tests)
 find_package(GTest CONFIG REQUIRED)
 target_link_libraries(beatograph_test PRIVATE GTest::gtest GTest::gtest_main)
@@ -66,11 +70,10 @@ target_link_libraries(beatograph_test PRIVATE GTest::gtest GTest::gtest_main)
 include(GoogleTest)
 
 # Find and link libcurl
-find_package(CURL REQUIRED)
-
-# Find and link SDL2 and SDL2_image
+find_package(PNG REQUIRED)
 find_package(SDL2 REQUIRED)
 find_package(SDL2_image REQUIRED)
+find_package(CURL CONFIG REQUIRED)
 
 # Find and link imgui
 find_package(imgui REQUIRED)
@@ -83,6 +86,8 @@ find_package(GLEW REQUIRED)
 
 find_package(cpr CONFIG REQUIRED)
 
+find_package(Libssh2 CONFIG REQUIRED)
+
 # Link external libraries to beatograph
 target_link_libraries(beatograph PRIVATE 
   CURL::libcurl 
@@ -91,6 +96,8 @@ target_link_libraries(beatograph PRIVATE
   imgui::imgui
   nlohmann_json::nlohmann_json
   cpr::cpr
+  PNG::PNG
+  $<IF:$<TARGET_EXISTS:Libssh2::libssh2_shared>,Libssh2::libssh2_shared,Libssh2::libssh2_static>
 )
 
 # Link external libraries to beatograph_test

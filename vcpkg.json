@@ -16,7 +16,10 @@
         "nlohmann-json",
         "utf8h",
         "tinyfiledialogs",
-        "cpr"
+        "cpr",
+        "libssh2",
+        "zlib",
+        "libpng"
     ],
     "overrides": [
         {
