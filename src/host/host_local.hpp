@@ -214,10 +214,12 @@ struct host_local
     }
 
     std::string ssh(std::string_view command, std::string_view host_name, unsigned int timeout_seconds = 5) {
-        ssh_execute ssh{host_name};
-        return ssh.execute_command(std::string{command}, timeout_seconds);
-        // auto cmd = std::format("ssh -o ConnectTimeout={} {} {}", timeout_seconds, host_name, command);
-        // return execute_command(cmd.c_str());
+        std::string key{host_name};
+        static std::unordered_map<std::string, std::unique_ptr<ssh_execute>> sessions;
+        if (sessions.find(key) == sessions.end()) {
+            sessions[key] = std::make_unique<ssh_execute>(std::string{host_name}, timeout_seconds);
+        }
+        return sessions.at(key)->execute_command(std::string{command});
     }
 
     std::string execute_command(const char *command)
