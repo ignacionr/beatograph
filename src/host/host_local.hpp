@@ -211,6 +211,11 @@ struct host_local
         proc->read_all(sink);
     }
 
+    std::string ssh(std::string_view command, std::string_view host_name, unsigned int timeout_seconds = 5) {
+        auto cmd = std::format("ssh -o ConnectTimeout={} {} {}", timeout_seconds, host_name, command);
+        return execute_command(cmd.c_str());
+    }
+
     std::string execute_command(const char *command)
     {
         std::string result;
