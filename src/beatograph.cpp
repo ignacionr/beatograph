@@ -73,13 +73,6 @@ int main()
         ignacionr::cppgpt gpt{groq_api_key, ignacionr::cppgpt::groq_base};
         metrics_model model;
 
-#if defined(_DEBUG)
-    // attach a console, so I can check what comes out of std::cerr
-    AllocConsole();
-    FILE *stream;
-    freopen_s(&stream, "CONOUT$", "w", stderr);
-#endif
-
         metrics_screen ms(model);
         char *token_env = nullptr;
         len = 0;
