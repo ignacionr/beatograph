@@ -19,7 +19,15 @@
         "cpr",
         "libssh",
         "zlib",
-        "libpng"
+        "libpng",
+        {
+            "name": "ffmpeg",
+            "features": [
+                "avcodec",
+                "avformat"
+            ]
+        },
+        "graphviz"
     ],
     "overrides": [
         {

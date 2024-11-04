@@ -25,6 +25,7 @@
 #include <cppgpt/cppgpt.hpp>
 #include "views/assertion.hpp"
 #include "git/host.hpp"
+#include "radio/host.hpp"
 
 
 #if defined(_WIN32)
@@ -72,6 +73,9 @@ int main()
 
         cluster_report cr{localhost};
         ssh_screen ssh_screen;
+
+        radio::host radio_host;
+        radio_host.play_sync("Urbana Play");
 
         auto tabs = std::make_unique<screen_tabs>(std::vector<screen_tabs::tab_t>{
             {"This Computer", [&local_screen]
