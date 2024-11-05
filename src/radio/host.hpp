@@ -1,13 +1,22 @@
 #pragma once
 
+#include <atomic>
+#include <functional>
 #include <map>
 #include <stdexcept>
 #include <string>
+#include <thread>
 
 #include <curl/curl.h>
 extern "C" {
-#include <libavcodec/avcodec.h>
+
+#include <libavutil/opt.h>
+#include <libavutil/mathematics.h>
 #include <libavformat/avformat.h>
+#include <libswscale/swscale.h>
+#include <libswresample/swresample.h>
+
+#include <libavcodec/avcodec.h>
 }
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_audio.h>
@@ -18,13 +27,17 @@ namespace radio
     {
         host() {}
 
-        // Define a callback function to receive the audio data
-        static size_t write_callback(void *ptr, size_t size, size_t nmemb, void *userdata) {
-            // Write the audio data to a buffer
-            host *self = (host *)userdata;
-            SDL_AudioDeviceID dev = self->dev;
-            SDL_QueueAudio(dev, ptr, static_cast<Uint32>(size * nmemb));
-            return size * nmemb;
+        using release_audio_t = std::function<void()>;
+        using audio_converter_t = std::function<release_audio_t(void *, uint32_t, void **, uint32_t *)>;
+
+        void play(std::string url) {
+            std::thread([this, url]() {
+                play_sync(url);
+            }).detach();
+        }
+
+        void stop() {
+            playing = false;
         }
 
         void play_sync(std::string url)
@@ -36,113 +49,143 @@ namespace radio
             }
 
             // Initialize SDL
-            SDL_Init(SDL_INIT_AUDIO);
-
-            // Initialize libcurl
-            CURL *curl;
-            CURLcode res;
-            curl_global_init(CURL_GLOBAL_DEFAULT);
-            curl = curl_easy_init();
-            if (curl)
+            if (SDL_Init(SDL_INIT_AUDIO) < 0)
             {
-                // Set up the URL and other options
-                curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-                curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
+                throw std::runtime_error("Failed to initialize SDL");
+            }
 
-                // Initialize libavformat
-                avformat_network_init();
+            // Initialize libavformat
+            avformat_network_init();
 
-                // Open the audio stream
-                AVFormatContext *fmt_ctx = NULL;
-                if (avformat_open_input(&fmt_ctx, url.c_str(), NULL, NULL) < 0)
+            // Open the audio stream
+            AVFormatContext *fmt_ctx = nullptr;
+            if (avformat_open_input(&fmt_ctx, url.c_str(), nullptr, nullptr) < 0)
+            {
+                throw std::runtime_error("Failed to open audio stream");
+            }
+
+            // Retrieve stream information
+            if (avformat_find_stream_info(fmt_ctx, nullptr) < 0)
+            {
+                avformat_close_input(&fmt_ctx);
+                throw std::runtime_error("Failed to find stream information");
+            }
+
+            // Get the audio stream
+            AVStream *audio_stream = nullptr;
+            for (unsigned int i = 0; i < fmt_ctx->nb_streams; i++)
+            {
+                if (fmt_ctx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO)
                 {
-                    // Handle errors
-                    throw std::runtime_error("Failed to open audio stream");
+                    audio_stream = fmt_ctx->streams[i];
+                    break;
                 }
+            }
 
-                // Retrieve stream information
-                auto ret = avformat_find_stream_info(fmt_ctx, nullptr);
-                if (ret < 0) {
-                    // Handle error
-                    avformat_close_input(&fmt_ctx);
-                    throw std::runtime_error("Failed to find stream information");
-                }
+            if (!audio_stream)
+            {
+                avformat_close_input(&fmt_ctx);
+                throw std::runtime_error("No audio stream found");
+            }
 
-                // Get the audio stream
-                AVStream *stream = NULL;
-                for (unsigned int i {0}; i < fmt_ctx->nb_streams; i++)
+            // Find the decoder for the audio stream
+            auto codec = avcodec_find_decoder(audio_stream->codecpar->codec_id);
+            if (!codec)
+            {
+                avformat_close_input(&fmt_ctx);
+                throw std::runtime_error("Failed to find audio codec");
+            }
+
+            // Allocate a codec context for the decoder
+            AVCodecContext *codec_ctx = avcodec_alloc_context3(codec);
+            if (!codec_ctx)
+            {
+                avformat_close_input(&fmt_ctx);
+                throw std::runtime_error("Failed to allocate codec context");
+            }
+
+            // Copy codec parameters from input stream to output codec context
+            if (avcodec_parameters_to_context(codec_ctx, audio_stream->codecpar) < 0)
+            {
+                avcodec_free_context(&codec_ctx);
+                avformat_close_input(&fmt_ctx);
+                throw std::runtime_error("Failed to copy codec parameters to codec context");
+            }
+
+            // Initialize the codec context to use the given codec
+            if (avcodec_open2(codec_ctx, codec, nullptr) < 0)
+            {
+                avcodec_free_context(&codec_ctx);
+                avformat_close_input(&fmt_ctx);
+                throw std::runtime_error("Failed to open codec");
+            }
+
+            // Set up SDL audio specs
+            SDL_AudioSpec wanted_spec, obtained_spec;
+            wanted_spec.freq = codec_ctx->sample_rate;
+            wanted_spec.format = AUDIO_F32SYS;
+            wanted_spec.channels = static_cast<uint8_t>(codec_ctx->ch_layout.nb_channels);
+            wanted_spec.silence = 0;
+            wanted_spec.samples = 1024;
+            wanted_spec.callback = nullptr;
+
+            if (SDL_OpenAudio(&wanted_spec, &obtained_spec) < 0)
+            {
+                avcodec_free_context(&codec_ctx);
+                avformat_close_input(&fmt_ctx);
+                throw std::runtime_error("Failed to open audio device");
+            }
+
+            // Initialize the resampler
+            SwrContext *swr_ctx = swr_alloc();
+            av_opt_set_int(swr_ctx, "in_channel_count", codec_ctx->ch_layout.nb_channels, 0);
+            av_opt_set_int(swr_ctx, "in_sample_rate", codec_ctx->sample_rate, 0);
+            av_opt_set_sample_fmt(swr_ctx, "in_sample_fmt", codec_ctx->sample_fmt, 0);
+            av_opt_set_int(swr_ctx, "out_channel_count", codec_ctx->ch_layout.nb_channels, 0);
+            av_opt_set_int(swr_ctx, "out_sample_rate", codec_ctx->sample_rate, 0);
+            av_opt_set_sample_fmt(swr_ctx, "out_sample_fmt", AV_SAMPLE_FMT_FLT, 0);
+            swr_init(swr_ctx);
+
+            // Start playing audio
+            SDL_PauseAudio(0);
+
+            AVPacket packet;
+            AVFrame *frame = av_frame_alloc();
+            uint8_t *audio_buf = nullptr;
+
+            playing = true;
+            while (playing.load() && av_read_frame(fmt_ctx, &packet) >= 0)
+            {
+                if (packet.stream_index == audio_stream->index)
                 {
-                    if (fmt_ctx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO)
+                    if (avcodec_send_packet(codec_ctx, &packet) >= 0)
                     {
-                        stream = fmt_ctx->streams[i];
-                        break;
+                        while (avcodec_receive_frame(codec_ctx, frame) >= 0)
+                        {
+                            int dst_nb_samples = static_cast<int>(av_rescale_rnd(swr_get_delay(swr_ctx, codec_ctx->sample_rate) + frame->nb_samples, codec_ctx->sample_rate, codec_ctx->sample_rate, AV_ROUND_UP));
+                            int dst_buf_size = av_samples_get_buffer_size(nullptr, codec_ctx->ch_layout.nb_channels, dst_nb_samples, AV_SAMPLE_FMT_FLT, 1);
+                            audio_buf = (uint8_t *)av_malloc(dst_buf_size);
+                            swr_convert(swr_ctx, &audio_buf, dst_nb_samples, (const uint8_t **)frame->extended_data, frame->nb_samples);
+                            SDL_QueueAudio(1, audio_buf, dst_buf_size);
+                            av_free(audio_buf);
+                        }
                     }
                 }
-
-                if (!stream)
-                {
-                    // Handle errors
-                }
-
-                // Get the audio format
-                AVCodecParameters *codecpar = stream->codecpar;
-                int freq = codecpar->sample_rate;
-                int channels = codecpar->ch_layout.nb_channels;
-                int format = codecpar->format;
-
-                // Convert the format to SDL format
-                SDL_AudioFormat sdl_format = AUDIO_S16LSB;
-                switch (format)
-                {
-                case AV_SAMPLE_FMT_S16:
-                    sdl_format = AUDIO_S16LSB;
-                    break;
-                case AV_SAMPLE_FMT_S32:
-                    sdl_format = AUDIO_S32LSB;
-                    break;
-                case AV_SAMPLE_FMT_FLT:
-                    sdl_format = AUDIO_F32LSB;
-                    break;
-                case AV_SAMPLE_FMT_FLTP:
-                    // Planar float format, convert to interleaved float format
-                    sdl_format = AUDIO_F32LSB;
-                    break;
-                default:
-                    throw std::runtime_error("Unsupported audio format");
-                }
-
-                // Initialize the audio device
-                SDL_AudioSpec spec;
-                spec.freq = freq;
-                spec.format = sdl_format;
-                spec.channels = static_cast<Uint8>(channels);
-                spec.samples = 1024;
-                spec.callback = NULL;
-                spec.userdata = NULL;
-                dev = SDL_OpenAudioDevice(NULL, 0, &spec, NULL, 0);
-
-                // Set the callback function for the audio stream
-                curl_easy_setopt(curl, CURLOPT_WRITEDATA, this);
-
-                // Start playing the audio
-                SDL_PauseAudioDevice(dev, 0);
-
-                // Perform the request
-                res = curl_easy_perform(curl);
-                if (res != CURLE_OK)
-                {
-                    // Handle errors
-                }
-
-                // Clean up
-                SDL_CloseAudioDevice(dev);
-                curl_easy_cleanup(curl);
-                avformat_close_input(&fmt_ctx);
+                av_packet_unref(&packet);
             }
-            curl_global_cleanup();
 
-            // Clean up SDL
+            // Clean up
+            av_frame_free(&frame);
+            swr_free(&swr_ctx);
+            avcodec_free_context(&codec_ctx);
+            avformat_close_input(&fmt_ctx);
+            SDL_CloseAudio();
             SDL_Quit();
+        }
+
+        bool is_playing() const
+        {
+            return playing.load();
         }
 
         std::map<std::string, std::string> presets{
@@ -150,5 +193,6 @@ namespace radio
 
     private:
         SDL_AudioDeviceID dev;
+        std::atomic<bool> playing{false};
     };
 }

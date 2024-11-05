@@ -75,7 +75,6 @@ int main()
         ssh_screen ssh_screen;
 
         radio::host radio_host;
-        radio_host.play_sync("Urbana Play");
 
         auto tabs = std::make_unique<screen_tabs>(std::vector<screen_tabs::tab_t>{
             {"This Computer", [&local_screen]
@@ -129,6 +128,18 @@ int main()
              {"RabbitMQ", [] {
                  ImGui::Text("RabbitMQ");
              }},
+             {"Radio", [&radio_host] {
+                if (radio_host.is_playing()) {
+                    if (ImGui::Button("Stop")) {
+                        radio_host.stop();
+                    }
+                } else {
+                    if (ImGui::Button("Play")) {
+                        radio_host.play("Urbana Play");
+//                        radio_host.play("http://stream.radioreklama.bg:80/radio1rock128");
+                    }
+                }
+             }}
         });
         main_screen screen{std::move(tabs)};
         screen.run();
