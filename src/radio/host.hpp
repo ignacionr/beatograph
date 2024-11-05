@@ -227,7 +227,9 @@ namespace radio
         std::map<std::string, std::string> presets_{
             {"Urbana Play", "https://cdn.instream.audio/:9660/stream"},
             {"Radio 1 Rock", "http://stream.radioreklama.bg:80/radio1rock128"},
-            {"BBC Radio 1", "http://bbcmedia.ic.llnwd.net/stream/bbcmedia_radio1_mf_p"},
+            {"BBC Radio 3", "http://as-hls-ww-live.akamaized.net/pool_904/live/ww/bbc_radio_three/bbc_radio_three.isml/bbc_radio_three-audio%3d96000.norewind.m3u8"},
+            {"BBC Radio 4", "http://as-hls-ww-live.akamaized.net/pool_904/live/ww/bbc_radio_fourfm/bbc_radio_fourfm.isml/bbc_radio_fourfm-audio%3d96000.norewind.m3u8"},
+            {"BBC World Service", "http://a.files.bbci.co.uk/media/live/manifesto/audio/simulcast/hls/nonuk/sbr_low/ak/bbc_world_service.m3u8"},
             {"Jazz FM", "http://media-ice.musicradio.com/JazzFMMP3"},
             {"Classic FM", "http://media-ice.musicradio.com/ClassicFM"},
             {"NPR News", "https://npr-ice.streamguys1.com/live.mp3"},
@@ -236,7 +238,7 @@ namespace radio
             {"Radio Swiss Jazz", "http://stream.srg-ssr.ch/m/rsj/mp3_128"},
             {"Lounge FM", "http://stream.laut.fm/lounge"},
             {"Radio Paradise", "http://stream.radioparadise.com/mp3-192"},
-            {"Ambient Sleeping Pill", "http://radio.ambientSleepingPill.com/asp-sr128.mp3"}
+            {"Radio Monte Carlo 2", "https://n23a-eu.rcs.revma.com/fxp289cp81uvv"},
         };
 
         SDL_AudioDeviceID dev;

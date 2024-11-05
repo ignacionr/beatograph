@@ -76,7 +76,7 @@ int main()
         ssh_screen ssh_screen;
 
         radio::host radio_host;
-        radio::screen radio_screen{radio_host};
+        std::unique_ptr<radio::screen> radio_screen;
 
         auto tabs = std::make_unique<screen_tabs>(std::vector<screen_tabs::tab_t>{
             {"This Computer", [&local_screen]
@@ -131,10 +131,11 @@ int main()
                  ImGui::Text("RabbitMQ");
              }},
              {"Radio", [&radio_screen] {
-                    radio_screen.render();
+                    radio_screen->render();
              }}
         });
         main_screen screen{std::move(tabs)};
+        radio_screen = std::make_unique<radio::screen>(radio_host);
         screen.run();
         views::quitting(true);
     }

@@ -112,6 +112,11 @@ struct main_screen
         }
     }
 
+    auto renderer() const
+    {
+        return sdl_renderer;
+    }
+
 private:
     void do_frame()
     {
