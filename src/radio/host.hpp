@@ -1,6 +1,8 @@
 #pragma once
 
+#include <algorithm>
 #include <atomic>
+#include <format>
 #include <functional>
 #include <map>
 #include <stdexcept>
@@ -32,20 +34,36 @@ namespace radio
 
         void play(std::string url) {
             std::thread([this, url]() {
-                play_sync(url);
+                if (is_playing())
+                {
+                    stop();
+                    while (is_playing())
+                    {
+                        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                    }
+                }
+                has_error_ = false;
+                try {
+                    play_sync(url);
+                }
+                catch(const std::exception &e) {
+                    last_error_ = e.what();
+                    has_error_ = true;
+                }
             }).detach();
         }
 
         void stop() {
-            playing = false;
+            keep_playing = false;
         }
 
         void play_sync(std::string url)
         {
+            keep_playing = true;
             // if the url is in the presets, use the preset
-            if (presets.find(url) != presets.end())
+            if (presets_.find(url) != presets_.end())
             {
-                url = presets[url];
+                url = presets_[url];
             }
 
             // Initialize SDL
@@ -61,14 +79,14 @@ namespace radio
             AVFormatContext *fmt_ctx = nullptr;
             if (avformat_open_input(&fmt_ctx, url.c_str(), nullptr, nullptr) < 0)
             {
-                throw std::runtime_error("Failed to open audio stream");
+                throw std::runtime_error(std::format("Failed to open audio stream: {}", url));
             }
 
             // Retrieve stream information
             if (avformat_find_stream_info(fmt_ctx, nullptr) < 0)
             {
                 avformat_close_input(&fmt_ctx);
-                throw std::runtime_error("Failed to find stream information");
+                throw std::runtime_error(std::format("Failed to find stream information: {}", url));
             }
 
             // Get the audio stream
@@ -154,7 +172,7 @@ namespace radio
             uint8_t *audio_buf = nullptr;
 
             playing = true;
-            while (playing.load() && av_read_frame(fmt_ctx, &packet) >= 0)
+            while (keep_playing.load() && av_read_frame(fmt_ctx, &packet) >= 0)
             {
                 if (packet.stream_index == audio_stream->index)
                 {
@@ -167,6 +185,7 @@ namespace radio
                             audio_buf = (uint8_t *)av_malloc(dst_buf_size);
                             swr_convert(swr_ctx, &audio_buf, dst_nb_samples, (const uint8_t **)frame->extended_data, frame->nb_samples);
                             SDL_QueueAudio(1, audio_buf, dst_buf_size);
+                            
                             av_free(audio_buf);
                         }
                     }
@@ -180,7 +199,8 @@ namespace radio
             avcodec_free_context(&codec_ctx);
             avformat_close_input(&fmt_ctx);
             SDL_CloseAudio();
-            SDL_Quit();
+            playing = false;
+            // SDL_Quit();
         }
 
         bool is_playing() const
@@ -188,11 +208,42 @@ namespace radio
             return playing.load();
         }
 
-        std::map<std::string, std::string> presets{
-            {"Urbana Play", "https://cdn.instream.audio/:9660/stream"}};
+        auto presets() const {
+            // return the preset keys
+            std::vector<std::string> keys;
+            std::transform(presets_.begin(), presets_.end(), std::back_inserter(keys),
+                           [](const auto &preset) { return preset.first; });
+            return keys;
+        }
 
+        auto has_error() const {
+            return has_error_.load();
+        }
+        auto last_error() const {
+            return last_error_;
+        }
     private:
+
+        std::map<std::string, std::string> presets_{
+            {"Urbana Play", "https://cdn.instream.audio/:9660/stream"},
+            {"Radio 1 Rock", "http://stream.radioreklama.bg:80/radio1rock128"},
+            {"BBC Radio 1", "http://bbcmedia.ic.llnwd.net/stream/bbcmedia_radio1_mf_p"},
+            {"Jazz FM", "http://media-ice.musicradio.com/JazzFMMP3"},
+            {"Classic FM", "http://media-ice.musicradio.com/ClassicFM"},
+            {"NPR News", "https://npr-ice.streamguys1.com/live.mp3"},
+            {"Chilltrax", "http://s3.viastreaming.net:7600/stream"},
+            {"France Inter", "http://direct.franceinter.fr/live/franceinter-midfi.mp3"},
+            {"Radio Swiss Jazz", "http://stream.srg-ssr.ch/m/rsj/mp3_128"},
+            {"Lounge FM", "http://stream.laut.fm/lounge"},
+            {"Radio Paradise", "http://stream.radioparadise.com/mp3-192"},
+            {"Ambient Sleeping Pill", "http://radio.ambientSleepingPill.com/asp-sr128.mp3"}
+        };
+
         SDL_AudioDeviceID dev;
         std::atomic<bool> playing{false};
+        std::atomic<bool> keep_playing{true};
+        std::atomic<float> level{0.0f};
+        std::atomic<bool> has_error_{false};
+        std::string last_error_;
     };
 }

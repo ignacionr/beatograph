@@ -26,6 +26,7 @@
 #include "views/assertion.hpp"
 #include "git/host.hpp"
 #include "radio/host.hpp"
+#include "radio/screen.hpp"
 
 
 #if defined(_WIN32)
@@ -75,6 +76,7 @@ int main()
         ssh_screen ssh_screen;
 
         radio::host radio_host;
+        radio::screen radio_screen{radio_host};
 
         auto tabs = std::make_unique<screen_tabs>(std::vector<screen_tabs::tab_t>{
             {"This Computer", [&local_screen]
@@ -128,17 +130,8 @@ int main()
              {"RabbitMQ", [] {
                  ImGui::Text("RabbitMQ");
              }},
-             {"Radio", [&radio_host] {
-                if (radio_host.is_playing()) {
-                    if (ImGui::Button("Stop")) {
-                        radio_host.stop();
-                    }
-                } else {
-                    if (ImGui::Button("Play")) {
-                        radio_host.play("Urbana Play");
-//                        radio_host.play("http://stream.radioreklama.bg:80/radio1rock128");
-                    }
-                }
+             {"Radio", [&radio_screen] {
+                    radio_screen.render();
              }}
         });
         main_screen screen{std::move(tabs)};
