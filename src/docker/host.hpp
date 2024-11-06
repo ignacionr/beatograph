@@ -12,6 +12,10 @@ struct docker_host {
         return localhost.ssh(std::format("{} {}", sudo ? "sudo" : "", command), host_name_);
     }
 
+    std::string execute_command(std::string_view command, std::string_view container_id, host_local &localhost, bool sudo = true) const {
+        return localhost.ssh(std::format("docker exec {} {} {}", container_id, sudo ? "sudo" : "", command), host_name_);
+    }
+
     void fetch_ps(host_local &localhost) {
         auto result = execute_command("docker ps -a --format json", localhost);
         // the result is not a json, but a succession of json lines
