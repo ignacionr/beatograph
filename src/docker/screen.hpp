@@ -35,21 +35,19 @@ struct docker_screen
                                               ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable))
                     {
                         ImGui::TableNextRow(ImGuiTableRowFlags_Headers);
+                        ImGui::TableNextColumn(); // Empty column for buttons
                         for (auto const &column_name : cols)
                         {
+                            ImGui::TableNextColumn();
                             ImGui::Text("%s", column_name.c_str());
-                            ImGui::TableSetColumnIndex(ImGui::TableGetColumnIndex() + 1);
                         }
                         for (auto const &container : array)
                         {
                             if (container.contains("State") && container["State"].get<std::string>() == "running")
                             {
                                 ImGui::TableNextRow();
-                                if (!only_running)
-                                {
-                                    ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0,
-                                                           (ImGui::TableGetRowIndex() % 2 == 0) ? IM_COL32(0xd0, 0xd0, 0, 255) : IM_COL32(0xa0, 0xa0, 0, 255));
-                                }
+                                ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0,
+                                                        (ImGui::TableGetRowIndex() % 2 == 0) ? IM_COL32(0xd0, 0xd0, 0, 255) : IM_COL32(0xa0, 0xa0, 0, 255));
                             }
                             else if (only_running)
                             {
@@ -59,21 +57,24 @@ struct docker_screen
                             {
                                 ImGui::TableNextRow();
                             }
+
                             auto const container_id{container["ID"].get<std::string>()};
-                            ImGui::PushID(container_id.c_str());
-                            for (auto const &[key, value] : container.items())
-                            {
-                                ImGui::TableNextColumn();
-                                ImGui::Text("%s", value.get<std::string>().c_str());
-                            }
                             ImGui::TableNextColumn();
                             if (ImGui::Button("Shell"))
                             {
                                 host.open_shell(container_id, localhost);
                             }
+                            ImGui::SameLine();
                             if (ImGui::Button("Logs"))
                             {
                                 host.open_logs(container_id);
+                            }
+
+                            ImGui::PushID(container_id.c_str());
+                            for (auto const &[key, value] : container.items())
+                            {
+                                ImGui::TableNextColumn();
+                                ImGui::Text("%s", value.get<std::string>().c_str());
                             }
                             ImGui::PopID();
                         }

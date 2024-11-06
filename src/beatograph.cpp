@@ -67,17 +67,19 @@ int main()
 
         git_host git{localhost};
         dataoffering_screen ds{localhost, groq_api_key};
-        host_local_screen local_screen{localhost};
 
         cluster_report cr{localhost};
         ssh_screen ssh_screen;
 
         radio::host radio_host;
         std::unique_ptr<radio::screen> radio_screen;
+        host_screen hs;
 
         auto tabs = std::make_unique<screen_tabs>(std::vector<screen_tabs::tab_t>{
-            {"This Computer", [&local_screen]
-             { local_screen.render(); }},
+            {"Backend Dev", [&hs, &localhost]
+             {
+                hs.render(host::by_name("dev-locked"), localhost);
+             }},
             {"Data Offering", [&ds]
              { ds.render(); }},
             {"ArangoDB", [&cr]
