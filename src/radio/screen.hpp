@@ -84,6 +84,7 @@ namespace radio {
             draw_list->AddTriangleFilled({dial_x + 1, initial_pos.y + 5}, {dial_x - 4, initial_pos.y}, {dial_x + 6, initial_pos.y}, red);
             draw_list->AddTriangleFilled({dial_x + 1, initial_pos.y + dial_height - 5}, {dial_x - 4, initial_pos.y + dial_height}, {dial_x + 6, initial_pos.y + dial_height}, red);
             draw_list->AddLine({dial_x, initial_pos.y}, {dial_x, initial_pos.y + dial_height}, red);
+            draw_list->AddLine({dial_x + 1, initial_pos.y}, {dial_x + 1, initial_pos.y + dial_height}, red);
             draw_list->AddLine({dial_x + 2, initial_pos.y}, {dial_x + 2, initial_pos.y + dial_height}, red);
 
             draw_list->AddRectFilledMultiColor(

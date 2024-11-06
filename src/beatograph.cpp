@@ -79,6 +79,26 @@ int main()
             {"Backend Dev", [&hs, &localhost]
              {
                 hs.render(host::by_name("dev-locked"), localhost);
+                if (ImGui::CollapsingHeader("Status")) {
+                    views::Assertion("dev1 is running", [&localhost] {
+                        return host::by_name("dev-locked")->docker().is_container_running("dev1_container", localhost);
+                    });
+                    views::Assertion("dev2 is running", [&localhost] {
+                        return host::by_name("dev-locked")->docker().is_container_running("dev2_container", localhost);
+                    });
+                    views::Assertion("dev3 is running", [&localhost] {
+                        return host::by_name("dev-locked")->docker().is_container_running("dev3_container", localhost);
+                    });
+                    views::Assertion("The Git service container is running", [&localhost] {
+                        return host::by_name("dev-locked")->docker().is_container_running("gitservice", localhost);
+                    });
+                    views::Assertion("The externalizer service is running", [&localhost] {
+                        return host::by_name("dev-locked")->docker().is_container_running("socat-proxy", localhost);
+                    });
+                    views::Assertion("The pipeline runner service is running", [&localhost] {
+                        return host::by_name("dev-locked")->docker().is_container_running("pipeline-runner", localhost);
+                    });
+                }
              }},
             {"Data Offering", [&ds]
              { ds.render(); }},

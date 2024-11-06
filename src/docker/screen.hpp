@@ -25,22 +25,33 @@ struct docker_screen
                 else
                 {
                     ImGui::Checkbox("Only running", &only_running);
-                    // get the columns from the first container
-                    auto cols = array.front().items() |
-                                std::views::transform([](auto const &item)
-                                                      { return item.key(); });
+                    constexpr std::array<std::string_view, 14> cols {
+                        "Names", 
+                        "Ports",
+                        "Status", 
+                        "Networks",
+                        "Image",
+                        "Command",
+                        "CreatedAt",
+                        "ID",
+                        "Labels",
+                        "LocalVolumes",
+                        "Mounts",
+                        "RunningFor",
+                        "Size",
+                        "State"
+                    };
                     if (ImGui::BeginTable("Docker Containers",
-                                          static_cast<int>(std::ranges::distance(cols)) + 1,
+                                          static_cast<int>(cols.size()) + 1,
                                           ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_Sortable |
                                               ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable))
                     {
-                        ImGui::TableNextRow(ImGuiTableRowFlags_Headers);
-                        ImGui::TableNextColumn(); // Empty column for buttons
+                        ImGui::TableSetupColumn("##actions"); // for the buttons
                         for (auto const &column_name : cols)
                         {
-                            ImGui::TableNextColumn();
-                            ImGui::Text("%s", column_name.c_str());
+                            ImGui::TableSetupColumn(column_name.data());
                         }
+                        ImGui::TableHeadersRow();
                         for (auto const &container : array)
                         {
                             if (container.contains("State") && container["State"].get<std::string>() == "running")
@@ -59,6 +70,8 @@ struct docker_screen
                             }
 
                             auto const container_id{container["ID"].get<std::string>()};
+                            ImGui::PushID(container_id.c_str());
+                            
                             ImGui::TableNextColumn();
                             if (ImGui::Button("Shell"))
                             {
@@ -70,11 +83,17 @@ struct docker_screen
                                 host.open_logs(container_id);
                             }
 
-                            ImGui::PushID(container_id.c_str());
-                            for (auto const &[key, value] : container.items())
+                            for (auto const &column_name : cols)
                             {
                                 ImGui::TableNextColumn();
-                                ImGui::Text("%s", value.get<std::string>().c_str());
+                                if (container.contains(column_name))
+                                {
+                                    ImGui::Text("%s", container[column_name].get<std::string>().c_str());
+                                }
+                                else
+                                {
+                                    ImGui::Text("N/A");
+                                }
                             }
                             ImGui::PopID();
                         }
