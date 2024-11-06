@@ -9,7 +9,7 @@
 
 namespace radio {
     struct screen {
-        static constexpr auto dial_height{200};
+        static constexpr auto dial_height{150};
 
         screen(host &h) : host_(h) {
             presets = host_.presets();
@@ -32,9 +32,9 @@ namespace radio {
             auto const y_center = dial_height / 2;
             auto const selectable_height = dial_height / 7;
             std::array<float, 4> row_y {
-                initial_pos.y + y_center - 2 * selectable_height - 5.0f, 
+                initial_pos.y + y_center - 2 * selectable_height - 10.0f, 
                 initial_pos.y + y_center - selectable_height - 5.0f, 
-                initial_pos.y + y_center + selectable_height, 
+                initial_pos.y + y_center + selectable_height - 5.0f, 
                 initial_pos.y + y_center + 2 * selectable_height
             };
 
@@ -50,6 +50,9 @@ namespace radio {
                 draw_list->AddLine(
                     {start_x + 4, initial_pos.y + y_center - 1 + 2 * (current_row > 1)}, 
                     {start_x + 4, initial_pos.y + y_center - 4 + 8 * (current_row > 1)}, green);
+                draw_list->AddLine(
+                    {start_x + 5, initial_pos.y + y_center - 1 + 2 * (current_row > 1)}, 
+                    {start_x + 5, initial_pos.y + y_center - 4 + 8 * (current_row > 1)}, green);
                 ImGui::SetCursorPosX(x);
                 ImGui::SetCursorPosY(row_y[current_row]);
                 if (ImGui::Selectable(presets[ip].c_str(), ip == currently_playing, 0, {3 * x_unit, selectable_height})) {

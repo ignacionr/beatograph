@@ -139,7 +139,7 @@ namespace radio
             }
 
             // Set up SDL audio specs
-            SDL_AudioSpec wanted_spec, obtained_spec;
+            SDL_AudioSpec wanted_spec{}, obtained_spec{};
             wanted_spec.freq = codec_ctx->sample_rate;
             wanted_spec.format = AUDIO_F32SYS;
             wanted_spec.channels = static_cast<uint8_t>(codec_ctx->ch_layout.nb_channels);
@@ -159,10 +159,16 @@ namespace radio
             av_opt_set_int(swr_ctx, "in_channel_count", codec_ctx->ch_layout.nb_channels, 0);
             av_opt_set_int(swr_ctx, "in_sample_rate", codec_ctx->sample_rate, 0);
             av_opt_set_sample_fmt(swr_ctx, "in_sample_fmt", codec_ctx->sample_fmt, 0);
-            av_opt_set_int(swr_ctx, "out_channel_count", codec_ctx->ch_layout.nb_channels, 0);
-            av_opt_set_int(swr_ctx, "out_sample_rate", codec_ctx->sample_rate, 0);
+            av_opt_set_int(swr_ctx, "out_channel_count", obtained_spec.channels, 0);
+            av_opt_set_int(swr_ctx, "out_sample_rate", obtained_spec.freq, 0);
             av_opt_set_sample_fmt(swr_ctx, "out_sample_fmt", AV_SAMPLE_FMT_FLT, 0);
-            swr_init(swr_ctx);
+            auto ret = swr_init(swr_ctx);
+            if (ret < 0)
+            {
+                avcodec_free_context(&codec_ctx);
+                avformat_close_input(&fmt_ctx);
+                throw std::runtime_error("Failed to initialize resampler");
+            }
 
             // Start playing audio
             SDL_PauseAudio(0);
@@ -181,9 +187,14 @@ namespace radio
                         while (avcodec_receive_frame(codec_ctx, frame) >= 0)
                         {
                             int dst_nb_samples = static_cast<int>(av_rescale_rnd(swr_get_delay(swr_ctx, codec_ctx->sample_rate) + frame->nb_samples, codec_ctx->sample_rate, codec_ctx->sample_rate, AV_ROUND_UP));
-                            int dst_buf_size = av_samples_get_buffer_size(nullptr, codec_ctx->ch_layout.nb_channels, dst_nb_samples, AV_SAMPLE_FMT_FLT, 1);
+                            int dst_buf_size = av_samples_get_buffer_size(nullptr, obtained_spec.channels, dst_nb_samples, AV_SAMPLE_FMT_FLT, 1);
                             audio_buf = (uint8_t *)av_malloc(dst_buf_size);
-                            swr_convert(swr_ctx, &audio_buf, dst_nb_samples, (const uint8_t **)frame->extended_data, frame->nb_samples);
+                            auto converted = swr_convert(swr_ctx, &audio_buf, dst_nb_samples, (const uint8_t **)frame->extended_data, frame->nb_samples);
+                            if (converted < 0)
+                            {
+                                av_free(audio_buf);
+                                throw std::runtime_error("Failed to convert audio");
+                            }
                             SDL_QueueAudio(1, audio_buf, dst_buf_size);
                             
                             av_free(audio_buf);
@@ -225,20 +236,30 @@ namespace radio
     private:
 
         std::map<std::string, std::string> presets_{
-            {"Urbana Play", "https://cdn.instream.audio/:9660/stream"},
-            {"Radio 1 Rock", "http://stream.radioreklama.bg:80/radio1rock128"},
+            {"AM 750 AR", "https://26513.live.streamtheworld.com/AM750_SC"},
             {"BBC Radio 3", "http://as-hls-ww-live.akamaized.net/pool_904/live/ww/bbc_radio_three/bbc_radio_three.isml/bbc_radio_three-audio%3d96000.norewind.m3u8"},
             {"BBC Radio 4", "http://as-hls-ww-live.akamaized.net/pool_904/live/ww/bbc_radio_fourfm/bbc_radio_fourfm.isml/bbc_radio_fourfm-audio%3d96000.norewind.m3u8"},
             {"BBC World Service", "http://a.files.bbci.co.uk/media/live/manifesto/audio/simulcast/hls/nonuk/sbr_low/ak/bbc_world_service.m3u8"},
-            {"Jazz FM", "http://media-ice.musicradio.com/JazzFMMP3"},
+            {"Cadena Ser", "https://25653.live.streamtheworld.com:443/CADENASERAAC_SC"},
             {"Classic FM", "http://media-ice.musicradio.com/ClassicFM"},
-            {"NPR News", "https://npr-ice.streamguys1.com/live.mp3"},
-            {"Chilltrax", "http://s3.viastreaming.net:7600/stream"},
             {"France Inter", "http://direct.franceinter.fr/live/franceinter-midfi.mp3"},
-            {"Radio Swiss Jazz", "http://stream.srg-ssr.ch/m/rsj/mp3_128"},
+            {"La Red (AR)", "https://27373.live.streamtheworld.com:443/LA_RED_AM910AAC_SC"},
             {"Lounge FM", "http://stream.laut.fm/lounge"},
+            {"NPR News", "https://npr-ice.streamguys1.com/live.mp3"},
+            {"Qmusic", "http://playerservices.streamtheworld.com/api/livestream-redirect/QMUSIC.mp3"},
+            {"Radio 1 Rock", "http://stream.radioreklama.bg:80/radio1rock128"},
+            {"Radio 10", "http://playerservices.streamtheworld.com/api/livestream-redirect/RADIO10.mp3"},
+            {"Radio 4", "http://playerservices.streamtheworld.com/api/livestream-redirect/RADIO4.mp3"},
+            {"Radio 538", "http://playerservices.streamtheworld.com/api/livestream-redirect/RADIO538.mp3"},
+            {"Monte Carlo 2", "https://n23a-eu.rcs.revma.com/fxp289cp81uvv"},
+            {"Radio Nova", "http://novazz.ice.infomaniak.ch/novazz-128.mp3"},
             {"Radio Paradise", "http://stream.radioparadise.com/mp3-192"},
-            {"Radio Monte Carlo 2", "https://n23a-eu.rcs.revma.com/fxp289cp81uvv"},
+            {"Radio SRF 3", "http://stream.srg-ssr.ch/m/drs3/mp3_128"},
+            {"Swiss Jazz", "http://stream.srg-ssr.ch/m/rsj/mp3_128"},
+            {"Sky Radio", "http://playerservices.streamtheworld.com/api/livestream-redirect/SKYRADIO.mp3"},
+            {"TWiT (This Week in Tech)", "https://pdst.fm/e/pscrb.fm/rss/p/cdn.twit.tv/libsyn/twit_1004/b26992aa-b1b1-4f90-a2b7-efc6a7d4b42a/R1_twit1004.mp3"},
+            {"Urbana Play", "https://cdn.instream.audio/:9660/stream"},
+            {"RMC", "https://icy.unitedradio.it/RMC.aac"},
         };
 
         SDL_AudioDeviceID dev;
