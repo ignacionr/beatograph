@@ -90,7 +90,8 @@
         "resumable": "cpp",
         "future": "cpp",
         "queue": "cpp",
-        "expected": "cpp"
+        "expected": "cpp",
+        "complex": "cpp"
     },
     "cmake.automaticReconfigure": false,
     "C_Cpp.default.cppStandard": "c++23",
