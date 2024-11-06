@@ -47,10 +47,7 @@ int main()
         }
         std::string groq_api_key{groq_env, len - 1}; // len returns the count of all copied bytes, including the terminator
         ignacionr::cppgpt gpt{groq_api_key, ignacionr::cppgpt::groq_base};
-        metrics_model model;
 
-
-        metrics_screen ms(model);
         char *token_env = nullptr;
         len = 0;
         if (_dupenv_s(&token_env, &len, "TOGGL_API_TOKEN") || token_env == nullptr)
@@ -85,8 +82,6 @@ int main()
              { ds.render(); }},
             {"ArangoDB", [&cr]
              { cr.render(); }},
-            {"Metrics", [&ms]
-             { ms.render(); }},
             {"Toggl", [&ts]
              { ts.render(); }},
             {"Jira", [&js]

@@ -28,6 +28,8 @@ namespace radio {
             constexpr auto green = IM_COL32(0, 160, 0, 255);
             // constexpr auto white = IM_COL32(255, 255, 255, 255);
             constexpr auto red = IM_COL32(255, 0, 0, 255);
+            constexpr auto traslucid_gray = IM_COL32(128, 128, 128, 40);
+            constexpr auto traslucid_yellow = IM_COL32(255, 255, 0, 40);
 
             auto const y_center = dial_height / 2;
             auto const selectable_height = dial_height / 7;
@@ -83,6 +85,11 @@ namespace radio {
             draw_list->AddTriangleFilled({dial_x + 1, initial_pos.y + dial_height - 5}, {dial_x - 4, initial_pos.y + dial_height}, {dial_x + 6, initial_pos.y + dial_height}, red);
             draw_list->AddLine({dial_x, initial_pos.y}, {dial_x, initial_pos.y + dial_height}, red);
             draw_list->AddLine({dial_x + 2, initial_pos.y}, {dial_x + 2, initial_pos.y + dial_height}, red);
+
+            draw_list->AddRectFilledMultiColor(
+                {initial_pos.x, initial_pos.y + 3}, 
+                {initial_pos.x + dial_width, initial_pos.y + dial_height - 6},
+                traslucid_gray, traslucid_gray, traslucid_yellow, traslucid_yellow);
 
             ImGui::SetCursorPosX(initial_pos.x);
             ImGui::SetCursorPosY(initial_pos.y + dial_height + 10);
