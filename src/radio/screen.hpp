@@ -98,6 +98,23 @@ namespace radio {
             if (host_.has_error()) {
                 ImGui::Text("Error: %s", host_.last_error().c_str());
             }
+
+            // check if the user pressed the left arrow
+            if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow)) {
+                if (currently_playing > 0) {
+                    host_.play(presets[--currently_playing]);
+                }
+                else {
+                    host_.stop();
+                    currently_playing = -1;
+                }
+            }
+            else if (ImGui::IsKeyPressed(ImGuiKey_RightArrow)) {
+                if (currently_playing < presets.size() - 1) {
+                    host_.play(presets[++currently_playing]);
+                }
+            }
+
         }
     private:
         std::vector<std::string> presets;
