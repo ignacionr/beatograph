@@ -75,7 +75,7 @@ namespace rss {
                 }
             }
         }
-    private:
+
         std::string contents;
         std::string feed_title;
         std::string feed_link;

@@ -29,6 +29,7 @@
 #include "radio/screen.hpp"
 #include "dev-locked/screen.hpp"
 #include "rss/host.hpp"
+#include "rss/screen.hpp"
 
 
 #if defined(_WIN32)
@@ -80,6 +81,7 @@ int main()
 
         rss::host rss_host;
         rss_host.add_feed("https://softwareengineeringdaily.com/feed/podcast/");
+        rss::screen rss_screen{rss_host};
 
         auto tabs = std::make_unique<screen_tabs>(std::vector<screen_tabs::tab_t>{
             {"Backend Dev", [&dev_screen]
@@ -133,8 +135,9 @@ int main()
              {"RabbitMQ", [] {
                  ImGui::Text("RabbitMQ");
              }},
-             {"Radio", [&radio_screen] {
-                    radio_screen->render();
+             {"Radio", [&radio_screen, &rss_screen] {
+                radio_screen->render();
+                rss_screen.render();
              }}
         });
         main_screen screen{std::move(tabs)};

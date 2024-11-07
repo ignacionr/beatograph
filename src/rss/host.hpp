@@ -67,14 +67,15 @@ namespace rss {
         void add_feed_sync(std::string_view url) {
             auto feed = get_feed(url);
             auto feeds = feeds_.load();
-            if (feeds == nullptr) {
-                feeds = std::make_shared<std::vector<std::shared_ptr<rss::feed>>>();
-            }
             auto feed_ptr = std::make_shared<rss::feed>(std::move(feed));
             feeds->emplace_back(std::move(feed_ptr));
             feeds_.store(feeds);
         }
+
+        auto feeds() {
+            return *feeds_.load();
+        }
     private:
-        std::atomic<std::shared_ptr<std::vector<std::shared_ptr<rss::feed>>>> feeds_;
+        std::atomic<std::shared_ptr<std::vector<std::shared_ptr<rss::feed>>>> feeds_ = std::make_shared<std::vector<std::shared_ptr<rss::feed>>>();
     };
 }
