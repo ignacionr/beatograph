@@ -57,6 +57,32 @@ namespace radio
             keep_playing = false;
         }
 
+        static size_t ignore_write(void *, size_t size, size_t nmemb, void *)  {
+            return size * nmemb;
+        };
+
+        std::string resolve_redirections(std::string const &url) {
+            CURL *curl = curl_easy_init();
+            if (!curl) {
+                throw std::runtime_error("Failed to initialize curl");
+            }
+            curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+            curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+            curl_easy_setopt(curl, CURLOPT_NOBODY, 1L);
+            curl_easy_setopt(curl, CURLOPT_HEADER, 1L);
+            curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, ignore_write);
+            curl_easy_setopt(curl, CURLOPT_WRITEDATA, nullptr);
+            curl_easy_setopt(curl, CURLOPT_HEADERDATA, nullptr);
+            auto res = curl_easy_perform(curl);
+            std::string result{url}; // if we fail, we return the original url
+            if (res == CURLE_OK) {
+                char *url_out;
+                curl_easy_getinfo(curl, CURLINFO_EFFECTIVE_URL, &url_out);
+            }
+            curl_easy_cleanup(curl);
+            return result;
+        }
+
         void play_sync(std::string url)
         {
             keep_playing = true;
@@ -64,6 +90,11 @@ namespace radio
             if (presets_.find(url) != presets_.end())
             {
                 url = presets_[url];
+            }
+            else {
+                std::cerr << std::format("Incoming URL: {}", url) << std::endl;
+                url = resolve_redirections(url);
+                std::cerr << std::format("Resolved URL: {}", url) << std::endl;
             }
 
             // Initialize SDL
@@ -147,6 +178,7 @@ namespace radio
             wanted_spec.samples = 1024;
             wanted_spec.callback = nullptr;
 
+            SDL_CloseAudio();
             if (SDL_OpenAudio(&wanted_spec, &obtained_spec) < 0)
             {
                 avcodec_free_context(&codec_ctx);
@@ -178,14 +210,40 @@ namespace radio
             uint8_t *audio_buf = nullptr;
 
             playing = true;
-            while (keep_playing.load() && av_read_frame(fmt_ctx, &packet) >= 0)
+            
+            for (int read_result = av_read_frame(fmt_ctx, &packet); keep_playing.load(); read_result = av_read_frame(fmt_ctx, &packet))
             {
+                if (read_result < 0) {
+                    if (read_result == AVERROR_EOF) {
+                        std::cerr << "End of file" << std::endl;
+                        break;
+                    }
+                    // obtain the error
+                    char err[AV_ERROR_MAX_STRING_SIZE];
+                    av_strerror(read_result, err, AV_ERROR_MAX_STRING_SIZE);
+                    throw std::runtime_error(std::format("Failed to read frame, code: {}, {}", read_result, err));
+                }
                 if (packet.stream_index == audio_stream->index)
                 {
                     if (avcodec_send_packet(codec_ctx, &packet) >= 0)
                     {
-                        while (avcodec_receive_frame(codec_ctx, frame) >= 0)
+                        for (;;)
                         {
+                            auto res = avcodec_receive_frame(codec_ctx, frame);
+                            if (res == AVERROR_EOF)
+                            {
+                                break;
+                            }
+                            else if (res == AVERROR(EAGAIN)) {
+                                break;
+                            }
+                            else if (res < 0)
+                            {
+                                // obtain the error description
+                                char err[AV_ERROR_MAX_STRING_SIZE];
+                                av_strerror(res, err, AV_ERROR_MAX_STRING_SIZE);
+                                throw std::runtime_error(std::format("Failed to receive frame, code: {}, {}", res, err));
+                            }
                             int dst_nb_samples = static_cast<int>(av_rescale_rnd(swr_get_delay(swr_ctx, codec_ctx->sample_rate) + frame->nb_samples, codec_ctx->sample_rate, codec_ctx->sample_rate, AV_ROUND_UP));
                             int dst_buf_size = av_samples_get_buffer_size(nullptr, obtained_spec.channels, dst_nb_samples, AV_SAMPLE_FMT_FLT, 1);
                             audio_buf = (uint8_t *)av_malloc(dst_buf_size);
@@ -195,11 +253,19 @@ namespace radio
                                 av_free(audio_buf);
                                 throw std::runtime_error("Failed to convert audio");
                             }
-                            SDL_QueueAudio(1, audio_buf, dst_buf_size);
+                            auto sdl_ret = SDL_QueueAudio(1, audio_buf, dst_buf_size);
+                            if (sdl_ret < 0)
+                            {
+                                av_free(audio_buf);
+                                throw std::runtime_error("Failed to queue audio");
+                            }
                             
                             av_free(audio_buf);
                         }
                     }
+                }
+                else {
+                    std::cerr << std::format("Skipping packet from stream {}\n", packet.stream_index);
                 }
                 av_packet_unref(&packet);
             }
@@ -209,7 +275,7 @@ namespace radio
             swr_free(&swr_ctx);
             avcodec_free_context(&codec_ctx);
             avformat_close_input(&fmt_ctx);
-            SDL_CloseAudio();
+            // SDL_CloseAudio();
             playing = false;
             // SDL_Quit();
         }

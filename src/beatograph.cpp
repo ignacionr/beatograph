@@ -80,8 +80,25 @@ int main()
         dev_locked::screen dev_screen{localhost};
 
         rss::host rss_host;
+        rss_host.add_feed("https://www.spreaker.com/show/4209606/episodes/feed"); // los temas del día
+        rss_host.add_feed("https://www.spreaker.com/show/6332631/episodes/feed"); // cultura líquida
+        rss_host.add_feed("https://www.spreaker.com/show/5711490/episodes/feed"); // working class history
+        rss_host.add_feed("https://www.spreaker.com/show/5634793/episodes/feed"); // dotnet rocks
+        rss_host.add_feed("https://www.spreaker.com/show/6006838/episodes/feed"); // cine para pensar
+        rss_host.add_feed("https://www.spreaker.com/show/5719641/episodes/feed"); // the digital decode
+        rss_host.add_feed("https://www.spreaker.com/show/6102036/episodes/feed"); // adventures in DevOps
+        rss_host.add_feed("https://www.spreaker.com/show/2576750/episodes/feed"); // compute this
+        rss_host.add_feed("https://www.spreaker.com/show/4956890/episodes/feed"); // CP radio
+        rss_host.add_feed("https://www.spreaker.com/show/3392139/episodes/feed"); // Internet Freakshows
+        rss_host.add_feed("https://www.spreaker.com/show/6349862/episodes/feed"); // Llama Cast
+        rss_host.add_feed("https://www.spreaker.com/show/6349862/episodes/feed"); // Llama Cast
+        
         rss_host.add_feed("https://softwareengineeringdaily.com/feed/podcast/");
-        rss::screen rss_screen{rss_host};
+        rss::screen rss_screen{rss_host,
+            [&radio_host](std::string_view url) {
+                radio_host.play(std::string{url});
+            }
+        };
 
         auto tabs = std::make_unique<screen_tabs>(std::vector<screen_tabs::tab_t>{
             {"Backend Dev", [&dev_screen]
