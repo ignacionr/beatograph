@@ -140,7 +140,7 @@ int main()
                     static std::string seed_result;
                     if (ImGui::Button("Seed Containers")) {
                         seed_result = host::by_name("dev-locked")->docker().execute_command(
-                            "cd /home/ubuntu/arangodb-infra/dev-locked && ./seed.sh", localhost, false);
+                            "bash -c 'cd /home/ubuntu/arangodb-infra/dev-locked && ./seed.sh'", localhost, false);
                     }
                     if (!seed_result.empty()) {
                         ImGui::Text("%s", seed_result.c_str());

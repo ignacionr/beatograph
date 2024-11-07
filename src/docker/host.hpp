@@ -64,7 +64,7 @@ struct docker_host {
     }
 
     void open_logs(std::string const &container_id) const {
-        auto cmd = std::format("/c ssh {} sudo docker logs -f {}", host_name_, container_id);
+        auto cmd = std::format("/c ssh {} sudo docker logs -f {} && pause", host_name_, container_id);
         ShellExecuteA(nullptr, 
             "open", 
             "cmd.exe", 
