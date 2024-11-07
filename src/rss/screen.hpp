@@ -17,54 +17,20 @@ namespace rss
         screen(host &host, player_t player, img_cache &cache) : host_{host}, player_{player}, cache_{cache} {}
         void render()
         {
-            if (ImGui::BeginChild("RSS"))
+            if (ImGui::BeginChild("RSS", ImVec2{ImGui::GetWindowWidth()-20, 200}, ImGuiChildFlags_None, ImGuiWindowFlags_AlwaysVerticalScrollbar))
             {
-                if (ImGui::CollapsingHeader("Feeds"))
+                const auto side {(ImGui::GetWindowWidth() - 50) / 5};
+                const ImVec2 button_size(side, side);
+                int i {0};
+                for (auto feed : host_.feeds())
                 {
-                    for (auto feed : host_.feeds())
+                    if (!feed->feed_image_url.empty())
                     {
-                        if (ImGui::TreeNode(feed->feed_title.c_str()))
+                        auto texture = cache_.load_texture_from_url(feed->feed_image_url);
+                        ImGui::Image(reinterpret_cast<void *>(static_cast<uintptr_t>(texture)), button_size);
+                        if (++i % 5 != 0)
                         {
-                            if (!feed->feed_image_url.empty())
-                            {
-                                auto texture = cache_.load_texture_from_url(feed->feed_image_url);
-                                ImGui::Image(reinterpret_cast<void *>(static_cast<uintptr_t>(texture)), ImVec2(100, 100));
-                            }
-                            if (ImGui::Button("Open"))
-                            {
-                                ::ShellExecuteA(nullptr,
-                                                "open",
-                                                feed->feed_link.c_str(),
-                                                nullptr,
-                                                nullptr,
-                                                SW_SHOWNORMAL);
-                            }
-                            for (auto item : feed->items)
-                            {
-                                if (ImGui::TreeNode(item.title.c_str()))
-                                {
-                                    ImGui::TextWrapped("%s", item.description.c_str());
-                                    if (ImGui::Button("Open"))
-                                    {
-                                        ::ShellExecuteA(nullptr,
-                                                        "open",
-                                                        item.link.c_str(),
-                                                        nullptr,
-                                                        nullptr,
-                                                        SW_SHOWNORMAL);
-                                    }
-                                    if (!item.enclosure.empty())
-                                    {
-                                        ImGui::SameLine();
-                                        if (ImGui::Button("Play"))
-                                        {
-                                            player_(item.enclosure);
-                                        }
-                                    }
-                                    ImGui::TreePop();
-                                }
-                            }
-                            ImGui::TreePop();
+                            ImGui::SameLine();
                         }
                     }
                 }
