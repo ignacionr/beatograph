@@ -28,6 +28,7 @@
 #include "radio/host.hpp"
 #include "radio/screen.hpp"
 #include "dev-locked/screen.hpp"
+#include "rss/host.hpp"
 
 
 #if defined(_WIN32)
@@ -76,6 +77,9 @@ int main()
         std::unique_ptr<radio::screen> radio_screen;
 
         dev_locked::screen dev_screen{localhost};
+
+        rss::host rss_host;
+        rss_host.add_feed("https://softwareengineeringdaily.com/feed/podcast/");
 
         auto tabs = std::make_unique<screen_tabs>(std::vector<screen_tabs::tab_t>{
             {"Backend Dev", [&dev_screen]

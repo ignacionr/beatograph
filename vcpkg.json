@@ -27,7 +27,7 @@
                 "avformat"
             ]
         },
-        "graphviz"
+        "tinyxml2"
     ],
     "overrides": [
         {

@@ -50,6 +50,7 @@ target_link_libraries(beatograph PRIVATE
   ssh
   ${FFMPEG_LIBRARIES} avformat
   tinyfiledialogs::tinyfiledialogs
+  tinyxml2
 )
 
 # Enable Unity builds
@@ -102,3 +103,4 @@ find_package(libssh CONFIG REQUIRED)
 find_package(FFMPEG REQUIRED)
 find_package(tinyfiledialogs CONFIG REQUIRED)
 find_path(UTF8H_INCLUDE_DIRS "utf8h/utf8.h")
+find_package(TinyXML2 REQUIRED)
