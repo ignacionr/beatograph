@@ -61,6 +61,13 @@ namespace dev_locked
                         auto const result = host::by_name("dev-locked")->docker().execute_command("ssh -T git@gitservice", "pipeline-runner", localhost, false);
                         return result.find("Welcome to git-server-docker!") != std::string::npos; });
                 ImGui::Unindent();
+                views::Assertion("staging deployment is running", [this]
+                                 { return host::by_name("dev-locked")->docker().is_container_running("foxbetbackend", localhost); });
+                ImGui::SameLine();
+                if (ImGui::Button("Open in browser..."))
+                {
+                    ShellExecuteA(nullptr, "open", "http://57.129.70.83:3333/api/lastbets", nullptr, nullptr, SW_SHOW);
+                }
             }
             if (ImGui::CollapsingHeader("Corrective Actions"))
             {

@@ -75,7 +75,7 @@ namespace views
         // set the color
         auto const color{state.waiting ? ImVec4(128, 128, 128, 128) :  (state ? ImVec4(0, 255, 0, 255) : ImVec4(255, 0, 0, 255))};
         // render the assertion
-        ImGui::Text("%s", state ? "[x]" : "[ ]");
+        ImGui::TextUnformatted(state ? "[x]" : "[ ]");
         ImGui::SameLine();
         ImGui::TextColored(color, "%s", title.data());
         if (state.exception) {
@@ -83,10 +83,15 @@ namespace views
             ImGui::TextColored(ImVec4(255, 0, 0, 255), "Error: %s", state.exception->c_str());
         }
         if (!state.waiting) {
-            ImGui::SameLine();
-            if (ImGui::Button("Refresh")) {
-                state.load([&]{ return assertion(); });
-            }
+            // check that the user cursor is within the bounds of this item (ignore the button)
+            auto const cursor = ImGui::GetCursorScreenPos();
+            auto const size = ImGui::GetItemRectSize();
+            auto const mouse = ImGui::GetMousePos();
+            if (mouse.x >= cursor.x && mouse.x <= cursor.x + 20 && mouse.y >= cursor.y && mouse.y <= cursor.y + size.y) {
+                if (ImGui::Button("Refresh")) {
+                    state.load([&]{ return assertion(); });
+                }
+                }
         }
         ImGui::PopID();
     }
