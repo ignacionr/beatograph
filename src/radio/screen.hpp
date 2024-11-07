@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <optional>
 
 #include <imgui.h>
 #include <SDL2/SDL.h>
@@ -64,13 +65,13 @@ namespace radio {
                     }
                     else {
                         host_.stop();
-                        currently_playing = -1;
+                        currently_playing.reset();
                     }
                 }
                 static constexpr int mapping[] = {3, 2, 0, 1};
                 current_row = mapping[current_row];
             }
-            auto target_x = currently_playing == -1 ? initial_pos.x : (initial_pos.x + currently_playing * x_unit + 2);
+            auto target_x = currently_playing.has_value() ? (initial_pos.x + currently_playing.value() * x_unit + 2) : initial_pos.x;
             if (dial_x < target_x) {
                 dial_x = std::min(target_x, dial_x + (target_x - dial_x) / 10 + 1);
             }
@@ -101,17 +102,25 @@ namespace radio {
 
             // check if the user pressed the left arrow
             if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow)) {
-                if (currently_playing > 0) {
-                    host_.play(presets[--currently_playing]);
+                if (currently_playing.has_value() && currently_playing.value() > 0U) {
+                    currently_playing = currently_playing.value() - 1;
+                    host_.play(presets[currently_playing.value()]);
                 }
                 else {
                     host_.stop();
-                    currently_playing = -1;
+                    currently_playing.reset();
                 }
             }
             else if (ImGui::IsKeyPressed(ImGuiKey_RightArrow)) {
-                if (currently_playing < presets.size() - 1) {
-                    host_.play(presets[++currently_playing]);
+                if (currently_playing.has_value()) {
+                    if(currently_playing < presets.size() - 1) {
+                        currently_playing = currently_playing.value() + 1;
+                        host_.play(presets[currently_playing.value()]);
+                    }
+                }
+                else {
+                    currently_playing = 0;
+                    host_.play(presets[currently_playing.value()]);
                 }
             }
 
@@ -119,7 +128,7 @@ namespace radio {
     private:
         std::vector<std::string> presets;
         std::vector<const char*> presets_c_strs;
-        int currently_playing{-1};
+        std::optional<unsigned> currently_playing{};
         host &host_;
         float dial_x{};
     };
