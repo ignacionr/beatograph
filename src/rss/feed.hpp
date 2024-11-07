@@ -62,7 +62,7 @@ namespace rss {
                             new_item.link = link->GetText();
                         }
                         description = xml_item->FirstChildElement("description");
-                        if (description) {
+                        if (description && !description->NoChildren()) {
                             new_item.description = description->GetText();
                         }
                         auto enclosure = xml_item->FirstChildElement("enclosure");

@@ -27,6 +27,8 @@ namespace radio {
             auto const dial_width = ImGui::GetWindowWidth();
             auto draw_list {ImGui::GetWindowDrawList()};
             auto const initial_pos = ImGui::GetCursorPos();
+            auto const scroll_y = ImGui::GetScrollY();
+            auto const offset_y = initial_pos.y - scroll_y;
 
             constexpr auto green = IM_COL32(0, 160, 0, 255);
             // constexpr auto white = IM_COL32(255, 255, 255, 255);
@@ -50,14 +52,14 @@ namespace radio {
                 auto const x = initial_pos.x + ip * x_unit;
                 auto start_x = x + 2;
                 draw_list->AddLine(
-                    {start_x + 3, initial_pos.y + y_center - 1 + 2 * (current_row > 1)}, 
-                    {start_x + 3, initial_pos.y + y_center - 4 + 8 * (current_row > 1)}, green);
+                    {start_x + 3, offset_y + y_center - 1 + 2 * (current_row > 1)}, 
+                    {start_x + 3, offset_y + y_center - 4 + 8 * (current_row > 1)}, green);
                 draw_list->AddLine(
-                    {start_x + 4, initial_pos.y + y_center - 1 + 2 * (current_row > 1)}, 
-                    {start_x + 4, initial_pos.y + y_center - 4 + 8 * (current_row > 1)}, green);
+                    {start_x + 4, offset_y + y_center - 1 + 2 * (current_row > 1)}, 
+                    {start_x + 4, offset_y + y_center - 4 + 8 * (current_row > 1)}, green);
                 draw_list->AddLine(
-                    {start_x + 5, initial_pos.y + y_center - 1 + 2 * (current_row > 1)}, 
-                    {start_x + 5, initial_pos.y + y_center - 4 + 8 * (current_row > 1)}, green);
+                    {start_x + 5, offset_y + y_center - 1 + 2 * (current_row > 1)}, 
+                    {start_x + 5, offset_y + y_center - 4 + 8 * (current_row > 1)}, green);
                 ImGui::SetCursorPosX(x);
                 ImGui::SetCursorPosY(row_y[current_row]);
                 if (ImGui::Selectable(presets[ip].c_str(), ip == currently_playing, 0, {3 * x_unit, selectable_height})) {
@@ -81,18 +83,24 @@ namespace radio {
                 dial_x = std::max(target_x, dial_x - (dial_x - target_x) / 10 - 1);
             }
 
-            draw_list->AddLine({0, initial_pos.y + y_center - 1}, {dial_width, initial_pos.y + y_center - 1}, green);
-            draw_list->AddLine({0, initial_pos.y + y_center + 1}, {dial_width, initial_pos.y + y_center + 1}, green);
+            draw_list->AddLine({0, offset_y + y_center - 1}, {dial_width, offset_y + y_center - 1}, green);
+            draw_list->AddLine({0, offset_y + y_center + 1}, {dial_width, offset_y + y_center + 1}, green);
 
-            draw_list->AddTriangleFilled({dial_x + 1, initial_pos.y + 5}, {dial_x - 4, initial_pos.y}, {dial_x + 6, initial_pos.y}, red);
-            draw_list->AddTriangleFilled({dial_x + 1, initial_pos.y + dial_height - 5}, {dial_x - 4, initial_pos.y + dial_height}, {dial_x + 6, initial_pos.y + dial_height}, red);
-            draw_list->AddLine({dial_x, initial_pos.y}, {dial_x, initial_pos.y + dial_height}, red);
-            draw_list->AddLine({dial_x + 1, initial_pos.y}, {dial_x + 1, initial_pos.y + dial_height}, red);
-            draw_list->AddLine({dial_x + 2, initial_pos.y}, {dial_x + 2, initial_pos.y + dial_height}, red);
+            draw_list->AddTriangleFilled(
+                {dial_x + 1, offset_y + 5}, 
+                {dial_x - 4, offset_y}, 
+                {dial_x + 6, offset_y}, red);
+            draw_list->AddTriangleFilled(
+                {dial_x + 1, offset_y + dial_height - 5}, 
+                {dial_x - 4, offset_y + dial_height}, 
+                {dial_x + 6, offset_y + dial_height}, red);
+            draw_list->AddLine({dial_x, offset_y}, {dial_x, offset_y + dial_height}, red);
+            draw_list->AddLine({dial_x + 1, offset_y}, {dial_x + 1, offset_y + dial_height}, red);
+            draw_list->AddLine({dial_x + 2, offset_y}, {dial_x + 2, offset_y + dial_height}, red);
 
             draw_list->AddRectFilledMultiColor(
-                {initial_pos.x, initial_pos.y + 3}, 
-                {initial_pos.x + dial_width, initial_pos.y + dial_height - 6},
+                {initial_pos.x, offset_y + 3}, 
+                {initial_pos.x + dial_width, offset_y + dial_height - 6},
                 traslucid_gray, traslucid_gray, traslucid_yellow, traslucid_yellow);
 
             ImGui::SetCursorPosX(initial_pos.x);
