@@ -6,6 +6,7 @@
 #include <imgui.h>
 
 #include "host.hpp"
+#include "../imgcache.hpp"
 
 namespace rss
 {
@@ -13,7 +14,7 @@ namespace rss
     {
         using player_t = std::function<void(std::string_view)>;
 
-        screen(host &host, player_t player) : host_{host}, player_{player} {}
+        screen(host &host, player_t player, img_cache &cache) : host_{host}, player_{player}, cache_{cache} {}
         void render()
         {
             if (ImGui::BeginChild("RSS"))
@@ -24,6 +25,11 @@ namespace rss
                     {
                         if (ImGui::TreeNode(feed->feed_title.c_str()))
                         {
+                            if (!feed->feed_image_url.empty())
+                            {
+                                auto texture = cache_.load_texture_from_url(feed->feed_image_url);
+                                ImGui::Image(reinterpret_cast<void *>(static_cast<uintptr_t>(texture)), ImVec2(100, 100));
+                            }
                             if (ImGui::Button("Open"))
                             {
                                 ::ShellExecuteA(nullptr,
@@ -69,5 +75,6 @@ namespace rss
     private:
         host &host_;
         player_t player_;
+        img_cache &cache_;
     };
 }

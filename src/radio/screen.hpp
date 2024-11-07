@@ -8,11 +8,13 @@
 #include <SDL2/SDL.h>
 #include "host.hpp"
 
+#include "../imgcache.hpp"
+
 namespace radio {
     struct screen {
         static constexpr auto dial_height{150};
 
-        screen(host &h) : host_(h) {
+        screen(host &h, img_cache &img_cache) : host_{h}, img_cache_{img_cache} {
             presets = host_.presets();
             std::transform(presets.begin(), presets.end(), std::back_inserter(presets_c_strs),
                            [](const auto &preset) { return preset.c_str(); });
@@ -130,6 +132,7 @@ namespace radio {
         std::vector<const char*> presets_c_strs;
         std::optional<unsigned> currently_playing{};
         host &host_;
+        img_cache &img_cache_;
         float dial_x{};
     };
 }

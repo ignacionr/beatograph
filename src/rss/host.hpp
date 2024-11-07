@@ -60,7 +60,12 @@ namespace rss {
         void add_feed(std::string_view url) {
             std::string url_str{url};
             std::thread([this, url_str] {
+                try {
                 add_feed_sync(url_str);
+                }
+                catch(...) {
+                    // ignore
+                }
             }).detach();
         }
 

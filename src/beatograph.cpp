@@ -30,6 +30,7 @@
 #include "dev-locked/screen.hpp"
 #include "rss/host.hpp"
 #include "rss/screen.hpp"
+#include "imgcache.hpp"
 
 
 #if defined(_WIN32)
@@ -40,6 +41,7 @@ int main()
 {
 #endif
     {
+        img_cache cache{"imgcache"};
         // get the Groq API key from GROQ_API_KEY
         char *groq_env = nullptr;
         size_t len = 0;
@@ -91,13 +93,13 @@ int main()
         rss_host.add_feed("https://www.spreaker.com/show/4956890/episodes/feed"); // CP radio
         rss_host.add_feed("https://www.spreaker.com/show/3392139/episodes/feed"); // Internet Freakshows
         rss_host.add_feed("https://www.spreaker.com/show/6349862/episodes/feed"); // Llama Cast
-        rss_host.add_feed("https://www.spreaker.com/show/6349862/episodes/feed"); // Llama Cast
         
         rss_host.add_feed("https://softwareengineeringdaily.com/feed/podcast/");
         rss::screen rss_screen{rss_host,
             [&radio_host](std::string_view url) {
                 radio_host.play(std::string{url});
-            }
+            }, 
+            cache
         };
 
         auto tabs = std::make_unique<screen_tabs>(std::vector<screen_tabs::tab_t>{
@@ -158,7 +160,7 @@ int main()
              }}
         });
         main_screen screen{std::move(tabs)};
-        radio_screen = std::make_unique<radio::screen>(radio_host);
+        radio_screen = std::make_unique<radio::screen>(radio_host, cache);
         screen.run();
         views::quitting(true);
     }
