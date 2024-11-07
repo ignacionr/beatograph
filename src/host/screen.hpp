@@ -20,6 +20,19 @@ struct host_screen
             ImGui::Indent();
             if (ImGui::CollapsingHeader("SSH Properties"))
             {
+                if (localhost.has_session(host->name())) {
+                    ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 255, 0, 255));
+                    ImGui::TextUnformatted("Connected");
+                    ImGui::PopStyleColor();
+                    ImGui::SameLine();
+                    if (ImGui::Button("Recycle Session"))
+                    {
+                        localhost.recycle_session(host->name());
+                    }
+                }
+                else {
+                    ImGui::TextUnformatted("Disconnected");
+                }
                 auto interesting_keys = std::array<std::string_view, 5>{"host", "hostname", "user", "port", "identityfile"};
                 auto filtered_properties = host->properties() |
                                            std::views::filter([&](auto const &pair)

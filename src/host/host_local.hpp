@@ -215,11 +215,20 @@ struct host_local
 
     std::string ssh(std::string_view command, std::string_view host_name, unsigned int timeout_seconds = 5) {
         std::string key{host_name};
-        static std::unordered_map<std::string, std::unique_ptr<ssh_execute>> sessions;
         if (sessions.find(key) == sessions.end()) {
             sessions[key] = std::make_unique<ssh_execute>(std::string{host_name}, timeout_seconds);
         }
         return sessions.at(key)->execute_command(std::string{command});
+    }
+
+    void recycle_session(std::string_view host_name) {
+        std::string key{host_name};
+        sessions.erase(key);
+    }
+
+    bool has_session(std::string_view host_name) {
+        std::string key{host_name};
+        return sessions.find(key) != sessions.end();
     }
 
     std::string execute_command(const char *command)
@@ -299,4 +308,5 @@ struct host_local
 
 private:
     std::string hostname;
+    std::unordered_map<std::string, std::unique_ptr<ssh_execute>> sessions;
 };
