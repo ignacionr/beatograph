@@ -42,6 +42,9 @@ int main()
 {
 #endif
     {
+        auto constexpr happy_bell_sound = "assets/mixkit-happy-bell-alert-601.wav";
+        auto constexpr impact_sound = "assets/mixkit-underground-explosion-impact-echo-1686.wav";
+
         img_cache cache{"imgcache"};
         // get the Groq API key from GROQ_API_KEY
         char *groq_env = nullptr;
@@ -78,6 +81,8 @@ int main()
         ssh_screen ssh_screen;
 
         radio::host radio_host;
+        radio_host.play_sync(happy_bell_sound);
+
         std::unique_ptr<radio::screen> radio_screen;
 
         dev_locked::screen dev_screen{localhost};
@@ -145,6 +150,17 @@ int main()
                 say(text);
             }
         }).detach();
+
+        auto &up = views::state_updated();
+        up = [&announcements_host](views::state_t const &state) {
+            announcements_host.stop();
+            if (state) {
+                announcements_host.play_sync(happy_bell_sound);
+            }
+            else {
+                announcements_host.play_sync(impact_sound);
+            }
+        };
 
         auto tabs = std::make_unique<screen_tabs>(std::vector<screen_tabs::tab_t> {
             {"Backend Dev", [&dev_screen]

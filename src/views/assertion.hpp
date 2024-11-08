@@ -12,7 +12,8 @@
 
 namespace views 
 {
-    struct state_t {
+    struct state_t 
+    {
         bool value{false};
         bool waiting{false};
         std::optional<std::string> exception;
@@ -28,8 +29,16 @@ namespace views
             catch (std::exception const &e) {
                 exception = e.what();
             }
+            waiting = false;
         }
     };
+
+    using state_updated_fn = std::function<void(state_t const &)>;
+    
+    static state_updated_fn &state_updated() {
+        static state_updated_fn state_updated = [](state_t const &) {};
+        return state_updated;
+    }
 
     static bool &quitting() {
         static bool quitting{false};
@@ -67,7 +76,7 @@ namespace views
             states[id].waiting = true;
             updates.push([id, assertion] {
                 states[id].load([assertion] { return assertion(); });
-                states[id].waiting = false;
+                state_updated()(states[id]);
             });
         }
         // get the state
