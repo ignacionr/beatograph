@@ -54,6 +54,9 @@ namespace radio
         }
 
         void stop() {
+            if (dev != 0) {
+                SDL_PauseAudioDevice(dev, 1);
+            }
             keep_playing = false;
         }
 
@@ -169,21 +172,22 @@ namespace radio
                 throw std::runtime_error("Failed to open codec");
             }
 
-            // Set up SDL audio specs
-            SDL_AudioSpec wanted_spec{}, obtained_spec{};
-            wanted_spec.freq = codec_ctx->sample_rate;
-            wanted_spec.format = AUDIO_F32SYS;
-            wanted_spec.channels = static_cast<uint8_t>(codec_ctx->ch_layout.nb_channels);
-            wanted_spec.silence = 0;
-            wanted_spec.samples = 1024;
-            wanted_spec.callback = nullptr;
-
-            SDL_CloseAudio();
-            if (SDL_OpenAudio(&wanted_spec, &obtained_spec) < 0)
-            {
-                avcodec_free_context(&codec_ctx);
-                avformat_close_input(&fmt_ctx);
-                throw std::runtime_error("Failed to open audio device");
+            if (dev == 0) {
+                // Set up SDL audio specs
+                SDL_AudioSpec wanted_spec{};
+                wanted_spec.freq = codec_ctx->sample_rate;
+                wanted_spec.format = AUDIO_F32SYS;
+                wanted_spec.channels = static_cast<uint8_t>(codec_ctx->ch_layout.nb_channels);
+                wanted_spec.silence = 0;
+                wanted_spec.samples = 1024;
+                wanted_spec.callback = nullptr;
+                dev = SDL_OpenAudioDevice(nullptr, 0, &wanted_spec, &obtained_spec, 0);
+                if (dev == 0)
+                {
+                    avcodec_free_context(&codec_ctx);
+                    avformat_close_input(&fmt_ctx);
+                    throw std::runtime_error("Failed to open audio device");
+                }
             }
 
             // Initialize the resampler
@@ -203,7 +207,7 @@ namespace radio
             }
 
             // Start playing audio
-            SDL_PauseAudio(0);
+            SDL_PauseAudioDevice(dev, 0);
 
             AVPacket packet;
             AVFrame *frame = av_frame_alloc();
@@ -253,7 +257,7 @@ namespace radio
                                 av_free(audio_buf);
                                 throw std::runtime_error("Failed to convert audio");
                             }
-                            auto sdl_ret = SDL_QueueAudio(1, audio_buf, dst_buf_size);
+                            auto sdl_ret = SDL_QueueAudio(dev, audio_buf, dst_buf_size);
                             if (sdl_ret < 0)
                             {
                                 av_free(audio_buf);
@@ -328,7 +332,8 @@ namespace radio
             {"RMC", "https://icy.unitedradio.it/RMC.aac"},
         };
 
-        SDL_AudioDeviceID dev;
+        SDL_AudioDeviceID dev{};
+        SDL_AudioSpec obtained_spec{};
         std::atomic<bool> playing{false};
         std::atomic<bool> keep_playing{true};
         std::atomic<float> level{0.0f};

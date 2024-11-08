@@ -103,6 +103,9 @@ int main()
             cache
         };
 
+        radio::host announcements_host;
+        announcements_host.play("http://141.95.101.189:5000/tts?text=Welcome%20to%20Beatograph%2C%20your%20personal%20assistant%20for%20all%20things%20development%20and%20data%20offering%2C%20including%20RSS%20feeds%20and%20music%20streaming.");
+
         auto tabs = std::make_unique<screen_tabs>(std::vector<screen_tabs::tab_t>{
             {"Backend Dev", [&dev_screen]
              {
