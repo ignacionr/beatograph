@@ -112,9 +112,12 @@ namespace radio
 
             // Open the audio stream
             AVFormatContext *fmt_ctx = nullptr;
-            if (avformat_open_input(&fmt_ctx, url.c_str(), nullptr, nullptr) < 0)
+            if (auto res = avformat_open_input(&fmt_ctx, url.c_str(), nullptr, nullptr); res < 0)
             {
-                throw std::runtime_error(std::format("Failed to open audio stream: {}", url));
+                // obtain the error description
+                char err[AV_ERROR_MAX_STRING_SIZE];
+                av_strerror(res, err, AV_ERROR_MAX_STRING_SIZE);
+                throw std::runtime_error(std::format("Failed to open audio stream: {} {}", err, url));
             }
 
             // Retrieve stream information
