@@ -12,6 +12,21 @@
 
 namespace rss {
     struct host {
+        host() {
+            add_feed("https://www.spreaker.com/show/4209606/episodes/feed"); // los temas del día
+            add_feed("https://www.spreaker.com/show/6332631/episodes/feed"); // cultura líquida
+            add_feed("https://www.spreaker.com/show/5711490/episodes/feed"); // working class history
+            add_feed("https://www.spreaker.com/show/5634793/episodes/feed"); // dotnet rocks
+            add_feed("https://www.spreaker.com/show/6006838/episodes/feed"); // cine para pensar
+            add_feed("https://www.spreaker.com/show/5719641/episodes/feed"); // the digital decode
+            add_feed("https://www.spreaker.com/show/6102036/episodes/feed"); // adventures in DevOps
+            add_feed("https://www.spreaker.com/show/2576750/episodes/feed"); // compute this
+            add_feed("https://www.spreaker.com/show/4956890/episodes/feed"); // CP radio
+            add_feed("https://www.spreaker.com/show/3392139/episodes/feed"); // Internet Freakshows
+            add_feed("https://www.spreaker.com/show/6349862/episodes/feed"); // Llama Cast
+            add_feed("https://ankar.io/this-american-life-archive/TALArchive.xml"); // This American Life
+            add_feed("https://softwareengineeringdaily.com/feed/podcast/");
+        }
 
         static size_t writeCallback(void *contents, size_t size, size_t nmemb, void *userp) {
             auto parser = static_cast<rss::feed*>(userp);
