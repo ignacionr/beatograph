@@ -56,6 +56,7 @@ namespace radio
         void stop() {
             if (dev != 0) {
                 SDL_PauseAudioDevice(dev, 1);
+                SDL_ClearQueuedAudio(dev);
             }
             keep_playing = false;
         }
