@@ -141,7 +141,7 @@ int main()
                 std::this_thread::sleep_until(next_hour_tp);
                 // announce the hour
                 auto hour = next_hour_tm.tm_hour;
-                std::string text = std::format("It's {} o'clock.", hour);
+                std::string text = std::format("It's {}{} o'clock.", hour % 12, hour >= 12 ? "pm" : "am");
                 say(text);
             }
         }).detach();
