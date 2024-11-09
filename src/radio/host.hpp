@@ -233,7 +233,8 @@ namespace radio
                 }
                 if (packet.stream_index == audio_stream->index)
                 {
-                    if (avcodec_send_packet(codec_ctx, &packet) >= 0)
+                    auto const send_res = avcodec_send_packet(codec_ctx, &packet);
+                    if (send_res >= 0)
                     {
                         for (;;)
                         {
@@ -271,6 +272,9 @@ namespace radio
                             av_free(audio_buf);
                         }
                     }
+                    else {
+                        std::cerr << std::format("Failed to send packet to codec, code: {}\n", send_res);
+                    }
                 }
                 else {
                     std::cerr << std::format("Skipping packet from stream {}\n", packet.stream_index);
@@ -283,9 +287,9 @@ namespace radio
             swr_free(&swr_ctx);
             avcodec_free_context(&codec_ctx);
             avformat_close_input(&fmt_ctx);
-            // SDL_CloseAudio();
+            SDL_CloseAudioDevice(dev);
+            dev = 0;
             playing = false;
-            // SDL_Quit();
         }
 
         bool is_playing() const

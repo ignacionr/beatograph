@@ -42,8 +42,8 @@ int main()
 {
 #endif
     {
-        auto constexpr happy_bell_sound = "assets/mixkit-happy-bell-alert-601.wav";
-        auto constexpr impact_sound = "assets/mixkit-underground-explosion-impact-echo-1686.wav";
+        // auto constexpr happy_bell_sound = "assets/mixkit-happy-bell-alert-601.wav";
+        // auto constexpr impact_sound = "assets/mixkit-underground-explosion-impact-echo-1686.wav";
 
         img_cache cache{"imgcache"};
         // get the Groq API key from GROQ_API_KEY
@@ -81,7 +81,7 @@ int main()
         ssh_screen ssh_screen;
 
         radio::host radio_host;
-        radio_host.play_sync(happy_bell_sound);
+        // radio_host.play_sync(happy_bell_sound);
 
         std::unique_ptr<radio::screen> radio_screen;
 
@@ -96,58 +96,58 @@ int main()
             cache
         };
 
-        radio::host announcements_host;
-        std::thread([&announcements_host] {
-            auto say = [&announcements_host](std::string text) {
-                static std::map<std::string_view, std::string_view> const replacements = {
-                    {" ", "%20"},
-                    {",", "%2C"},
-                    {".", "%2E"},
-                    {"!", "%21"},
-                    {"?", "%3F"},
-                    {":", "%3A"},
-                    {";", "%3B"},
-                    {"'", "%27"},
-                    {"\"", "%22"},
-                    {"&", "%26"}
-                };
-                for (auto const &[from, to] : replacements) {
-                    for (auto pos = text.find(from); pos != std::string::npos; pos = text.find(from, pos + to.size())) {
-                        text.replace(pos, from.size(), to);
-                    }
-                }
-                announcements_host.play_sync(std::format("http://141.95.101.189:5000/tts?text={}", text));
-            };
-            say("Welcome to Beat-o-graph, your personal assistant for all things development and data offering, including RSS feeds and music streaming.");
-            say("All systems are go.");
-            for (;;) {
-                // wait until next hour o'clock
-                auto now = std::chrono::system_clock::now();
-                auto next_hour = now + std::chrono::hours(1);
-                auto next_hour_t = std::chrono::system_clock::to_time_t(next_hour);
-                std::tm next_hour_tm;
-                localtime_s(&next_hour_tm, &next_hour_t);
-                next_hour_tm.tm_min = 0;
-                next_hour_tm.tm_sec = 0;
-                auto next_hour_tp = std::chrono::system_clock::from_time_t(std::mktime(&next_hour_tm));
-                std::this_thread::sleep_until(next_hour_tp);
-                // announce the hour
-                auto hour = next_hour_tm.tm_hour;
-                std::string text = std::format("It's {}{} o'clock.", hour % 12, hour >= 12 ? "pm" : "am");
-                say(text);
-            }
-        }).detach();
+        // radio::host announcements_host;
+        // std::thread([&announcements_host] {
+        //     auto say = [&announcements_host](std::string text) {
+        //         static std::map<std::string_view, std::string_view> const replacements = {
+        //             {" ", "%20"},
+        //             {",", "%2C"},
+        //             {".", "%2E"},
+        //             {"!", "%21"},
+        //             {"?", "%3F"},
+        //             {":", "%3A"},
+        //             {";", "%3B"},
+        //             {"'", "%27"},
+        //             {"\"", "%22"},
+        //             {"&", "%26"}
+        //         };
+        //         for (auto const &[from, to] : replacements) {
+        //             for (auto pos = text.find(from); pos != std::string::npos; pos = text.find(from, pos + to.size())) {
+        //                 text.replace(pos, from.size(), to);
+        //             }
+        //         }
+        //         announcements_host.play_sync(std::format("http://141.95.101.189:5000/tts?text={}", text));
+        //     };
+        //     say("Welcome to Beat-o-graph, your personal assistant for all things development and data offering, including RSS feeds and music streaming.");
+        //     say("All systems are go.");
+        //     for (;;) {
+        //         // wait until next hour o'clock
+        //         auto now = std::chrono::system_clock::now();
+        //         auto next_hour = now + std::chrono::hours(1);
+        //         auto next_hour_t = std::chrono::system_clock::to_time_t(next_hour);
+        //         std::tm next_hour_tm;
+        //         localtime_s(&next_hour_tm, &next_hour_t);
+        //         next_hour_tm.tm_min = 0;
+        //         next_hour_tm.tm_sec = 0;
+        //         auto next_hour_tp = std::chrono::system_clock::from_time_t(std::mktime(&next_hour_tm));
+        //         std::this_thread::sleep_until(next_hour_tp);
+        //         // announce the hour
+        //         auto hour = next_hour_tm.tm_hour;
+        //         std::string text = std::format("It's {}{} o'clock.", hour % 12, hour >= 12 ? "pm" : "am");
+        //         say(text);
+        //     }
+        // }).detach();
 
-        auto &up = views::state_updated();
-        up = [&announcements_host](views::state_t const &state) {
-            announcements_host.stop();
-            if (state) {
-                announcements_host.play_sync(happy_bell_sound);
-            }
-            else {
-                announcements_host.play_sync(impact_sound);
-            }
-        };
+        // auto &up = views::state_updated();
+        // up = [&announcements_host](views::state_t const &state) {
+        //     announcements_host.stop();
+        //     if (state) {
+        //         announcements_host.play_sync(happy_bell_sound);
+        //     }
+        //     else {
+        //         announcements_host.play_sync(impact_sound);
+        //     }
+        // };
 
         auto tabs = std::make_unique<screen_tabs>(std::vector<screen_tabs::tab_t> {
             {"Backend Dev", [&dev_screen] { dev_screen.render(); }},
