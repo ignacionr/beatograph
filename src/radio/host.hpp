@@ -287,6 +287,10 @@ namespace radio
             swr_free(&swr_ctx);
             avcodec_free_context(&codec_ctx);
             avformat_close_input(&fmt_ctx);
+            while (SDL_GetQueuedAudioSize(dev) > 0)
+            {
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            }
             SDL_CloseAudioDevice(dev);
             dev = 0;
             playing = false;
@@ -335,7 +339,6 @@ namespace radio
             {"Radio SRF 3", "http://stream.srg-ssr.ch/m/drs3/mp3_128"},
             {"Swiss Jazz", "http://stream.srg-ssr.ch/m/rsj/mp3_128"},
             {"Sky Radio", "http://playerservices.streamtheworld.com/api/livestream-redirect/SKYRADIO.mp3"},
-            {"TWiT (This Week in Tech)", "https://pdst.fm/e/pscrb.fm/rss/p/cdn.twit.tv/libsyn/twit_1004/b26992aa-b1b1-4f90-a2b7-efc6a7d4b42a/R1_twit1004.mp3"},
             {"Urbana Play", "https://cdn.instream.audio/:9660/stream"},
             {"RMC", "https://icy.unitedradio.it/RMC.aac"},
         };
