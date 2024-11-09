@@ -42,7 +42,7 @@ int main()
 {
 #endif
     {
-        // auto constexpr happy_bell_sound = "assets/mixkit-happy-bell-alert-601.wav";
+        auto constexpr happy_bell_sound = "assets/mixkit-happy-bell-alert-601.wav";
         // auto constexpr impact_sound = "assets/mixkit-underground-explosion-impact-echo-1686.wav";
 
         img_cache cache{"imgcache"};
@@ -81,7 +81,7 @@ int main()
         ssh_screen ssh_screen;
 
         radio::host radio_host;
-        // radio_host.play_sync(happy_bell_sound);
+        radio_host.play_sync(happy_bell_sound);
 
         std::unique_ptr<radio::screen> radio_screen;
 
