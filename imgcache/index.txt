@@ -11,3 +11,5 @@ https://d3wo5wojvuv7l.cloudfront.net/t_rss_itunes_square_1400/images.spreaker.co
 https://d3wo5wojvuv7l.cloudfront.net/t_rss_itunes_square_1400/images.spreaker.com/original/f92f1a88724860d0237663b325469978.jpg imgcache\738304479888540525.JPG
 https://d3wo5wojvuv7l.cloudfront.net/t_rss_itunes_square_1400/images.spreaker.com/original/fd3d852ae95b790244a703b3b51878d5.jpg imgcache\1393732245613630567.JPG
 https://dcadata.github.io/this-american-life-archive/templates/tal_official_image.png imgcache\12776223972823480234.PNG
+https://elroy.twit.tv/sites/default/files/styles/twit_album_art_2048x2048/public/images/shows/all_twit.tv_shows/album_art/audio/all_albumart_centered_2400.jpg imgcache\12712966968813499890.JPG
+https://elroy.twit.tv/sites/default/files/styles/twit_album_art_2048x2048/public/images/shows/this_week_in_tech/album_art/audio/twit_2022albumart_standard_2048.jpg imgcache\3180612532166537051.JPG
