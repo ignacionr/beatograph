@@ -35,19 +35,53 @@ namespace rss
                     ImGui::TextWrapped("%s", current_feed_->feed_title.c_str());
                     ImGui::TextWrapped("%s", current_feed_->feed_description.c_str());
                     ImGui::NextColumn();
-                    for (auto &item : current_feed_->items)
+                    if (ImGui::BeginTable("##items", 1, ImGuiTableFlags_BordersInnerV))
                     {
-                        if (ImGui::Button(item.title.c_str()))
+                        ImGui::TableSetupColumn("Title", ImGuiTableColumnFlags_WidthStretch);
+                        ImGui::TableHeadersRow();
+                        auto draw_list = ImGui::GetWindowDrawList();
+                        for (auto &item : current_feed_->items)
                         {
-                            player_(item.enclosure);
+                            ImGui::TableNextRow();
+                            ImGui::PushID(&item);
+                            ImGui::TableNextColumn();
+                            auto starting_pos = ImGui::GetCursorScreenPos();
+                            if (!item.enclosure.empty())
+                            {
+                                constexpr ImU32 blue = IM_COL32(100, 100, 255, 255);
+                                constexpr ImU32 white = IM_COL32(255, 255, 255, 255);
+                                draw_list->AddCircleFilled({starting_pos.x + 11, starting_pos.y + 9}, 7, white);
+                                draw_list->AddCircleFilled({starting_pos.x + 12, starting_pos.y + 10}, 6, blue);
+                                draw_list->AddTriangleFilled(
+                                    {starting_pos.x + 9, starting_pos.y + 7},
+                                    {starting_pos.x + 9, starting_pos.y + 13},
+                                    {starting_pos.x + 15, starting_pos.y + 10},
+                                    white);
+                                ImGui::SetCursorPosX(starting_pos.x + 30);
+                            }
+                            ImGui::TextUnformatted(item.title.c_str());
+                            auto const mouse_pos = ImGui::GetMousePos();
+                            ImVec2 const row_max {starting_pos.x + ImGui::GetColumnWidth(), ImGui::GetCursorPosY()};
+                            if (mouse_pos.x >= starting_pos.x && mouse_pos.x <= row_max.x &&
+                                mouse_pos.y >= starting_pos.y && mouse_pos.y <= row_max.y)
+                            {
+                                auto data = ImGui::GetWindowDrawList();
+                                data->AddRect(starting_pos, row_max, IM_COL32(255, 255, 0, 255));
+                                if (ImGui::IsMouseClicked(0) && !item.enclosure.empty())
+                                {
+                                    player_(item.enclosure);
+                                }
+                            }
+                            ImGui::PopID();
                         }
+                        ImGui::EndTable();
                     }
                     ImGui::Columns();
                 }
             }
             else
             {
-                if (ImGui::BeginChild("RSS", ImVec2{ImGui::GetWindowWidth() - 20, 200}, ImGuiChildFlags_None, ImGuiWindowFlags_AlwaysVerticalScrollbar))
+                if (ImGui::BeginChild("RSS", ImVec2{ImGui::GetWindowWidth() - 20, ImGui::GetWindowHeight() - ImGui::GetCursorPosY() - 20}))
                 {
                     constexpr float side_length{75};
                     const unsigned col_count{static_cast<unsigned>((ImGui::GetWindowWidth() - 50) / side_length)};

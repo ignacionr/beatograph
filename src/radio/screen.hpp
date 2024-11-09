@@ -45,7 +45,6 @@ namespace radio {
                 initial_pos.y + y_center + 2 * selectable_height
             };
 
-            // std::array<int, 4> row_x{};
             int current_row{1};
             auto const x_unit = dial_width / (presets.size() + 2);
             for (auto ip{0}; ip < presets.size(); ++ip) {
