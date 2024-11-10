@@ -218,7 +218,7 @@ struct dataoffering_screen
                     ShellExecuteA(nullptr, nullptr, "cmd.exe", "/c code --remote ssh-remote+storm1 /home/ubuntu/arangodb-infra/storm", nullptr, SW_SHOW);
                 }
                 else if (ImGui::SameLine(); ImGui::Button("Code on Hadoop1")) {
-                    ShellExecuteA(nullptr, nullptr, "cmd.exe /c code --remote ssh-remote+hadoop1 /home/ubuntu/arangodb-infra/hadoop", nullptr, nullptr, SW_SHOW);
+                    ShellExecuteA(nullptr, nullptr, "cmd.exe", "/c code --remote ssh-remote+hadoop1 /home/ubuntu/repos/arangodb-infra/hadoop", nullptr, SW_SHOW);
                 }
             }
 
