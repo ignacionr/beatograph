@@ -14,6 +14,7 @@ namespace rss {
     struct host {
         host() {
             add_feed("https://ankar.io/this-american-life-archive/TALArchive.xml"); // This American Life
+            add_feed("https://cppcast.com/feed.rss"); // cppcast
             add_feed("https://feeds.twit.tv/brickhouse.xml");
             add_feed("https://feeds.twit.tv/twit.xml");
             add_feed("https://softwareengineeringdaily.com/feed/podcast/");
@@ -28,6 +29,20 @@ namespace rss {
             add_feed("https://www.spreaker.com/show/6102036/episodes/feed"); // adventures in DevOps
             add_feed("https://www.spreaker.com/show/6332631/episodes/feed"); // cultura líquida
             add_feed("https://www.spreaker.com/show/6349862/episodes/feed"); // Llama Cast
+            add_feed("https://feeds.transistor.fm/energy-bytes"); // Energy Bytes ?
+            add_feed("https://feeds.transistor.fm/techradio");
+            add_feed("https://rss.podplaystudio.com/2743.xml"); // Tech Talk with Jess Kelly
+            add_feed("https://feeds.simplecast.com/Sl5CSM3S");
+            add_feed("https://sbs-ondemand.streamguys1.com/sbs-russian/");
+            add_feed("https://changelog.com/podcast/feed");
+            add_feed("http://feeds.feedburner.com/VenganzasDelPasado");
+            add_feed("https://feeds.transistor.fm/test-and-code");
+            add_feed("https://feeds.npr.org/510351/podcast.xml");
+            add_feed("https://rss.art19.com/the-lead");
+            add_feed("https://feeds.transistor.fm/small-big-wins");
+            add_feed("https://feeds.megaphone.fm/BVLLC2163264914");
+            add_feed("https://feeds.simplecast.com/Sl5CSM3S");
+            
         }
 
         static size_t writeCallback(void *contents, size_t size, size_t nmemb, void *userp) {
@@ -74,11 +89,12 @@ namespace rss {
             return parser;
         }
 
-        void add_feed(std::string_view url) {
+        void add_feed(std::string_view url, std::function<void()> callback = {}) {
             std::string url_str{url};
-            std::thread([this, url_str] {
+            std::thread([this, url_str, callback] {
                 try {
-                add_feed_sync(url_str);
+                    add_feed_sync(url_str);
+                    if (callback) callback();
                 }
                 catch(...) {
                     // ignore
@@ -90,7 +106,17 @@ namespace rss {
             auto feed = get_feed(url);
             auto feeds = feeds_.load();
             auto feed_ptr = std::make_shared<rss::feed>(std::move(feed));
-            feeds->emplace_back(std::move(feed_ptr));
+            // does the feed already exist?
+            auto pos = std::find_if(feeds->begin(), feeds->end(), [&feed_ptr](auto const &f) {
+                return f->feed_link == feed_ptr->feed_link;
+            });
+            // add or replace with the new one
+            if (pos != feeds->end()) {
+                *pos = feed_ptr;
+            }
+            else {
+                feeds->emplace_back(std::move(feed_ptr));
+            }
             feeds_.store(feeds);
         }
 
