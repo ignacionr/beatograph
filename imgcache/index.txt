@@ -1,4 +1,5 @@
 http://softwareengineeringdaily.com/wp-content/uploads/2024/02/sed_logo.png imgcache\9986585877379090430.PNG
+https://cppcast.com/static/cppcast-logo-square.png imgcache\8482647007716525230.PNG
 https://d3wo5wojvuv7l.cloudfront.net/images.spreaker.com/cloudinary/s--IdAxOLS3--/w_1000,h_800,c_fit,l_text:Lato_158_bold:CPP%20-%20Cine%20Para%20Pensar/images.spreaker.com/default/show-1400x1400-20190801.jpg imgcache\10269696310729636782.JPG
 https://d3wo5wojvuv7l.cloudfront.net/t_rss_itunes_square_1400/images.spreaker.com/original/2eb3ef07a3edd7f80037d6fccd5a95a8.jpg imgcache\4191756060915662134.JPG
 https://d3wo5wojvuv7l.cloudfront.net/t_rss_itunes_square_1400/images.spreaker.com/original/7f2ce0f99b37f512efe28b103143ecba.jpg imgcache\7385090986643389119.JPG
