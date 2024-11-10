@@ -73,12 +73,18 @@ struct img_cache {
         if (it != index_.end()) {
             return load_texture_from_file(it->second);
         }
+        // obtain the url path plus filename part only (exclude querystring or hash)
+        auto const pos_qs = url.find('?');
+        auto const pos_hash = url.find('#');
+        auto const pos_end = std::min(pos_qs, pos_hash);
+        auto const url_path = url.substr(0, pos_end);
+
         // get the url extension
-        auto pos = url.find_last_of('.');
+        auto pos = url_path.find_last_of('.');
         if (pos == std::string::npos) {
             throw std::runtime_error("Failed to determine the extension of the image");
         }
-        auto extension = url.substr(pos);
+        auto extension = url_path.substr(pos);
         // make the extension uppercase
         std::transform(extension.begin(), extension.end(), extension.begin(), [](unsigned char c) { return std::toupper(c); });
         auto file_path = cache_path_ / std::format("{}{}", std::hash<std::string>{}(url), extension);

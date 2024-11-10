@@ -201,6 +201,16 @@ struct dataoffering_screen
                                             throw std::runtime_error(result);
                                         }
                                         return true; });
+                views::cached_view<std::string>("Checker", 
+                    [this]() -> std::string {
+                        return host::by_name("storm1")->docker().execute_command(
+                            "docker logs --tail 1 storm-checker-1 2>&1",
+                            localhost_);
+                    },
+                    [](std::string const &output)
+                    {
+                        ImGui::TextUnformatted(output.c_str());
+                    });
             }
 
             ImGui::EndChild();

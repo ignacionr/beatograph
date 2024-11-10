@@ -42,7 +42,31 @@ namespace rss {
             add_feed("https://feeds.transistor.fm/small-big-wins");
             add_feed("https://feeds.megaphone.fm/BVLLC2163264914");
             add_feed("https://feeds.simplecast.com/Sl5CSM3S");
-            
+            add_feed("https://www.omnycontent.com/d/playlist/e73c998e-6e60-432f-8610-ae210140c5b1/a91018a4-ea4f-4130-bf55-ae270180c327/44710ecc-10bb-48d1-93c7-ae270180c33e/podcast.rss");
+            add_feed("https://allinchamathjason.libsyn.com/rss");
+            add_feed("https://feeds.simplecast.com/hNaFxXpO");
+            add_feed("https://rss.pdrl.fm/55dc8e/feeds.megaphone.fm/WWO7410387571");
+            add_feed("https://feeds.simplecast.com/WCb5SgYj");
+            add_feed("https://audioboom.com/channels/5021027.rss");
+            add_feed("https://audioboom.com/channels/5021027.rss");
+            add_feed("https://anchor.fm/s/28fef6f0/podcast/rss");
+            add_feed("https://anchor.fm/s/f35c22c4/podcast/rss");
+            add_feed("https://feed.podbean.com/podcast.hernancattaneo.com/feed.xml");
+            add_feed("https://feeds.megaphone.fm/ADSMOVILESPAASL6591275552");
+            add_feed("https://anchor.fm/s/5e295028/podcast/rss");
+            add_feed("https://feeds.megaphone.fm/SONORO5005023613");
+            add_feed("https://www.spreaker.com/show/4725236/episodes/feed");
+            add_feed("https://podcasts.files.bbci.co.uk/p02nq0gn.rss");
+            add_feed("https://www.spreaker.com/show/4731320/episodes/feed");
+            add_feed("https://anchor.fm/s/4cc7fadc/podcast/rss");
+            add_feed("https://cuonda.com/monos-estocasticos/feed");
+            add_feed("https://feeds.npr.org/510355/podcast.xml");
+            add_feed("https://anchor.fm/s/5936c94c/podcast/rss");
+            add_feed("https://fapi-top.prisasd.com/podcast/elpais/las_noticias_del_pais.xml");
+            add_feed("https://video-api.wsj.com/podcast/rss/wsj/whats-news");
+            add_feed("https://www.spreaker.com/show/5718542/episodes/feed");
+            add_feed("https://mavecloud.s3mts.ru/storage/feeds/41353.xml");
+            add_feed("https://feeds.transistor.fm/0b18f927-efcb-4ed8-87c4-3cf9642a0de6");
         }
 
         static size_t writeCallback(void *contents, size_t size, size_t nmemb, void *userp) {
@@ -103,21 +127,25 @@ namespace rss {
         }
 
         void add_feed_sync(std::string_view url) {
-            auto feed = get_feed(url);
-            auto feeds = feeds_.load();
-            auto feed_ptr = std::make_shared<rss::feed>(std::move(feed));
-            // does the feed already exist?
-            auto pos = std::find_if(feeds->begin(), feeds->end(), [&feed_ptr](auto const &f) {
-                return f->feed_link == feed_ptr->feed_link;
-            });
-            // add or replace with the new one
-            if (pos != feeds->end()) {
-                *pos = feed_ptr;
+            auto feed_ptr = std::make_shared<rss::feed>(get_feed(url));
+            {
+                static std::mutex mutex;
+                std::lock_guard<std::mutex> lock(mutex);
+                auto feeds = feeds_.load();
+                // does the feed already exist?
+                auto pos = std::find_if(feeds->begin(), feeds->end(), 
+                    [ourlink = feed_ptr->feed_link](auto const &f) {
+                        return f->feed_link == ourlink;
+                });
+                // add or replace with the new one
+                if (pos != feeds->end()) {
+                    *pos = feed_ptr;
+                }
+                else {
+                    feeds->emplace_back(std::move(feed_ptr));
+                }
+                feeds_.store(feeds);
             }
-            else {
-                feeds->emplace_back(std::move(feed_ptr));
-            }
-            feeds_.store(feeds);
         }
 
         auto feeds() {
