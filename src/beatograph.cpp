@@ -66,6 +66,16 @@ int main()
             return 1;
         }
         std::string toggle_token{token_env, len - 1}; // len returns the count of all copied bytes, including the terminator
+
+        char *dataoffering_env = nullptr;
+        len = 0;
+        if (_dupenv_s(&dataoffering_env, &len, "DATAOFFERING_TOKEN") || dataoffering_env == nullptr) {
+            std::cerr << "Error: DATAOFFERING_TOKEN environment variable not set." << std::endl;
+            return 1;
+        }
+        std::string const dataoffering_token {dataoffering_env, len - 1};
+
+
         toggl_client tc(toggle_token);
         toggl_screen ts(tc);
 
@@ -76,7 +86,7 @@ int main()
         host_local localhost;
 
         git_host git{localhost};
-        dataoffering_screen ds{localhost, groq_api_key};
+        dataoffering::screen ds{localhost, groq_api_key, dataoffering_token};
 
         cluster_report cr{localhost};
         ssh_screen ssh_screen;
