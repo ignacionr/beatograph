@@ -220,6 +220,9 @@ struct dataoffering_screen
                 else if (ImGui::SameLine(); ImGui::Button("Code on Hadoop1")) {
                     ShellExecuteA(nullptr, nullptr, "cmd.exe", "/c code --remote ssh-remote+hadoop1 /home/ubuntu/repos/arangodb-infra/hadoop", nullptr, SW_SHOW);
                 }
+                else if (ImGui::SameLine(); ImGui::Button("Open Hbase Shell")) {
+                    ShellExecuteA(nullptr, nullptr, "cmd.exe", "/c ssh -t hadoop1 docker exec -it hadoop-hbase-master-1 hbase shell", nullptr, SW_SHOW);
+                }
             }
 
             ImGui::EndChild();
