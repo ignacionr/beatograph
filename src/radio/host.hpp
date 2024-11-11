@@ -28,6 +28,7 @@ namespace radio
     struct host
     {
         host() = default;
+        ~host() { stop(); }
 
         using release_audio_t = std::function<void()>;
         using audio_converter_t = std::function<release_audio_t(void *, uint32_t, void **, uint32_t *)>;
