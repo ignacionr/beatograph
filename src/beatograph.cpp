@@ -32,6 +32,7 @@
 #include "rss/host.hpp"
 #include "rss/screen.hpp"
 #include "imgcache.hpp"
+#include "conversions/screen.hpp"
 
 
 #if defined(_WIN32)
@@ -95,6 +96,8 @@ int main()
             }, 
             cache
         };
+
+        conversions::screen conv_screen{};
 
         // radio::host announcements_host;
         // std::thread([&announcements_host] {
@@ -168,18 +171,19 @@ int main()
                      }
                  }
              }},
-             {"GitHub", [] { ImGui::Text("GitHub"); }},
-             {"Bitbucket", [] { ImGui::Text("Bitbucket");}},
-             {"Zookeeper", [] { ImGui::Text("Zookeeper"); }},
-             {"RabbitMQ", [] { ImGui::Text("RabbitMQ"); }},
-             {"GitHub", [] { ImGui::Text("GitHub"); }},
-             {"Bitbucket", [] { ImGui::Text("Bitbucket"); }},
-             {"Zookeeper", [] { ImGui::Text("Zookeeper"); }},
-             {"RabbitMQ", [] { ImGui::Text("RabbitMQ"); }},
+            //  {"GitHub", [] { ImGui::Text("GitHub"); }},
+            //  {"Bitbucket", [] { ImGui::Text("Bitbucket");}},
+            //  {"Zookeeper", [] { ImGui::Text("Zookeeper"); }},
+            //  {"RabbitMQ", [] { ImGui::Text("RabbitMQ"); }},
+            //  {"GitHub", [] { ImGui::Text("GitHub"); }},
+            //  {"Bitbucket", [] { ImGui::Text("Bitbucket"); }},
+            //  {"Zookeeper", [] { ImGui::Text("Zookeeper"); }},
+            //  {"RabbitMQ", [] { ImGui::Text("RabbitMQ"); }},
              {"Radio", [&radio_screen, &rss_screen] {
                 radio_screen->render();
                 rss_screen.render();
-             }}
+             }},
+             {"Conversions", [&conv_screen] { conv_screen.render(); }}
         });
         main_screen screen{std::move(tabs)};
         radio_screen = std::make_unique<radio::screen>(radio_host, cache);
