@@ -149,6 +149,10 @@ struct toggl_screen
                     }
                     ImGui::EndTable();
                 }
+                if (ImGui::Button("Open Web"))
+                {
+                    ShellExecuteA(nullptr, "open", "https://track.toggl.com/", nullptr, nullptr, SW_SHOW);
+                }
             }
             else
             {
