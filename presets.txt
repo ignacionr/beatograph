@@ -21,3 +21,5 @@ Swiss Jazz=http://stream.srg-ssr.ch/m/rsj/mp3_128
 Sky Radio=http://playerservices.streamtheworld.com/api/livestream-redirect/SKYRADIO.mp3
 Urbana Play=https://cdn.instream.audio/:9660/stream
 RMC=https://icy.unitedradio.it/RMC.aac
+LT10=https://radio.arcast.net:1060/stream
+FM Sol=https://arcast.com.ar/fmsol/

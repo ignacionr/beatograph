@@ -138,9 +138,6 @@ namespace radio
                 throw std::runtime_error("Failed to initialize SDL");
             }
 
-            // Initialize libavformat
-            avformat_network_init();
-
             // Open the audio stream
             AVFormatContext *fmt_ctx = nullptr;
             if (auto res = avformat_open_input(&fmt_ctx, url.c_str(), nullptr, nullptr); res < 0)
