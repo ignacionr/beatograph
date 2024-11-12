@@ -77,7 +77,7 @@ namespace rss
                         tablestart_y + ImGui::GetCursorPosY() - ImGui::GetScrollY()};
                     // hovering at any part of the row?
                     if (mouse_pos.x >= starting_pos.x && mouse_pos.x <= row_max.x &&
-                        mouse_pos.y >= (starting_pos.y - ImGui::GetScrollY()) && mouse_pos.y <= row_max.y)
+                        mouse_pos.y >= (starting_pos.y) && mouse_pos.y <= row_max.y)
                     {
                         ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
                         auto data = ImGui::GetWindowDrawList();
