@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <atomic>
 #include <format>
+#include <fstream>
 #include <functional>
 #include <map>
 #include <stdexcept>
@@ -27,13 +28,42 @@ namespace radio
 {
     struct host
     {
-        host() = default;
+        host() {
+            // load the presets from file
+            std::ifstream file("presets.txt");
+            if (file.is_open())
+            {
+                std::string line;
+                while (std::getline(file, line))
+                {
+                    auto pos = line.find_first_of('=');
+                    if (pos != std::string::npos)
+                    {
+                        presets_[line.substr(0, pos)] = line.substr(pos + 1);
+                    }
+                }
+            }
+            // load the last played url from file
+            std::ifstream last_played_file("last_played.txt");
+            if (last_played_file.is_open())
+            {
+                std::string line;
+                std::getline(last_played_file, line);
+                play(line);
+            }
+        }
         ~host() { stop(); }
 
         using release_audio_t = std::function<void()>;
         using audio_converter_t = std::function<release_audio_t(void *, uint32_t, void **, uint32_t *)>;
 
         void play(std::string url) {
+            // save the last played ulr on file
+            {
+                std::ofstream file("last_played.txt");
+                file << url;
+            }
+            // start the player in a separate thread
             std::thread([this, url]() {
                 if (is_playing())
                 {
@@ -318,31 +348,7 @@ namespace radio
         }
     private:
 
-        std::map<std::string, std::string> presets_{
-            {"AM 750 AR", "https://26513.live.streamtheworld.com/AM750_SC"},
-            {"BBC Radio 3", "http://as-hls-ww-live.akamaized.net/pool_904/live/ww/bbc_radio_three/bbc_radio_three.isml/bbc_radio_three-audio%3d96000.norewind.m3u8"},
-            {"BBC Radio 4", "http://as-hls-ww-live.akamaized.net/pool_904/live/ww/bbc_radio_fourfm/bbc_radio_fourfm.isml/bbc_radio_fourfm-audio%3d96000.norewind.m3u8"},
-            {"BBC World Service", "http://a.files.bbci.co.uk/media/live/manifesto/audio/simulcast/hls/nonuk/sbr_low/ak/bbc_world_service.m3u8"},
-            {"Cadena Ser", "https://25653.live.streamtheworld.com:443/CADENASERAAC_SC"},
-            {"Classic FM", "http://media-ice.musicradio.com/ClassicFM"},
-            {"France Inter", "http://direct.franceinter.fr/live/franceinter-midfi.mp3"},
-            {"La Red (AR)", "https://27373.live.streamtheworld.com:443/LA_RED_AM910AAC_SC"},
-            {"Lounge FM", "http://stream.laut.fm/lounge"},
-            {"NPR News", "https://npr-ice.streamguys1.com/live.mp3"},
-            {"Qmusic", "http://playerservices.streamtheworld.com/api/livestream-redirect/QMUSIC.mp3"},
-            {"Radio 1 Rock", "http://stream.radioreklama.bg:80/radio1rock128"},
-            {"Radio 10", "http://playerservices.streamtheworld.com/api/livestream-redirect/RADIO10.mp3"},
-            {"Radio 4", "http://playerservices.streamtheworld.com/api/livestream-redirect/RADIO4.mp3"},
-            {"Radio 538", "http://playerservices.streamtheworld.com/api/livestream-redirect/RADIO538.mp3"},
-            {"Monte Carlo 2", "https://n23a-eu.rcs.revma.com/fxp289cp81uvv"},
-            {"Radio Nova", "http://novazz.ice.infomaniak.ch/novazz-128.mp3"},
-            {"Radio Paradise", "http://stream.radioparadise.com/mp3-192"},
-            {"Radio SRF 3", "http://stream.srg-ssr.ch/m/drs3/mp3_128"},
-            {"Swiss Jazz", "http://stream.srg-ssr.ch/m/rsj/mp3_128"},
-            {"Sky Radio", "http://playerservices.streamtheworld.com/api/livestream-redirect/SKYRADIO.mp3"},
-            {"Urbana Play", "https://cdn.instream.audio/:9660/stream"},
-            {"RMC", "https://icy.unitedradio.it/RMC.aac"},
-        };
+        std::map<std::string, std::string> presets_;
 
         SDL_AudioDeviceID dev{};
         SDL_AudioSpec obtained_spec{};
