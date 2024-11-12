@@ -142,8 +142,9 @@ private:
                     if (ImGui::MenuItem("Debug")) {
                         // attach a console, so I can check what comes out of std::cerr
                         AllocConsole();
-                        FILE *stream;
-                        freopen_s(&stream, "CONOUT$", "w", stderr);
+                        FILE *out, *err;
+                        freopen_s(&out, "CONOUT$", "w", stderr);
+                        freopen_s(&err, "CONOUT$", "w", stdout);
                     }
                     ImGui::Separator();
                     if (ImGui::MenuItem("Exit"))

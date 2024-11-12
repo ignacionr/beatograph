@@ -15,6 +15,7 @@
 #include "metrics/metrics_screen.hpp"
 #include "toggl/toggl_client.hpp"
 #include "toggl/toggl_screen.hpp"
+#include "jira/host.hpp"
 #include "jira/screen.hpp"
 #include "calendar/screen.hpp"
 #include "data_offering/screen.hpp"
@@ -34,6 +35,15 @@
 #include "imgcache.hpp"
 #include "conversions/screen.hpp"
 
+std::string get_env_variable(std::string_view key) {
+    char *val = nullptr;
+    size_t len = 0;
+    if (_dupenv_s(&val, &len, key.data()) || val == nullptr)
+    {
+        throw std::runtime_error(std::format("Error: {} environment variable not set.", key));
+    }
+    return std::string{val, len - 1}; // len returns the count of all copied bytes, including the terminator
+}
 
 #if defined(_WIN32)
 int WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
@@ -47,46 +57,23 @@ int main()
         // auto constexpr impact_sound = "assets/mixkit-underground-explosion-impact-echo-1686.wav";
 
         img_cache cache{"imgcache"};
+
         // get the Groq API key from GROQ_API_KEY
-        char *groq_env = nullptr;
-        size_t len = 0;
-        if (_dupenv_s(&groq_env, &len, "GROQ_API_KEY") || groq_env == nullptr)
-        {
-            std::cerr << "Error: GROQ_API_KEY environment variable not set." << std::endl;
-            return 1;
-        }
-        std::string groq_api_key{groq_env, len - 1}; // len returns the count of all copied bytes, including the terminator
+        auto groq_api_key = get_env_variable("GROQ_API_KEY");
         ignacionr::cppgpt gpt{groq_api_key, ignacionr::cppgpt::groq_base};
 
-        char *token_env = nullptr;
-        len = 0;
-        if (_dupenv_s(&token_env, &len, "TOGGL_API_TOKEN") || token_env == nullptr)
-        {
-            std::cerr << "Error: TOGGL_API_TOKEN environment variable not set." << std::endl;
-            return 1;
-        }
-        std::string toggle_token{token_env, len - 1}; // len returns the count of all copied bytes, including the terminator
-
-        char *dataoffering_env = nullptr;
-        len = 0;
-        if (_dupenv_s(&dataoffering_env, &len, "DATAOFFERING_TOKEN") || dataoffering_env == nullptr) {
-            std::cerr << "Error: DATAOFFERING_TOKEN environment variable not set." << std::endl;
-            return 1;
-        }
-        std::string const dataoffering_token {dataoffering_env, len - 1};
-
-
-        toggl_client tc(toggle_token);
+        toggl_client tc(get_env_variable("TOGGL_API_TOKEN"));
         toggl_screen ts(tc);
 
-        jira_screen js;
+        jira::host jh {get_env_variable("JIRA_USER"), get_env_variable("JIRA_TOKEN")};
+        jira::screen js;
 
         calendar_screen cs;
 
         host_local localhost;
 
         git_host git{localhost};
-        dataoffering::screen ds{localhost, groq_api_key, dataoffering_token};
+        dataoffering::screen ds{localhost, groq_api_key, get_env_variable("DATAOFFERING_TOKEN")};
 
         cluster_report cr{localhost};
         ssh_screen ssh_screen;
@@ -166,7 +153,7 @@ int main()
             {"Data Offering", [&ds] { ds.render(); }},
             {"ArangoDB", [&cr] { cr.render(); }},
             {"Toggl", [&ts] { ts.render(); }},
-            {"Jira", [&js] { js.render(); }},
+            {"Jira", [&js, &jh] { js.render(jh); }},
             {"Calendar", [&cs] { cs.render(); }},
             {"Configured SSH Hosts", [&ssh_screen, &localhost] { ssh_screen.render(localhost); }},
              {"Git Repositories", [&git]
