@@ -3,18 +3,20 @@
 #include <string>
 #include <imgui.h>
 #include <vector>
-#include <utility>
+#include <tuple>
 
 struct screen_tabs {
-    using tab_t = std::pair<std::string, std::function<void()>>;
+    using tab_t = std::tuple<std::string, std::function<void()>, std::function<void(std::string_view)>>;
     screen_tabs(std::vector<tab_t> tabs) : tabs{std::move(tabs)} {}
     void render()
     {
         if (ImGui::BeginTabBar("Tabs")) {
-            for (const auto &[name, render] : tabs)
+            current_menu = {};
+            for (const auto &[name, render, render_menu] : tabs)
             {
                 if (ImGui::BeginTabItem(name.c_str()))
                 {
+                    current_menu = render_menu;
                     render();
                     ImGui::EndTabItem();
                 }
@@ -22,6 +24,12 @@ struct screen_tabs {
             ImGui::EndTabBar();
         }
     }
+    void render_menu(std::string_view item) {
+        if (current_menu) {
+            current_menu(item);
+        }
+    }
 private:
     std::vector<tab_t> tabs;
+    std::function<void(std::string_view)> current_menu{};
 };

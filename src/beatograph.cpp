@@ -148,14 +148,16 @@ int main()
         //     }
         // };
 
+        auto no_menu = [](std::string_view){};
+
         auto tabs = std::make_unique<screen_tabs>(std::vector<screen_tabs::tab_t> {
-            {"Backend Dev", [&dev_screen] { dev_screen.render(); }},
-            {"Data Offering", [&ds] { ds.render(); }},
-            {"ArangoDB", [&cr] { cr.render(); }},
-            {"Toggl", [&ts] { ts.render(); }},
-            {"Jira", [&js, &jh] { js->render(jh); }},
-            {"Calendar", [&cs] { cs.render(); }},
-            {"Configured SSH Hosts", [&ssh_screen, &localhost] { ssh_screen.render(localhost); }},
+            {"Backend Dev", [&dev_screen] { dev_screen.render(); }, no_menu},
+            {"Data Offering", [&ds] { ds.render(); }, no_menu},
+            {"ArangoDB", [&cr] { cr.render(); }, no_menu},
+            {"Toggl", [&ts] { ts.render(); }, no_menu},
+            {"Jira", [&js, &jh] { js->render(jh); }, [&js](std::string_view item){ js->render_menu(item); }},
+            {"Calendar", [&cs] { cs.render(); }, no_menu},
+            {"Configured SSH Hosts", [&ssh_screen, &localhost] { ssh_screen.render(localhost); }, no_menu},
              {"Git Repositories", [&git]
              {
                  ImGui::Text("Git Repositories");
@@ -166,7 +168,7 @@ int main()
                          ImGui::Text("%s", repo.c_str());
                      }
                  }
-             }},
+             }, no_menu},
             //  {"GitHub", [] { ImGui::Text("GitHub"); }},
             //  {"Bitbucket", [] { ImGui::Text("Bitbucket");}},
             //  {"Zookeeper", [] { ImGui::Text("Zookeeper"); }},
@@ -178,8 +180,8 @@ int main()
              {"Radio", [&radio_screen, &rss_screen] {
                 radio_screen->render();
                 rss_screen.render();
-             }},
-             {"Conversions", [&conv_screen] { conv_screen.render(); }}
+             }, no_menu},
+             {"Conversions", [&conv_screen] { conv_screen.render(); }, no_menu}
         });
         main_screen screen{std::move(tabs)};
 

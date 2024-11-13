@@ -17,7 +17,7 @@ namespace jira
         issue_screen(img_cache &cache): user_screen_{cache} {
         }
 
-        bool render(nlohmann::json const &json, host& h, bool expanded = false)
+        bool render(nlohmann::json const &json, host& h, bool expanded = false, bool show_json_details = false, bool show_assignee = false)
         {
             bool request_requery = false;
             auto const key{json.at("key").get<std::string>()};
@@ -39,12 +39,14 @@ namespace jira
                 ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[1]);
                 ImGui::TextWrapped("%s\n \n", fields.at("summary").get<std::string>().c_str());
                 ImGui::PopFont();
-                ImGui::SeparatorText("Asignee");
-                if (fields.find("assignee") != fields.end() && fields.at("assignee").is_object()) {
-                    user_screen_.render(fields.at("assignee"));
-                }
-                else {
-                    ImGui::Text("Unassigned");
+                if (show_assignee) {
+                    ImGui::SeparatorText("Asignee");
+                    if (fields.find("assignee") != fields.end() && fields.at("assignee").is_object()) {
+                        user_screen_.render(fields.at("assignee"));
+                    }
+                    else {
+                        ImGui::Text("Unassigned");
+                    }
                 }
                 if (ImGui::SmallButton("Assign to me")) {
                     h.assign_issue_to_me(key);
@@ -68,16 +70,18 @@ namespace jira
                     nlohmann::json::array_t const &subtasks {fields.at("subtasks").get<nlohmann::json::array_t>()};
                     for (nlohmann::json const &subtask : subtasks)
                     {
-                        request_requery |= render(subtask, h);
+                        request_requery |= render(subtask, h, false, show_json_details, show_assignee);
                     }
                     ImGui::Unindent();
                 }
-                ImGui::Indent();
-                if (ImGui::CollapsingHeader("All Details"))
-                {
-                    json_view_.render(fields);
+                if (show_json_details) {
+                    ImGui::Indent();
+                    if (ImGui::CollapsingHeader("All Details"))
+                    {
+                        json_view_.render(fields);
+                    }
+                    ImGui::Unindent();
                 }
-                ImGui::Unindent();
             }
             ImGui::PopStyleColor();
             ImGui::PopID();

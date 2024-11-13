@@ -82,6 +82,7 @@ struct main_screen
         }
         Repository<SDL_Renderer *>::available(sdl_renderer);
     }
+
     ~main_screen()
     {
         // destroy the ImGui SDL2 backend
@@ -143,6 +144,7 @@ private:
                     {
                         running = false;
                     }
+                    screen->render_menu("File");
                     ImGui::EndMenu();
                 }
                 if (ImGui::BeginMenu("View")) {
@@ -157,8 +159,10 @@ private:
                         freopen_s(&out, "CONOUT$", "w", stderr);
                         freopen_s(&err, "CONOUT$", "w", stdout);
                     }
+                    screen->render_menu("View");
                     ImGui::EndMenu();
                 }
+                screen->render_menu("Main");
                 ImGui::EndMenuBar();
             }
             if (show_stats)

@@ -24,6 +24,18 @@ namespace jira
             search_text_.reserve(256);
         }
 
+        void render_menu(std::string_view item) {
+            if (item == "View") {
+                ImGui::SeparatorText("JIRA");
+                if (ImGui::MenuItem("Show Details", nullptr, show_json_details_)) {
+                    show_json_details_ = !show_json_details_;
+                }
+                if (ImGui::MenuItem("Show Assignee", nullptr, show_assignee_)) {
+                    show_assignee_ = !show_assignee_;
+                }
+            }
+        }
+
         void render(host &h)
         {
             ImGui::Columns(2);
@@ -31,7 +43,7 @@ namespace jira
             // present the selected issues
             for (auto const &issue : selected_issues_)
             {
-                if (issue_screen_.render(issue, h, true)) {
+                if (issue_screen_.render(issue, h, true, show_json_details_, show_assignee_)) {
                     query();
                     return;
                 }
@@ -117,5 +129,7 @@ namespace jira
         project_screen project_screen_;
         std::vector<nlohmann::json::object_t> selected_issues_;
         selector_t selector_;
+        bool show_json_details_{false};
+        bool show_assignee_{false};
     };
 }
