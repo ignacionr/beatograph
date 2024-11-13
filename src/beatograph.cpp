@@ -66,7 +66,7 @@ int main()
         toggl_screen ts(tc);
 
         jira::host jh {get_env_variable("JIRA_USER"), get_env_variable("JIRA_TOKEN")};
-        jira::screen js;
+        std::unique_ptr<jira::screen> js;
 
         calendar_screen cs;
 
@@ -153,7 +153,7 @@ int main()
             {"Data Offering", [&ds] { ds.render(); }},
             {"ArangoDB", [&cr] { cr.render(); }},
             {"Toggl", [&ts] { ts.render(); }},
-            {"Jira", [&js, &jh] { js.render(jh); }},
+            {"Jira", [&js, &jh] { js->render(jh); }},
             {"Calendar", [&cs] { cs.render(); }},
             {"Configured SSH Hosts", [&ssh_screen, &localhost] { ssh_screen.render(localhost); }},
              {"Git Repositories", [&git]
@@ -182,7 +182,15 @@ int main()
              {"Conversions", [&conv_screen] { conv_screen.render(); }}
         });
         main_screen screen{std::move(tabs)};
+
+        // time to setup our fonts
+        auto &io {ImGui::GetIO()};
+        io.Fonts->AddFontDefault();
+        io.Fonts->AddFontFromFileTTF("assets/fonts/Montserrat-Regular.ttf", 16.0f);
+        std::cerr << std::format("Fonts loaded: {}\n", io.Fonts->Fonts.size());
+
         radio_screen = std::make_unique<radio::screen>(radio_host, cache);
+        js = std::make_unique<jira::screen>();
         screen.run();
         views::quitting(true);
     }
