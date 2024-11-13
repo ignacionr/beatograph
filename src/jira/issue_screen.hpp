@@ -1,6 +1,8 @@
 #pragma once
 
 #include <string>
+#include <stdexcept>
+#include <thread>
 #include <unordered_map>
 
 #include <nlohmann/json.hpp>
@@ -15,6 +17,20 @@ namespace jira
     struct issue_screen
     {
         issue_screen(img_cache &cache): user_screen_{cache} {
+        }
+
+        void do_async(std::function<void()> fn) {
+            // std::thread([fn]{
+                try {
+                    fn();
+                }
+                catch(std::exception const &e) {
+                    std::cerr << "Error in async function: " << e.what() << "\n";
+                }
+                catch(...) {
+                    std::cerr << "Error in async function\n";
+                }
+            //}).detach();
         }
 
         bool render(nlohmann::json const &json, host& h, bool expanded = false, bool show_json_details = false, bool show_assignee = false)
@@ -49,15 +65,19 @@ namespace jira
                     }
                 }
                 if (ImGui::SmallButton("Assign to me")) {
-                    h.assign_issue_to_me(key);
+                    do_async([&h, key] { h.assign_issue_to_me(key); });
+                    request_requery = true;
+                }
+                if (ImGui::SameLine(); ImGui::SmallButton("Unassign")) {
+                    do_async([&h, key] { h.unassign_issue(key); });
                     request_requery = true;
                 }
                 if (ImGui::SameLine(); ImGui::SmallButton("Mark as Done")) {
-                    h.transition_issue(key, "31");
+                    do_async([&h, key]{ h.transition_issue(key, "31");});
                     request_requery = true;
                 }
                 if (ImGui::SameLine(); ImGui::SmallButton("Mark In Progress")) {
-                    h.transition_issue(key, "21");
+                    do_async([&h, key]{ h.transition_issue(key, "21");});
                     request_requery = true;
                 }
                 ImGui::EndChild();

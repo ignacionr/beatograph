@@ -2,6 +2,7 @@
 
 #include <functional>
 #include <vector>
+#include <mutex>
 
 #include <nlohmann/json.hpp>
 
@@ -38,12 +39,15 @@ namespace jira
 
         void render(host &h)
         {
+            // lock the selection_mutex_
+            std::lock_guard lock(selection_mutex_);
+
             ImGui::Columns(2);
             ImGui::SetColumnWidth(0, ImGui::GetWindowWidth() - 200);
             // present the selected issues
             for (auto const &issue : selected_issues_)
             {
-                if (issue_screen_.render(issue, h, true, show_json_details_, show_assignee_)) {
+                if (issue_screen_.render(issue, h, false, show_json_details_, show_assignee_)) {
                     query();
                     return;
                 }
@@ -86,35 +90,17 @@ namespace jira
                         }
                     }
                 });
-
             ImGui::Columns();
-
-            // ImGui::InputText("Search", search_text_.data(), search_text_.capacity());
-            // {
-            //     search_text_.resize(std::strlen(search_text_.data()));
-            //     views::cached_view<nlohmann::json::array_t>("Search Results",
-            //         [&h, &search_text = search_text_] {
-            //             nlohmann::json result = nlohmann::json::parse(h.search_issues_summary(search_text));
-            //             if (result.contains("errorMessages")) {
-            //                 throw std::runtime_error(result.at("errorMessages").dump());
-            //             }
-            //             return result.at("issues");
-            //         },
-            //         [this, &h](nlohmann::json::array_t const &json_content) {
-            //             if (json_content.empty())
-            //             {
-            //                 ImGui::Text("No results found.");
-            //             }
-            //             else for (auto const &issue : json_content)
-            //             {
-            //                 issue_screen_.render(issue, h);
-            //             }
-            //         });
-            // }
         }
 
         void query() {
-            selected_issues_ = selector_();
+            std::thread([this] {
+                auto result = selector_();
+                {
+                    std::lock_guard lock(selection_mutex_);
+                    selected_issues_ = result;
+                }
+            }).detach();
         }
 
         void select(selector_t selector) {
@@ -129,6 +115,7 @@ namespace jira
         project_screen project_screen_;
         std::vector<nlohmann::json::object_t> selected_issues_;
         selector_t selector_;
+        std::mutex selection_mutex_;
         bool show_json_details_{false};
         bool show_assignee_{false};
     };

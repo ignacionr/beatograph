@@ -3,7 +3,9 @@
 #include <filesystem>
 #include <fstream>
 #include <map>
+#include <mutex>
 #include <string>
+#include <thread>
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
@@ -33,8 +35,9 @@ struct img_cache {
         save();
     }
 
-    void save() const {
+    void save() {
         std::ofstream index_file{cache_path_ / "index.txt"};
+        std::lock_guard lock{index_mutex_};
         for (auto const &[key, value] : index_) {
             index_file << key << ' ' << value << '\n';
         }
@@ -69,10 +72,21 @@ struct img_cache {
     }
 
     unsigned int load_texture_from_url(std::string const &url) {
+        std::lock_guard lock{index_mutex_};
         auto it = index_.find(url);
         if (it != index_.end()) {
             return load_texture_from_file(it->second);
         }
+        // is there a thread already downloading this?
+        auto it_thread = loader_threads_.find(url);
+        if (it_thread == loader_threads_.end()) {
+            // craete one
+            loader_threads_[url] = std::thread{&img_cache::load_into_cache, this, url};
+        }
+        return load_texture_from_file("assets/b6a9d081425dd6a.png");
+    }
+
+    void load_into_cache(std::string const &url) {
         // obtain the url path plus filename part only (exclude querystring or hash)
         auto const pos_qs = url.find('?');
         auto const pos_hash = url.find('#');
@@ -92,36 +106,43 @@ struct img_cache {
         std::transform(extension.begin(), extension.end(), extension.begin(), [](unsigned char c) { return std::toupper(c); });
         auto file_path = cache_path_ / std::format("{}{}", std::hash<std::string>{}(url), extension);
 
-        // download the image into file_path
-        CURL *curl = curl_easy_init();
-        if (!curl) {
-            throw std::runtime_error("Failed to initialize curl");
+        if (!std::filesystem::exists(file_path)) {
+
+            // download the image into file_path
+            CURL *curl = curl_easy_init();
+            if (!curl) {
+                throw std::runtime_error("Failed to initialize curl");
+            }
+            {
+                std::ofstream image_file{file_path, std::ios::binary};
+                if (!image_file) {
+                    throw std::runtime_error(std::format("Failed to open file: {}", file_path.string()));
+                }
+                curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+                curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+                curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 3L);
+                curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
+                curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+                curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
+                curl_easy_setopt(curl, CURLOPT_WRITEDATA, &image_file);
+                auto res = curl_easy_perform(curl);
+                if (res != CURLE_OK) {
+                    curl_easy_cleanup(curl);
+                    throw std::runtime_error(std::format("Failed to download image: {}", curl_easy_strerror(res)));
+                }
+            }
+            curl_easy_cleanup(curl);
         }
         {
-            std::ofstream image_file{file_path, std::ios::binary};
-            if (!image_file) {
-                throw std::runtime_error(std::format("Failed to open file: {}", file_path.string()));
-            }
-            curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-            curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-            curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 3L);
-            curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
-            curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
-            curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
-            curl_easy_setopt(curl, CURLOPT_WRITEDATA, &image_file);
-            auto res = curl_easy_perform(curl);
-            if (res != CURLE_OK) {
-                curl_easy_cleanup(curl);
-                throw std::runtime_error(std::format("Failed to download image: {}", curl_easy_strerror(res)));
-            }
+            std::lock_guard lock{index_mutex_};
+            index_[url] = file_path.string();
         }
-        curl_easy_cleanup(curl);
-        index_[url] = file_path.string();
-        return load_texture_from_file(file_path.string());
     }
 
 private:
     std::filesystem::path cache_path_;
     std::map<std::string, std::string> index_;
+    std::mutex index_mutex_;
+    std::map<std::string, std::thread> loader_threads_;
     std::map<std::string, unsigned int> textures_;
 };

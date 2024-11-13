@@ -89,6 +89,18 @@ namespace jira {
             }
         }
 
+        void unassign_issue(std::string_view issue_key) {
+            nlohmann::json::object_t contents = {
+                {"accountId", nullptr}
+            };
+            auto const result_string = put(
+                std::format("issue/{}/assignee", issue_key), contents);
+            if (!result_string.empty()) {
+                auto result = nlohmann::json::parse(result_string);
+                throw std::runtime_error(result.at("errorMessages").dump());
+            }
+        }
+
         std::string send(std::string_view endpoint, std::string_view verb, std::string_view contents, std::string_view content_type){
             CURL* curl = curl_easy_init();
             if(!curl) {
