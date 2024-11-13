@@ -6,6 +6,7 @@
 #include "../views/cached_view.hpp"
 #include "../views/json.hpp"
 #include "issue_screen.hpp"
+#include "user_screen.hpp"
 
 namespace jira
 {
@@ -13,10 +14,10 @@ namespace jira
     {
         void render(host &h)
         {
-            views::cached_view<std::string>("My Profile",
-                [&h](){ return h.me(); },
-                [this](std::string const& json_content) {
-                    json.render(json_content);
+            views::cached_view<nlohmann::json::object_t>("My Profile",
+                [&h](){ return nlohmann::json::parse(h.me()); },
+                [this] (nlohmann::json::object_t const& json_content) {
+                    user_screen_.render(json_content);
                 }
             );
             using json_array_t = std::vector<nlohmann::json::object_t>;
@@ -36,11 +37,12 @@ namespace jira
                     for (nlohmann::json const &issue : json_content) {
                         issue_screen_.render(issue);
                     }
-                }
-            );
+                },
+                true);
         }
     private:
         views::json json;
         issue_screen issue_screen_;
+        user_screen user_screen_;
     };
 }

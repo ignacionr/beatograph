@@ -100,7 +100,7 @@ struct main_screen
         running = true;
         while (running)
         {
-            while (SDL_WaitEventTimeout(&event, 1000 / 60))
+            while (SDL_WaitEventTimeout(&event, 1000 / 120))
             {
                 if (event.type == SDL_QUIT)
                 {
@@ -139,6 +139,17 @@ private:
             {
                 if (ImGui::BeginMenu("File"))
                 {
+                    if (ImGui::MenuItem("Exit"))
+                    {
+                        running = false;
+                    }
+                    ImGui::EndMenu();
+                }
+                if (ImGui::BeginMenu("View")) {
+                    if (ImGui::MenuItem("Stats", nullptr, show_stats))
+                    {
+                        show_stats = !show_stats;
+                    }
                     if (ImGui::MenuItem("Debug")) {
                         // attach a console, so I can check what comes out of std::cerr
                         AllocConsole();
@@ -146,14 +157,14 @@ private:
                         freopen_s(&out, "CONOUT$", "w", stderr);
                         freopen_s(&err, "CONOUT$", "w", stdout);
                     }
-                    ImGui::Separator();
-                    if (ImGui::MenuItem("Exit"))
-                    {
-                        running = false;
-                    }
                     ImGui::EndMenu();
                 }
                 ImGui::EndMenuBar();
+            }
+            if (show_stats)
+            {
+                ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
+                            1000.0f / io.Framerate, io.Framerate);
             }
             screen->render();
             ImGui::End();
@@ -173,5 +184,6 @@ private:
     SDL_GLContext gl_context;
     SDL_Renderer *sdl_renderer;
     std::unique_ptr<screen_t> screen;
-    bool running;
+    bool running{false};
+    bool show_stats{false};
 };
