@@ -35,7 +35,7 @@ namespace jira
                 },
                 [this](json_array_t const& json_content) {
                     for (nlohmann::json const &issue : json_content) {
-                        issue_screen_.render(issue);
+                        issue_screen_.render(issue, true);
                     }
                 },
                 true);

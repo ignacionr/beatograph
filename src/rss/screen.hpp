@@ -105,7 +105,7 @@ namespace rss
                 else if (ImGui::SameLine(); ImGui::Button("Refresh"))
                 {
                     // we will re-add the selected feed into the host
-                    host_.add_feed(current_feed_->feed_link);
+                    host_.add_feeds({current_feed_->feed_link});
                 }
                 else
                 {

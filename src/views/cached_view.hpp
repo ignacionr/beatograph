@@ -14,7 +14,7 @@ namespace views {
     void cached_view(
         std::string const &name, std::function<cached_t()> const &factory, 
         std::function<void(cached_t const &)> const &renderer,
-        bool appear_open = false) 
+        bool no_title = false) 
     {
         using cached_item_t = std::expected<cached_t, std::string>;
         using ptr_t = std::shared_ptr<cached_item_t>;
@@ -22,7 +22,7 @@ namespace views {
 
         static std::unordered_map<int, envelope_t> cache;
 
-        if (ImGui::CollapsingHeader(name.c_str(), appear_open ? ImGuiTreeNodeFlags_DefaultOpen : 0)) {
+        if (no_title || ImGui::CollapsingHeader(name.c_str())) {
             auto const item_id {ImGui::GetID(name.c_str())};
             envelope_t cached_copy{cache[item_id].load()};
             ptr_t item_ptr = cached_copy.load();

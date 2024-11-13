@@ -13,60 +13,61 @@
 namespace rss {
     struct host {
         host() {
-            add_feed("https://ankar.io/this-american-life-archive/TALArchive.xml"); // This American Life
-            add_feed("https://cppcast.com/feed.rss"); // cppcast
-            add_feed("https://feeds.twit.tv/brickhouse.xml");
-            add_feed("https://feeds.twit.tv/twit.xml");
-            add_feed("https://softwareengineeringdaily.com/feed/podcast/");
-            add_feed("https://www.spreaker.com/show/2576750/episodes/feed"); // compute this
-            add_feed("https://www.spreaker.com/show/3392139/episodes/feed"); // Internet Freakshows
-            add_feed("https://www.spreaker.com/show/4209606/episodes/feed"); // los temas del día
-            add_feed("https://www.spreaker.com/show/4956890/episodes/feed"); // CP radio
-            add_feed("https://www.spreaker.com/show/5634793/episodes/feed"); // dotnet rocks
-            add_feed("https://www.spreaker.com/show/5711490/episodes/feed"); // working class history
-            add_feed("https://www.spreaker.com/show/5719641/episodes/feed"); // the digital decode
-            add_feed("https://www.spreaker.com/show/6006838/episodes/feed"); // cine para pensar
-            add_feed("https://www.spreaker.com/show/6102036/episodes/feed"); // adventures in DevOps
-            add_feed("https://www.spreaker.com/show/6332631/episodes/feed"); // cultura líquida
-            add_feed("https://www.spreaker.com/show/6349862/episodes/feed"); // Llama Cast
-            add_feed("https://feeds.transistor.fm/energy-bytes"); // Energy Bytes ?
-            add_feed("https://feeds.transistor.fm/techradio");
-            add_feed("https://rss.podplaystudio.com/2743.xml"); // Tech Talk with Jess Kelly
-            add_feed("https://feeds.simplecast.com/Sl5CSM3S");
-            add_feed("https://sbs-ondemand.streamguys1.com/sbs-russian/");
-            add_feed("https://changelog.com/podcast/feed");
-            add_feed("http://feeds.feedburner.com/VenganzasDelPasado");
-            add_feed("https://feeds.transistor.fm/test-and-code");
-            add_feed("https://feeds.npr.org/510351/podcast.xml");
-            add_feed("https://rss.art19.com/the-lead");
-            add_feed("https://feeds.transistor.fm/small-big-wins");
-            add_feed("https://feeds.megaphone.fm/BVLLC2163264914");
-            add_feed("https://feeds.simplecast.com/Sl5CSM3S");
-            add_feed("https://www.omnycontent.com/d/playlist/e73c998e-6e60-432f-8610-ae210140c5b1/a91018a4-ea4f-4130-bf55-ae270180c327/44710ecc-10bb-48d1-93c7-ae270180c33e/podcast.rss");
-            add_feed("https://allinchamathjason.libsyn.com/rss");
-            add_feed("https://feeds.simplecast.com/hNaFxXpO");
-            add_feed("https://rss.pdrl.fm/55dc8e/feeds.megaphone.fm/WWO7410387571");
-            add_feed("https://feeds.simplecast.com/WCb5SgYj");
-            add_feed("https://audioboom.com/channels/5021027.rss");
-            add_feed("https://audioboom.com/channels/5021027.rss");
-            add_feed("https://anchor.fm/s/28fef6f0/podcast/rss");
-            add_feed("https://anchor.fm/s/f35c22c4/podcast/rss");
-            add_feed("https://feed.podbean.com/podcast.hernancattaneo.com/feed.xml");
-            add_feed("https://feeds.megaphone.fm/ADSMOVILESPAASL6591275552");
-            add_feed("https://anchor.fm/s/5e295028/podcast/rss");
-            add_feed("https://feeds.megaphone.fm/SONORO5005023613");
-            add_feed("https://www.spreaker.com/show/4725236/episodes/feed");
-            add_feed("https://podcasts.files.bbci.co.uk/p02nq0gn.rss");
-            add_feed("https://www.spreaker.com/show/4731320/episodes/feed");
-            add_feed("https://anchor.fm/s/4cc7fadc/podcast/rss");
-            add_feed("https://cuonda.com/monos-estocasticos/feed");
-            add_feed("https://feeds.npr.org/510355/podcast.xml");
-            add_feed("https://anchor.fm/s/5936c94c/podcast/rss");
-            add_feed("https://fapi-top.prisasd.com/podcast/elpais/las_noticias_del_pais.xml");
-            add_feed("https://video-api.wsj.com/podcast/rss/wsj/whats-news");
-            add_feed("https://www.spreaker.com/show/5718542/episodes/feed");
-            add_feed("https://mavecloud.s3mts.ru/storage/feeds/41353.xml");
-            add_feed("https://feeds.transistor.fm/0b18f927-efcb-4ed8-87c4-3cf9642a0de6");
+            add_feeds( {
+                "https://ankar.io/this-american-life-archive/TALArchive.xml" // This American Life
+                , "https://cppcast.com/feed.rss" // cppcast
+                , "https://feeds.twit.tv/brickhouse.xml"
+                , "https://feeds.twit.tv/twit.xml"
+                , "https://softwareengineeringdaily.com/feed/podcast/"
+                , "https://www.spreaker.com/show/2576750/episodes/feed" // compute this
+                , "https://www.spreaker.com/show/3392139/episodes/feed" // Internet Freakshows
+                , "https://www.spreaker.com/show/4209606/episodes/feed" // los temas del día
+                , "https://www.spreaker.com/show/4956890/episodes/feed" // CP radio
+                , "https://www.spreaker.com/show/5634793/episodes/feed" // dotnet rocks
+                , "https://www.spreaker.com/show/5711490/episodes/feed" // working class history
+                , "https://www.spreaker.com/show/5719641/episodes/feed" // the digital decode
+                , "https://www.spreaker.com/show/6006838/episodes/feed" // cine para pensar
+                , "https://www.spreaker.com/show/6102036/episodes/feed" // adventures in DevOps
+                , "https://www.spreaker.com/show/6332631/episodes/feed" // cultura líquida
+                , "https://www.spreaker.com/show/6349862/episodes/feed" // Llama Cast
+                , "https://feeds.transistor.fm/energy-bytes" // Energy Bytes ?
+                , "https://feeds.transistor.fm/techradio"
+                , "https://rss.podplaystudio.com/2743.xml" // Tech Talk with Jess Kelly
+                , "https://feeds.simplecast.com/Sl5CSM3S"
+                , "https://sbs-ondemand.streamguys1.com/sbs-russian/"
+                , "https://changelog.com/podcast/feed"
+                , "http://feeds.feedburner.com/VenganzasDelPasado"
+                , "https://feeds.transistor.fm/test-and-code"
+                , "https://feeds.npr.org/510351/podcast.xml"
+                , "https://rss.art19.com/the-lead"
+                , "https://feeds.transistor.fm/small-big-wins"
+                , "https://feeds.megaphone.fm/BVLLC2163264914"
+                , "https://feeds.simplecast.com/Sl5CSM3S"
+                , "https://www.omnycontent.com/d/playlist/e73c998e-6e60-432f-8610-ae210140c5b1/a91018a4-ea4f-4130-bf55-ae270180c327/44710ecc-10bb-48d1-93c7-ae270180c33e/podcast.rss"
+                , "https://allinchamathjason.libsyn.com/rss"
+                , "https://feeds.simplecast.com/hNaFxXpO"
+                , "https://rss.pdrl.fm/55dc8e/feeds.megaphone.fm/WWO7410387571"
+                , "https://feeds.simplecast.com/WCb5SgYj"
+                , "https://audioboom.com/channels/5021027.rss"
+                , "https://audioboom.com/channels/5021027.rss"
+                , "https://anchor.fm/s/28fef6f0/podcast/rss"
+                , "https://anchor.fm/s/f35c22c4/podcast/rss"
+                , "https://feed.podbean.com/podcast.hernancattaneo.com/feed.xml"
+                , "https://feeds.megaphone.fm/ADSMOVILESPAASL6591275552"
+                , "https://anchor.fm/s/5e295028/podcast/rss"
+                , "https://feeds.megaphone.fm/SONORO5005023613"
+                , "https://www.spreaker.com/show/4725236/episodes/feed"
+                , "https://podcasts.files.bbci.co.uk/p02nq0gn.rss"
+                , "https://www.spreaker.com/show/4731320/episodes/feed"
+                , "https://anchor.fm/s/4cc7fadc/podcast/rss"
+                , "https://cuonda.com/monos-estocasticos/feed"
+                , "https://feeds.npr.org/510355/podcast.xml"
+                , "https://anchor.fm/s/5936c94c/podcast/rss"
+                , "https://fapi-top.prisasd.com/podcast/elpais/las_noticias_del_pais.xml"
+                , "https://video-api.wsj.com/podcast/rss/wsj/whats-news"
+                , "https://www.spreaker.com/show/5718542/episodes/feed"
+                , "https://mavecloud.s3mts.ru/storage/feeds/41353.xml"
+                , "https://feeds.transistor.fm/0b18f927-efcb-4ed8-87c4-3cf9642a0de6"});
         }
 
         static size_t writeCallback(void *contents, size_t size, size_t nmemb, void *userp) {
@@ -113,11 +114,12 @@ namespace rss {
             return parser;
         }
 
-        void add_feed(std::string_view url, std::function<void()> callback = {}) {
-            std::string url_str{url};
-            std::thread([this, url_str, callback] {
+        void add_feeds(std::vector<std::string> urls, std::function<void()> callback = {}) {
+            std::thread([this, urls, callback] {
                 try {
-                    add_feed_sync(url_str);
+                    for (auto const &url_str : urls) {
+                        add_feed_sync(url_str);
+                    }
                     if (callback) callback();
                 }
                 catch(...) {

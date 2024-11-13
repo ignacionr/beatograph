@@ -15,7 +15,7 @@ namespace jira
         issue_screen() {
         }
 
-        void render(nlohmann::json const &json)
+        void render(nlohmann::json const &json, bool expanded = false)
         {
             auto const key{json["key"].get<std::string>()};
             ImGui::PushID(key.c_str());
@@ -25,7 +25,7 @@ namespace jira
                 color_name = json.at("fields").at("status").at("statusCategory").at("colorName").get<std::string>();
             }
             ImGui::PushStyleColor(ImGuiCol_Header, color(color_name));
-            if (ImGui::CollapsingHeader(key.c_str())) {
+            if (ImGui::CollapsingHeader(key.c_str(), expanded ? ImGuiTreeNodeFlags_DefaultOpen : 0)) {
                 nlohmann::json::object_t const &fields {json.at("fields").get<nlohmann::json::object_t>()};
                 ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, {30, 30});
                 ImGui::PushStyleColor(ImGuiCol_FrameBg, color(color_name));
