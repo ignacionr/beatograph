@@ -19,15 +19,18 @@ namespace jira
 
         void render(nlohmann::json const &json, host& h, bool expanded = false)
         {
-            auto const key{json["key"].get<std::string>()};
+            auto const key{json.at("key").get<std::string>()};
             ImGui::PushID(key.c_str());
             std::string color_name {"unknown"};
-            nlohmann::json::json_pointer ptr {"/fields/status/statusCategory/colorName"};
-            if (json.contains(ptr)) {
-                color_name = json.at("fields").at("status").at("statusCategory").at("colorName").get<std::string>();
+            static const nlohmann::json::json_pointer status_color_ptr {"/fields/status/statusCategory/colorName"};
+            if (json.contains(status_color_ptr)) {
+                color_name = json.at(status_color_ptr).get<std::string>();
             }
             ImGui::PushStyleColor(ImGuiCol_Header, color(color_name));
-            if (ImGui::CollapsingHeader(key.c_str(), expanded ? ImGuiTreeNodeFlags_DefaultOpen : 0)) {
+            static const nlohmann::json::json_pointer issue_type_name_ptr {"/fields/issuetype/name"};
+            if (ImGui::CollapsingHeader(std::format("{} - {}", key, json.at(issue_type_name_ptr).get<std::string>()).c_str(),
+                expanded ? ImGuiTreeNodeFlags_DefaultOpen : 0)) 
+            {
                 nlohmann::json::object_t const &fields {json.at("fields").get<nlohmann::json::object_t>()};
                 ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, {20, 20});
                 ImGui::PushStyleColor(ImGuiCol_FrameBg, color(color_name));
@@ -42,7 +45,7 @@ namespace jira
                 else {
                     ImGui::Text("Unassigned");
                 }
-                if (ImGui::Button("Assign to me")) {
+                if (ImGui::SmallButton("Assign to me")) {
                     h.assign_issue_to_me(key);
                 }
                 ImGui::EndChild();

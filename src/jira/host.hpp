@@ -36,8 +36,12 @@ namespace jira {
 
         // Add the following method to the jira::host struct
 
-        std::string get_assigned_issues() {
-            return get_jql("assignee=currentUser()");
+        std::string get_assigned_issues(bool include_done = false) {
+            std::string jql = "assignee=currentUser()";
+            if (!include_done) {
+                jql += " AND statusCategory != \"Done\"";
+            }
+            return get_jql(jql);
         }
 
         std::string get_project(int project_id) {
