@@ -7,15 +7,17 @@
 #include <imgui.h>
 #include "../views/json.hpp"
 #include "colors.hpp"
+#include "user_screen.hpp"
+#include "../imgcache.hpp"
 
 namespace jira
 {
     struct issue_screen
     {
-        issue_screen() {
+        issue_screen(img_cache &cache): user_screen_{cache} {
         }
 
-        void render(nlohmann::json const &json, bool expanded = false)
+        void render(nlohmann::json const &json, host& h, bool expanded = false)
         {
             auto const key{json["key"].get<std::string>()};
             ImGui::PushID(key.c_str());
@@ -27,12 +29,22 @@ namespace jira
             ImGui::PushStyleColor(ImGuiCol_Header, color(color_name));
             if (ImGui::CollapsingHeader(key.c_str(), expanded ? ImGuiTreeNodeFlags_DefaultOpen : 0)) {
                 nlohmann::json::object_t const &fields {json.at("fields").get<nlohmann::json::object_t>()};
-                ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, {30, 30});
+                ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, {20, 20});
                 ImGui::PushStyleColor(ImGuiCol_FrameBg, color(color_name));
                 ImGui::BeginChild(std::format("summary-{}", key).c_str(), {ImGui::GetColumnWidth(), 0}, ImGuiChildFlags_FrameStyle | ImGuiChildFlags_AutoResizeY);
                 ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[1]);
-                ImGui::TextWrapped("%s", fields.at("summary").get<std::string>().c_str());
+                ImGui::TextWrapped("%s\n \n", fields.at("summary").get<std::string>().c_str());
                 ImGui::PopFont();
+                ImGui::SeparatorText("Asignee");
+                if (fields.find("assignee") != fields.end() && fields.at("assignee").is_object()) {
+                    user_screen_.render(fields.at("assignee"));
+                }
+                else {
+                    ImGui::Text("Unassigned");
+                }
+                if (ImGui::Button("Assign to me")) {
+                    h.assign_issue_to_me(key);
+                }
                 ImGui::EndChild();
                 ImGui::PopStyleColor();
                 ImGui::PopStyleVar();
@@ -43,14 +55,14 @@ namespace jira
                     nlohmann::json::array_t const &subtasks {fields.at("subtasks").get<nlohmann::json::array_t>()};
                     for (nlohmann::json const &subtask : subtasks)
                     {
-                        render(subtask);
+                        render(subtask, h);
                     }
                     ImGui::Unindent();
                 }
                 ImGui::Indent();
                 if (ImGui::CollapsingHeader("All Details"))
                 {
-                    json_view.render(fields);
+                    json_view_.render(fields);
                 }
                 ImGui::Unindent();
             }
@@ -59,6 +71,7 @@ namespace jira
         }
 
     private:
-        views::json json_view;
+        views::json json_view_;
+        user_screen user_screen_;
     };
 } // namespace jira

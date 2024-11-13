@@ -190,7 +190,7 @@ int main()
         std::cerr << std::format("Fonts loaded: {}\n", io.Fonts->Fonts.size());
 
         radio_screen = std::make_unique<radio::screen>(radio_host, cache);
-        js = std::make_unique<jira::screen>();
+        js = std::make_unique<jira::screen>(cache);
         screen.run();
         views::quitting(true);
     }

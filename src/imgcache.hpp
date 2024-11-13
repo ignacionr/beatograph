@@ -81,10 +81,13 @@ struct img_cache {
 
         // get the url extension
         auto pos = url_path.find_last_of('.');
-        if (pos == std::string::npos) {
-            throw std::runtime_error("Failed to determine the extension of the image");
+        std::string extension;
+        if (pos != std::string::npos) {
+            extension = url_path.substr(pos);
         }
-        auto extension = url_path.substr(pos);
+        if (extension.size() > 5) {
+            extension.clear();
+        }
         // make the extension uppercase
         std::transform(extension.begin(), extension.end(), extension.begin(), [](unsigned char c) { return std::toupper(c); });
         auto file_path = cache_path_ / std::format("{}{}", std::hash<std::string>{}(url), extension);
@@ -96,6 +99,9 @@ struct img_cache {
         }
         {
             std::ofstream image_file{file_path, std::ios::binary};
+            if (!image_file) {
+                throw std::runtime_error(std::format("Failed to open file: {}", file_path.string()));
+            }
             curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
             curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
             curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 3L);
