@@ -120,8 +120,8 @@ namespace rss
             {
                 if (ImGui::BeginChild("RSS", ImVec2{ImGui::GetWindowWidth() - 20, ImGui::GetWindowHeight() - ImGui::GetCursorPosY() - 20}))
                 {
-                    constexpr float side_length{75};
-                    const unsigned col_count{static_cast<unsigned>((ImGui::GetWindowWidth() - 5) / (side_length + 8))};
+                    constexpr float side_length{160};
+                    const unsigned col_count{static_cast<unsigned>(ImGui::GetWindowWidth() / (side_length + 10))};
                     const ImVec2 button_size(side_length, side_length);
                     int i{0};
                     for (auto feed : host_.feeds())
