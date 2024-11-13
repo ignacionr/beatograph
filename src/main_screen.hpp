@@ -135,6 +135,18 @@ private:
         if (ImGui::Begin("Beat-o-Graph", nullptr,
                          ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar))
         {
+            auto const flags = SDL_GetWindowFlags(window);
+            auto const is_fullscreen {flags & SDL_WINDOW_FULLSCREEN_DESKTOP};
+            auto toggle_fullscreen = [&] {
+                if (is_fullscreen)
+                {
+                    SDL_SetWindowFullscreen(window, 0);
+                }
+                else
+                {
+                    SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN_DESKTOP);
+                }
+            };
 
             if (ImGui::BeginMenuBar())
             {
@@ -159,12 +171,23 @@ private:
                         freopen_s(&out, "CONOUT$", "w", stderr);
                         freopen_s(&err, "CONOUT$", "w", stdout);
                     }
+                    if (ImGui::MenuItem("Full Screen", "F11", is_fullscreen))
+                    {
+                        toggle_fullscreen();
+                    }
                     screen->render_menu("View");
                     ImGui::EndMenu();
                 }
                 screen->render_menu("Main");
                 ImGui::EndMenuBar();
             }
+
+            // run shortcuts
+            if (ImGui::IsKeyPressed(ImGuiKey_F11))
+            {
+                toggle_fullscreen();
+            }
+            
             if (show_stats)
             {
                 ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
