@@ -155,7 +155,7 @@ int main()
             {"Data Offering", [&ds] { ds.render(); }, no_menu},
             {"ArangoDB", [&cr] { cr.render(); }, no_menu},
             {"Toggl", [&ts] { ts.render(); }, no_menu},
-            {"Jira", [&js, &jh] { js->render(jh); }, [&js](std::string_view item){ js->render_menu(item); }},
+            {"Jira", [&js, &jh] { js->render(jh); }, [&js](std::string_view item){ js->render_menu(item); }, ImVec4(0.5f, 0.5f, 1.0f, 1.0f)},
             {"Calendar", [&cs] { cs.render(); }, no_menu},
             {"Configured SSH Hosts", [&ssh_screen, &localhost] { ssh_screen.render(localhost); }, no_menu},
              {"Git Repositories", [&git]

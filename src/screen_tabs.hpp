@@ -6,21 +6,33 @@
 #include <tuple>
 
 struct screen_tabs {
-    using tab_t = std::tuple<std::string, std::function<void()>, std::function<void(std::string_view)>>;
+
+    struct tab_t {
+        std::string name;
+        std::function<void()> render;
+        std::function<void(std::string_view)> render_menu = {};
+        ImVec4 color = ImVec4(0.1f, 0.1f, 0.5f, 1.0f);
+    };
     screen_tabs(std::vector<tab_t> tabs) : tabs{std::move(tabs)} {}
     void render()
     {
         if (ImGui::BeginTabBar("Tabs")) {
+            ImGui::PushStyleColor(ImGuiCol_Tab, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
             current_menu = {};
-            for (const auto &[name, render, render_menu] : tabs)
+            for (const auto &tab : tabs)
             {
-                if (ImGui::BeginTabItem(name.c_str()))
+                ImGui::PushStyleColor(ImGuiCol_TabActive, tab.color);
+                ImGui::PushStyleColor(ImGuiCol_TabHovered, tab.color);
+                if (ImGui::BeginTabItem(tab.name.c_str()))
                 {
-                    current_menu = render_menu;
-                    render();
+                    current_menu = tab.render_menu;
+                    tab.render();
                     ImGui::EndTabItem();
                 }
+                ImGui::PopStyleColor();
+                ImGui::PopStyleColor();
             }
+            ImGui::PopStyleColor();
             ImGui::EndTabBar();
         }
     }

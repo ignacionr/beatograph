@@ -23,3 +23,5 @@ Urbana Play=https://cdn.instream.audio/:9660/stream
 RMC=https://icy.unitedradio.it/RMC.aac
 LT10=https://radio.arcast.net:1060/stream
 FM Sol=https://arcast.com.ar/fmsol/
+Radio Rebelde=https://icecast.teveo.cu/kHKL7tWd
+Habana Radio=https://media.ohc.cu/habanaradio
