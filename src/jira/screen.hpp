@@ -37,23 +37,7 @@ namespace jira
             }
         }
 
-        void render(host &h)
-        {
-            // lock the selection_mutex_
-            std::lock_guard lock(selection_mutex_);
-
-            ImGui::Columns(2);
-            ImGui::SetColumnWidth(0, ImGui::GetWindowWidth() - 200);
-            // present the selected issues
-            for (auto const &issue : selected_issues_)
-            {
-                if (issue_screen_.render(issue, h, false, show_json_details_, show_assignee_)) {
-                    query();
-                    return;
-                }
-            }
-            ImGui::NextColumn();
-
+        void selection_tree(host &h) {
             // now present the tree of options to select issues from different grouppings
             if (ImGui::TreeNode("My Assigned Issues"))
             {
@@ -90,6 +74,25 @@ namespace jira
                         }
                     }
                 });
+        }
+
+        void render(host &h)
+        {
+            // lock the selection_mutex_
+            std::lock_guard lock(selection_mutex_);
+
+            ImGui::Columns(2);
+            ImGui::SetColumnWidth(0, ImGui::GetWindowWidth() - 200);
+            // present the selected issues
+            for (auto const &issue : selected_issues_)
+            {
+                if (issue_screen_.render(issue, h, false, show_json_details_, show_assignee_)) {
+                    query();
+                    return;
+                }
+            }
+            ImGui::NextColumn();
+            selection_tree(h);
             ImGui::Columns();
         }
 

@@ -80,6 +80,10 @@ namespace jira
                     do_async([&h, key]{ h.transition_issue(key, "21");});
                     request_requery = true;
                 }
+                if (ImGui::SameLine(); ImGui::SmallButton("Open Web...")) {
+                    auto const url = std::format("https://betmavrik.atlassian.net/browse/{}", key);
+                    ShellExecuteA(nullptr, "open", url.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+                }
                 ImGui::EndChild();
                 ImGui::PopStyleColor();
                 ImGui::PopStyleVar();
