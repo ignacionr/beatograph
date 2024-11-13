@@ -48,8 +48,12 @@ namespace jira {
             return get(std::format("project/{}", project_id));
         }
 
-        std::string search_todo(std::string project_key) {
-            return get_jql(std::format("project={} AND statusCategory=\"To Do\"", project_key));
+        std::string get_projects() {
+            return get("project");
+        }
+
+        std::string search_by_project(std::string_view project_key, std::string_view status_category = "To Do") {
+            return get_jql(std::format("project={} AND statusCategory=\"{}\" AND issuetype != Subtask", project_key, status_category));
         }
 \
         // search by summary
@@ -61,17 +65,28 @@ namespace jira {
             return get(std::format("search?jql={}", conversions::uri::encode_component(std::string{jql})));
         }
 
-        nlohmann::json assign_issue_to_me(std::string_view issue_key) {
+        void transition_issue(std::string_view issue_key, std::string_view transition_id) {
+            nlohmann::json::object_t contents = {
+                {"transition", {{"id", transition_id}}}
+            };
+            auto const result_string = post(
+                std::format("issue/{}/transitions", issue_key), contents);
+            if (!result_string.empty()) {
+                auto result = nlohmann::json::parse(result_string);
+                throw std::runtime_error(result.at("errorMessages").dump());
+            }
+        }
+
+        void assign_issue_to_me(std::string_view issue_key) {
             nlohmann::json::object_t contents = {
                 {"accountId", account_id()}
             };
             auto const result_string = put(
                 std::format("issue/{}/assignee", issue_key), contents);
-            auto result = nlohmann::json::parse(result_string);
-            if (result.contains("errorMessages")) {
+            if (!result_string.empty()) {
+                auto result = nlohmann::json::parse(result_string);
                 throw std::runtime_error(result.at("errorMessages").dump());
             }
-            return result;
         }
 
         std::string send(std::string_view endpoint, std::string_view verb, std::string_view contents, std::string_view content_type){
@@ -107,6 +122,10 @@ namespace jira {
 
         std::string put(std::string_view endpoint, nlohmann::json contents) {
             return send(endpoint, "PUT", contents.dump(), "application/json");
+        }
+        
+        std::string post(std::string_view endpoint, nlohmann::json contents) {
+            return send(endpoint, "POST", contents.dump(), "application/json");
         }
 
         std::string get(std::string_view endpoint) {

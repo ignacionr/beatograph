@@ -33,7 +33,7 @@ namespace jira
             }
             views::cached_view<nlohmann::json::array_t>("To Do",
                 [key, &host]() {
-                    return nlohmann::json::parse(host.search_todo(key)).at("issues");
+                    return nlohmann::json::parse(host.search_by_project(key)).at("issues");
                 },
                 [this, &host](nlohmann::json::array_t const &json_components) {
                     if (json_components.empty())

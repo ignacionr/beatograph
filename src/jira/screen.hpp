@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <vector>
 
 #include <nlohmann/json.hpp>
@@ -16,6 +17,8 @@ namespace jira
 {
     struct screen
     {
+        using selector_t = std::function<std::vector<nlohmann::json::object_t>()>;
+
         screen(img_cache &cache) : 
         user_screen_{cache}, issue_screen_{cache}, project_screen_{cache} {
             search_text_.reserve(256);
@@ -24,11 +27,14 @@ namespace jira
         void render(host &h)
         {
             ImGui::Columns(2);
-            ImGui::SetColumnWidth(0, ImGui::GetWindowWidth() - 140);
+            ImGui::SetColumnWidth(0, ImGui::GetWindowWidth() - 200);
             // present the selected issues
             for (auto const &issue : selected_issues_)
             {
-                issue_screen_.render(issue, h, true);
+                if (issue_screen_.render(issue, h, true)) {
+                    query();
+                    return;
+                }
             }
             ImGui::NextColumn();
 
@@ -36,23 +42,41 @@ namespace jira
             if (ImGui::TreeNode("My Assigned Issues"))
             {
                 if (ImGui::SmallButton("Except Done")) {
-                    selected_issues_ = nlohmann::json::parse(h.get_assigned_issues()).at("issues").get<std::vector<nlohmann::json::object_t>>();
+                    select([&h] { return nlohmann::json::parse(h.get_assigned_issues()).at("issues").get<std::vector<nlohmann::json::object_t>>(); });
                 }
                 if (ImGui::SmallButton("All")) {
-                    selected_issues_ = nlohmann::json::parse(h.get_assigned_issues(true)).at("issues").get<std::vector<nlohmann::json::object_t>>();
+                    select([&h] { return nlohmann::json::parse(h.get_assigned_issues(true)).at("issues").get<std::vector<nlohmann::json::object_t>>(); });
                 }
                 ImGui::TreePop();
             }
+            views::cached_view<nlohmann::json::array_t>("Projects",
+                [&h]() {
+                    return nlohmann::json::parse(h.get_projects());
+                },
+                [this, &h](nlohmann::json::array_t const &json_projects) {
+                    for (auto const &project : json_projects)
+                    {
+                        auto const key {project.at("key").get<std::string>()};
+                        auto const key_and_name = std::format("{} - {}", 
+                            key, 
+                            project.at("name").get<std::string>());
+                        if (ImGui::TreeNode(key_and_name.c_str()))
+                        {
+                            static const std::array<std::string_view, 3> status_categories {"To Do", "In Progress", "Done"};
+                            for (auto const status_category : status_categories)
+                            {
+                                if (ImGui::SmallButton(status_category.data()))
+                                {
+                                    select([&h, key, status_category]{ return nlohmann::json::parse(h.search_by_project(key, status_category)).at("issues").get<std::vector<nlohmann::json::object_t>>();});
+                                }
+                            }
+                            ImGui::TreePop();
+                        }
+                    }
+                });
 
             ImGui::Columns();
 
-            // views::cached_view<nlohmann::json::object_t>("My Main Project",
-            //     [&h]() {
-            //         return nlohmann::json::parse(h.get_project(10026));
-            //     },
-            //     [this, &h](nlohmann::json::object_t const &json_content) {
-            //         project_screen_.render(json_content, h);
-            //     });
             // ImGui::InputText("Search", search_text_.data(), search_text_.capacity());
             // {
             //     search_text_.resize(std::strlen(search_text_.data()));
@@ -75,25 +99,15 @@ namespace jira
             //             }
             //         });
             // }
-            // using json_array_t = std::vector<nlohmann::json::object_t>;
-            // views::cached_view<json_array_t>("My Assigned Issues",
-            //     [&h]() {
-            //         json_array_t issues;
-            //         auto const issues_response {h.get_assigned_issues()};
-            //         std::cerr << issues_response << std::endl;
-            //         nlohmann::json obj = nlohmann::json::parse(issues_response);
-            //         nlohmann::json::array_t arr_issues = obj["issues"].get<nlohmann::json::array_t>();
-            //         for (nlohmann::json const &issue : arr_issues) {
-            //             issues.push_back(issue);
-            //         }
-            //         return issues;
-            //     },
-            //     [this, &h](json_array_t const& json_content) {
-            //         for (nlohmann::json const &issue : json_content) {
-            //             issue_screen_.render(issue, h, true);
-            //         }
-            //     },
-            //     true);
+        }
+
+        void query() {
+            selected_issues_ = selector_();
+        }
+
+        void select(selector_t selector) {
+            selector_ = selector;
+            query();
         }
     private:
         views::json json;
@@ -102,5 +116,6 @@ namespace jira
         std::string search_text_;
         project_screen project_screen_;
         std::vector<nlohmann::json::object_t> selected_issues_;
+        selector_t selector_;
     };
 }

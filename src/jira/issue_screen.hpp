@@ -17,8 +17,9 @@ namespace jira
         issue_screen(img_cache &cache): user_screen_{cache} {
         }
 
-        void render(nlohmann::json const &json, host& h, bool expanded = false)
+        bool render(nlohmann::json const &json, host& h, bool expanded = false)
         {
+            bool request_requery = false;
             auto const key{json.at("key").get<std::string>()};
             ImGui::PushID(key.c_str());
             std::string color_name {"unknown"};
@@ -47,6 +48,15 @@ namespace jira
                 }
                 if (ImGui::SmallButton("Assign to me")) {
                     h.assign_issue_to_me(key);
+                    request_requery = true;
+                }
+                if (ImGui::SameLine(); ImGui::SmallButton("Mark as Done")) {
+                    h.transition_issue(key, "31");
+                    request_requery = true;
+                }
+                if (ImGui::SameLine(); ImGui::SmallButton("Mark In Progress")) {
+                    h.transition_issue(key, "21");
+                    request_requery = true;
                 }
                 ImGui::EndChild();
                 ImGui::PopStyleColor();
@@ -58,7 +68,7 @@ namespace jira
                     nlohmann::json::array_t const &subtasks {fields.at("subtasks").get<nlohmann::json::array_t>()};
                     for (nlohmann::json const &subtask : subtasks)
                     {
-                        render(subtask, h);
+                        request_requery |= render(subtask, h);
                     }
                     ImGui::Unindent();
                 }
@@ -71,6 +81,7 @@ namespace jira
             }
             ImGui::PopStyleColor();
             ImGui::PopID();
+            return request_requery;
         }
 
     private:
