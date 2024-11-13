@@ -9,6 +9,7 @@
 #include "base64.hpp"
 #include "string-double.hpp"
 #include "metric-imperial.hpp"
+#include "uri.hpp"
 
 namespace conversions
 {
@@ -48,7 +49,9 @@ namespace conversions
                 {"Text to Base64", text_to_base64},
                 {"Base64 to Text", base64_to_text},
                 {"Meters to Feet", string_double::convert(metric_imperial::meters_to_feet)},
-                {"Feet to Meters", string_double::convert(metric_imperial::feet_to_meters)}};
+                {"Feet to Meters", string_double::convert(metric_imperial::feet_to_meters)},
+                {"Text to URI Component", uri::encode_component}
+                };
             return conversions;
         }
 
