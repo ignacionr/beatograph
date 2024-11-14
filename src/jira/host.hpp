@@ -101,6 +101,21 @@ namespace jira {
             }
         }
 
+        nlohmann::json::object_t create_issue(std::string_view issue_summary, std::string_view project_key) {
+            nlohmann::json::object_t contents = {
+                {"fields", {
+                    {"project", {{"key", project_key}}},
+                    {"summary", issue_summary},
+                    {"issuetype", {{"id", "10053"}}}
+                }}
+            };
+            nlohmann::json::object_t const result = nlohmann::json::parse(post("issue", contents));
+            if (result.contains("errorMessages")) {
+                throw std::runtime_error(result.at("errorMessages").dump());
+            }
+            return result;
+        }
+
         std::string send(std::string_view endpoint, std::string_view verb, std::string_view contents, std::string_view content_type){
             CURL* curl = curl_easy_init();
             if(!curl) {

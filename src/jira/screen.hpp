@@ -3,6 +3,7 @@
 #include <functional>
 #include <vector>
 #include <mutex>
+#include <sstream>
 
 #include <nlohmann/json.hpp>
 
@@ -23,6 +24,7 @@ namespace jira
         screen(img_cache &cache) : 
         user_screen_{cache}, issue_screen_{cache}, project_screen_{cache} {
             search_text_.reserve(256);
+            summary_text_.reserve(256);
         }
 
         void render_menu(std::string_view item) {
@@ -76,12 +78,7 @@ namespace jira
                 });
         }
 
-        void render(host &h)
-        {
-            // lock the selection_mutex_
-            std::lock_guard lock(selection_mutex_);
-
-            ImGui::Columns(2);
+        void render_list(host &h) {
             ImGui::SetColumnWidth(0, ImGui::GetWindowWidth() - 200);
             // present the selected issues
             for (auto const &issue : selected_issues_)
@@ -91,12 +88,87 @@ namespace jira
                     return;
                 }
             }
+        }
+
+        void render_new_editor(host &h) {
+            ImGui::Text("New Issue");
+            views::cached_view<std::string>("Projects",
+                [&h]() {
+                    auto all = nlohmann::json::parse(h.get_projects());
+                    std::stringstream ss;
+                    for (auto const &project : all) {
+                        ss << project.at("key").get<std::string>() << " - " << project.at("name").get<std::string>() << '\0';
+                    }
+                    ss << '\0';
+                    return ss.str();
+                },
+                [this, &h](std::string const &all_projects) {
+                    if (ImGui::Combo("Project", &selected_project_, all_projects.data())) {
+                        if (selected_project_ < 0) {
+                            selected_project_key_.clear();
+                        }
+                        else {
+                            const char *p_selected = all_projects.data();
+                            for (auto i = 0; i < selected_project_; ++i) {
+                                p_selected += strlen(p_selected) + 1;
+                            }
+                            std::string_view selected {p_selected};
+                            selected_project_key_ = selected.substr(0, selected.find(" - "));
+                        }
+                    }
+                }, true);
+            if (summary_text_.reserve(256); ImGui::InputText("Summary", summary_text_.data(), summary_text_.capacity())) {
+                summary_text_.resize(std::strlen(summary_text_.data()));
+            }
+            if (ImGui::CollapsingHeader("Sub-Tasks", ImGuiTreeNodeFlags_DefaultOpen)) {
+                int i{0};
+                for (auto &subtask : subtasks_) {
+                    ImGui::PushID(i++);
+                    if (subtask.reserve(256); ImGui::InputText("Summary", subtask.data(), subtask.capacity())) {
+                        subtask.resize(std::strlen(subtask.data()));
+                    }
+                    if (ImGui::SameLine(); ImGui::SmallButton("-")) {
+                        subtasks_.erase(std::next(subtasks_.begin(), i - 1));
+                        ImGui::PopID();
+                        return;
+                    }
+                    ImGui::PopID();
+                }
+                if (ImGui::SmallButton("  +  ")) {
+                    subtasks_.push_back({});
+                }
+            }
+            if (ImGui::Button("Create and Assign to Me")) {
+                auto issue {h.create_issue(summary_text_, selected_project_key_)};
+                h.assign_issue_to_me(issue.at("key").get<std::string>());
+                summary_text_.clear();
+                editing_new_ = false;
+                query();
+            }
+        }
+
+        void render(host &h)
+        {
+            // lock the selection_mutex_
+            std::lock_guard lock(selection_mutex_);
+
+            ImGui::Columns(2);
+            if (editing_new_) {
+                render_new_editor(h);
+            }
+            else {
+                if (ImGui::Button("New Issue")) {
+                    editing_new_ = true;
+                }
+                render_list(h);
+            }
             ImGui::NextColumn();
             selection_tree(h);
             ImGui::Columns();
         }
 
         void query() {
+            if (!selector_) return;
             std::thread([this] {
                 auto result = selector_();
                 {
@@ -121,5 +193,10 @@ namespace jira
         std::mutex selection_mutex_;
         bool show_json_details_{false};
         bool show_assignee_{false};
+        bool editing_new_{false};
+        std::string summary_text_;
+        int selected_project_{-1};
+        std::string selected_project_key_;
+        std::vector<std::string> subtasks_;
     };
 }

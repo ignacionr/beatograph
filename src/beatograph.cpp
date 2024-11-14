@@ -95,69 +95,38 @@ int main()
 
         conversions::screen conv_screen{};
 
-        // radio::host announcements_host;
-        // std::thread([&announcements_host] {
-        //     auto say = [&announcements_host](std::string text) {
-        //         static std::map<std::string_view, std::string_view> const replacements = {
-        //             {" ", "%20"},
-        //             {",", "%2C"},
-        //             {".", "%2E"},
-        //             {"!", "%21"},
-        //             {"?", "%3F"},
-        //             {":", "%3A"},
-        //             {";", "%3B"},
-        //             {"'", "%27"},
-        //             {"\"", "%22"},
-        //             {"&", "%26"}
-        //         };
-        //         for (auto const &[from, to] : replacements) {
-        //             for (auto pos = text.find(from); pos != std::string::npos; pos = text.find(from, pos + to.size())) {
-        //                 text.replace(pos, from.size(), to);
-        //             }
-        //         }
-        //         announcements_host.play_sync(std::format("http://141.95.101.189:5000/tts?text={}", text));
-        //     };
-        //     say("Welcome to Beat-o-graph, your personal assistant for all things development and data offering, including RSS feeds and music streaming.");
-        //     say("All systems are go.");
-        //     for (;;) {
-        //         // wait until next hour o'clock
-        //         auto now = std::chrono::system_clock::now();
-        //         auto next_hour = now + std::chrono::hours(1);
-        //         auto next_hour_t = std::chrono::system_clock::to_time_t(next_hour);
-        //         std::tm next_hour_tm;
-        //         localtime_s(&next_hour_tm, &next_hour_t);
-        //         next_hour_tm.tm_min = 0;
-        //         next_hour_tm.tm_sec = 0;
-        //         auto next_hour_tp = std::chrono::system_clock::from_time_t(std::mktime(&next_hour_tm));
-        //         std::this_thread::sleep_until(next_hour_tp);
-        //         // announce the hour
-        //         auto hour = next_hour_tm.tm_hour;
-        //         std::string text = std::format("It's {}{} o'clock.", hour % 12, hour >= 12 ? "pm" : "am");
-        //         say(text);
-        //     }
-        // }).detach();
+        std::shared_ptr<screen_tabs> tabs;
 
-        // auto &up = views::state_updated();
-        // up = [&announcements_host](views::state_t const &state) {
-        //     announcements_host.stop();
-        //     if (state) {
-        //         announcements_host.play_sync(happy_bell_sound);
-        //     }
-        //     else {
-        //         announcements_host.play_sync(impact_sound);
-        //     }
-        // };
+        auto menu_tabs = [&tabs](std::string_view key){
+            if (key == "Main") {
+                if (ImGui::BeginMenu("Tabs")) {
+                    if (ImGui::MenuItem("Jira", "Ctrl+J")) {
+                        tabs->select_tab("Jira");
+                    }
+                    if (ImGui::MenuItem("Radio")) {
+                        tabs->select_tab("Radio");
+                    }
+                    ImGui::EndMenu();
+                }
+            }
+        };
+        auto menu_tabs_and = [&menu_tabs](std::function<void(std::string_view)>other) {
+            return [menu_tabs, other](std::string_view key) {
+                other(key);
+                menu_tabs(key);
+            };
+        };
 
-        auto no_menu = [](std::string_view){};
-
-        auto tabs = std::make_unique<screen_tabs>(std::vector<screen_tabs::tab_t> {
-            {"Backend Dev", [&dev_screen] { dev_screen.render(); }, no_menu},
-            {"Data Offering", [&ds] { ds.render(); }, no_menu},
-            {"ArangoDB", [&cr] { cr.render(); }, no_menu},
-            {"Toggl", [&ts] { ts.render(); }, no_menu},
-            {"Jira", [&js, &jh] { js->render(jh); }, [&js](std::string_view item){ js->render_menu(item); }, ImVec4(0.5f, 0.5f, 1.0f, 1.0f)},
-            {"Calendar", [&cs] { cs.render(); }, no_menu},
-            {"Configured SSH Hosts", [&ssh_screen, &localhost] { ssh_screen.render(localhost); }, no_menu},
+        tabs = std::make_shared<screen_tabs>(std::vector<screen_tabs::tab_t> {
+            {"Backend Dev", [&dev_screen] { dev_screen.render(); }, menu_tabs},
+            {"Data Offering", [&ds] { ds.render(); }, menu_tabs},
+            {"ArangoDB", [&cr] { cr.render(); }, menu_tabs},
+            {"Toggl", [&ts] { ts.render(); }, menu_tabs},
+            {"Jira", [&js, &jh] { js->render(jh); }, 
+                menu_tabs_and([&js](std::string_view item){ js->render_menu(item); }), 
+                ImVec4(0.5f, 0.5f, 1.0f, 1.0f)},
+            {"Calendar", [&cs] { cs.render(); }, menu_tabs},
+            {"Configured SSH Hosts", [&ssh_screen, &localhost] { ssh_screen.render(localhost); }, menu_tabs},
              {"Git Repositories", [&git]
              {
                  ImGui::Text("Git Repositories");
@@ -168,22 +137,14 @@ int main()
                          ImGui::Text("%s", repo.c_str());
                      }
                  }
-             }, no_menu},
-            //  {"GitHub", [] { ImGui::Text("GitHub"); }},
-            //  {"Bitbucket", [] { ImGui::Text("Bitbucket");}},
-            //  {"Zookeeper", [] { ImGui::Text("Zookeeper"); }},
-            //  {"RabbitMQ", [] { ImGui::Text("RabbitMQ"); }},
-            //  {"GitHub", [] { ImGui::Text("GitHub"); }},
-            //  {"Bitbucket", [] { ImGui::Text("Bitbucket"); }},
-            //  {"Zookeeper", [] { ImGui::Text("Zookeeper"); }},
-            //  {"RabbitMQ", [] { ImGui::Text("RabbitMQ"); }},
+             }, menu_tabs},
              {"Radio", [&radio_screen, &rss_screen] {
                 radio_screen->render();
                 rss_screen.render();
-             }, no_menu},
-             {"Conversions", [&conv_screen] { conv_screen.render(); }, no_menu}
+             }, menu_tabs},
+             {"Conversions", [&conv_screen] { conv_screen.render(); }, menu_tabs}
         });
-        main_screen screen{std::move(tabs)};
+        main_screen screen{tabs};
 
         // time to setup our fonts
         auto &io {ImGui::GetIO()};
@@ -193,7 +154,16 @@ int main()
 
         radio_screen = std::make_unique<radio::screen>(radio_host, cache);
         js = std::make_unique<jira::screen>(cache);
-        screen.run();
+        screen.run([&tabs]{
+            if (ImGui::IsKeyDown(ImGuiMod_Ctrl)) {
+                if (ImGui::IsKeyPressed(ImGuiKey_J)) {
+                    tabs->select_tab("Jira");
+                }
+                else if (ImGui::IsKeyPressed(ImGuiKey_R)) {
+                    tabs->select_tab("Radio");
+                }
+            }
+        });
         views::quitting(true);
     }
     std::cerr << "Terminating.\n";

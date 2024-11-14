@@ -23,7 +23,12 @@ struct screen_tabs {
             {
                 ImGui::PushStyleColor(ImGuiCol_TabActive, tab.color);
                 ImGui::PushStyleColor(ImGuiCol_TabHovered, tab.color);
-                if (ImGui::BeginTabItem(tab.name.c_str()))
+                ImGuiTabItemFlags flags = 0;
+                if (select_tab_ == tab.name) {
+                    flags |= ImGuiTabItemFlags_SetSelected;
+                    select_tab_.clear();
+                }
+                if (ImGui::BeginTabItem(tab.name.c_str(), nullptr, flags))
                 {
                     current_menu = tab.render_menu;
                     tab.render();
@@ -41,7 +46,11 @@ struct screen_tabs {
             current_menu(item);
         }
     }
+    void select_tab(std::string_view name) {
+        select_tab_ = name;
+    }
 private:
     std::vector<tab_t> tabs;
     std::function<void(std::string_view)> current_menu{};
+    std::string select_tab_;
 };

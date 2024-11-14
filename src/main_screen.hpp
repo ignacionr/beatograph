@@ -16,7 +16,7 @@
 template <typename screen_t>
 struct main_screen
 {
-    main_screen(std::unique_ptr<screen_t> &&contained_screen) : screen{std::move(contained_screen)}
+    main_screen(std::shared_ptr<screen_t> contained_screen) : screen{contained_screen}
     {
 #if defined(IMGUI_IMPL_OPENGL_ES2)
         // GL ES 2.0 + GLSL 100
@@ -94,7 +94,7 @@ struct main_screen
         SDL_Quit();
     }
 
-    void run()
+    void run(std::function<void()> pre_frame = []{})
     {
         // run the main loop
         SDL_Event event;
@@ -109,6 +109,7 @@ struct main_screen
                 }
                 ImGui_ImplSDL2_ProcessEvent(&event);
             }
+            pre_frame();
             do_frame();
         }
     }
@@ -210,7 +211,7 @@ private:
     SDL_Window *window;
     SDL_GLContext gl_context;
     SDL_Renderer *sdl_renderer;
-    std::unique_ptr<screen_t> screen;
+    std::shared_ptr<screen_t> screen;
     bool running{false};
     bool show_stats{false};
 };
