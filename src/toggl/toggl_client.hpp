@@ -9,7 +9,7 @@
 class toggl_client
 {
 public:
-    toggl_client(const std::string &apiToken) : baseUrl("https://api.track.toggl.com/api/v9/me/")
+    toggl_client(const std::string &apiToken) : baseUrl("https://api.track.toggl.com/api/v9/")
     {
         std::string base_auth = apiToken + ":api_token";
         std::string base64_auth_string = base64_encode(base_auth);
@@ -18,7 +18,7 @@ public:
 
     auto getTimeEntries()
     {
-        auto str = performRequest(baseUrl + "time_entries", "GET");
+        auto str = performRequest(baseUrl + "me/time_entries", "GET");
         return nlohmann::json::parse(str);
     }
     std::string startTimeEntry(const std::string &description)
@@ -29,9 +29,11 @@ public:
     {
         auto url = std::format("{}workspaces/{}/time_entries/{}", 
             baseUrl,
-            entry["workspace_id"].get<std::string>(),
+            entry["workspace_id"].get<long long>(),
             entry["id"].get<long long>());
-        auto data = std::format("{{\"time_entry\":{{\"stop\":\"{}\"}}}}", std::format("{:%FT%T%z}", std::chrono::system_clock::now()));
+        auto data = std::format("{{\"stop\":\"{}\"}}", 
+            std::format("{:%FT%T}Z", std::chrono::system_clock::now())
+        );
         return performRequest(url, "PUT", data);
     }
 

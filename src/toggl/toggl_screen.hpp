@@ -95,7 +95,8 @@ struct toggl_screen
                 }
                 catch (std::exception const &e)
                 {
-                    std::cerr << "Error: " << e.what() << std::endl;
+                    std::string error_message = std::format("Failed to stop time entry: {}", e.what());
+                    std::cerr << "Error: " << error_message << std::endl;
                 }
             }
         }
