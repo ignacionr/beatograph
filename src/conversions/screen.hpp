@@ -39,7 +39,12 @@ namespace conversions
                         }
                     }
                 }
-                ImGui::TextUnformatted(inout[1].data(), inout[1].data() + inout[1].size());
+                if (!inout[1].empty()) {
+                    ImGui::TextUnformatted(inout[1].data(), inout[1].data() + inout[1].size());
+                    if (ImGui::SmallButton("Copy")) {
+                        ImGui::SetClipboardText(inout[1].c_str());
+                    }
+                }
             }
         }
         using map_t = std::map<std::string, std::function<std::string(std::string)>>;
