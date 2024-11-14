@@ -103,7 +103,7 @@ int main()
                     if (ImGui::MenuItem("Jira", "Ctrl+J")) {
                         tabs->select_tab("Jira");
                     }
-                    if (ImGui::MenuItem("Radio")) {
+                    if (ImGui::MenuItem("Radio", "Ctrl+R")) {
                         tabs->select_tab("Radio");
                     }
                     ImGui::EndMenu();
@@ -126,9 +126,9 @@ int main()
                 menu_tabs_and([&js](std::string_view item){ js->render_menu(item); }), 
                 ImVec4(0.5f, 0.5f, 1.0f, 1.0f)},
             {"Calendar", [&cs] { cs.render(); }, menu_tabs},
-            {"Configured SSH Hosts", [&ssh_screen, &localhost] { ssh_screen.render(localhost); }, menu_tabs},
-             {"Git Repositories", [&git]
-             {
+            {"SSH Hosts", [&ssh_screen, &localhost] { ssh_screen.render(localhost); }, menu_tabs},
+            {"Git Repositories", [&git]
+            {
                  ImGui::Text("Git Repositories");
                  if (auto repos = git.repos(); repos)
                  {
@@ -137,12 +137,12 @@ int main()
                          ImGui::Text("%s", repo.c_str());
                      }
                  }
-             }, menu_tabs},
-             {"Radio", [&radio_screen, &rss_screen] {
-                radio_screen->render();
-                rss_screen.render();
-             }, menu_tabs},
-             {"Conversions", [&conv_screen] { conv_screen.render(); }, menu_tabs}
+            }, menu_tabs},
+            {"Radio", [&radio_screen, &rss_screen] {
+            radio_screen->render();
+            rss_screen.render();
+            }, menu_tabs, ImVec4(0.05f, 0.5f, 0.05f, 1.0f)},
+            {"Conversions", [&conv_screen] { conv_screen.render(); }, menu_tabs}
         });
         main_screen screen{tabs};
 

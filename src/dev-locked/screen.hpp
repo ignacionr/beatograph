@@ -69,7 +69,7 @@ namespace dev_locked
                     ShellExecuteA(nullptr, "open", "http://57.129.70.83:3333/api/lastbets", nullptr, nullptr, SW_SHOW);
                 }
             }
-            if (ImGui::CollapsingHeader("Corrective Actions"))
+            if (ImGui::CollapsingHeader("Tools"))
             {
                 static std::string seed_result;
                 if (ImGui::Button("Seed Containers"))
@@ -79,6 +79,10 @@ namespace dev_locked
                 if (!seed_result.empty())
                 {
                     ImGui::Text("%s", seed_result.c_str());
+                }
+                if (ImGui::SameLine(); ImGui::Button("Code on dev-locked"))
+                {
+                        ShellExecuteA(nullptr, nullptr, "cmd.exe", "/c code --remote ssh-remote+dev-locked /home/ubuntu/arangodb-infra/dev-locked", nullptr, SW_SHOW);
                 }
             }
         }
