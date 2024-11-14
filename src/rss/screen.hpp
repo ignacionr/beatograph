@@ -148,19 +148,22 @@ namespace rss
                                 }
                             }
                             ImGui::Image(reinterpret_cast<void *>(static_cast<uintptr_t>(texture)), button_size);
-                            if (++i % col_count != 0)
-                            {
-                                ImGui::SameLine();
-                            }
+                            auto data = ImGui::GetWindowDrawList();
                             if (ImGui::IsItemHovered())
                             {
                                 ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
-                                auto data = ImGui::GetWindowDrawList();
-                                data->AddRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), IM_COL32(255, 255, 0, 255));
                                 if (ImGui::IsItemClicked())
                                 {
                                     current_feed_ = feed;
                                 }
+                            }
+                            else {
+                                data->AddRectFilled(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), IM_COL32(255, 255, 0, 200));
+                            }
+
+                            if (++i % col_count != 0)
+                            {
+                                ImGui::SameLine();
                             }
                             ImGui::PopID();
                         }
