@@ -17,7 +17,7 @@ struct screen_tabs {
     void render()
     {
         if (ImGui::BeginTabBar("Tabs")) {
-            ImGui::PushStyleColor(ImGuiCol_Tab, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_Tab, ImVec4(0.05f, 0.05f, 0.05f, 0.8f));
             current_menu = {};
             for (const auto &tab : tabs)
             {
