@@ -7,7 +7,7 @@ namespace conversions
     struct uri {
         static std::string encode_component(std::string src) {
             std::string dst;
-            for (auto c : src) {
+            for (unsigned char c : src) {
                 if (std::isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~') {
                     dst += c;
                 }

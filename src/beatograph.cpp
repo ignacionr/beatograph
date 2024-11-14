@@ -148,9 +148,9 @@ int main()
 
         // time to setup our fonts
         auto &io {ImGui::GetIO()};
-        io.Fonts->AddFontDefault();
-        io.Fonts->AddFontFromFileTTF("assets/fonts/Montserrat-Regular.ttf", 16.0f);
-        std::cerr << std::format("Fonts loaded: {}\n", io.Fonts->Fonts.size());
+        // io.Fonts->AddFontDefault();
+        io.Fonts->AddFontFromFileTTF("assets/fonts/LiberationMono-Regular.ttf", 13.5f, nullptr, io.Fonts->GetGlyphRangesCyrillic());
+        io.Fonts->AddFontFromFileTTF("assets/fonts/Montserrat-Regular.ttf", 16.0f, nullptr, io.Fonts->GetGlyphRangesCyrillic());
 
         radio_screen = std::make_unique<radio::screen>(radio_host, cache);
         js = std::make_unique<jira::screen>(cache);
