@@ -95,6 +95,8 @@ int main()
 
         conversions::screen conv_screen{};
 
+        cppgpt::screen gpt_screen;
+
         std::shared_ptr<screen_tabs> tabs;
 
         auto menu_tabs = [&tabs](std::string_view key){
@@ -118,7 +120,7 @@ int main()
         };
 
         tabs = std::make_shared<screen_tabs>(std::vector<screen_tabs::tab_t> {
-            {"Backend Dev", [&dev_screen] { dev_screen.render(); }, menu_tabs},
+            {"Backend Dev", [&dev_screen, &gpt] { dev_screen.render(gpt); }, menu_tabs},
             {"Data Offering", [&ds] { ds.render(); }, menu_tabs},
             {"ArangoDB", [&cr] { cr.render(); }, menu_tabs},
             {"Toggl", [&ts] { ts.render(); }, menu_tabs},
@@ -142,7 +144,8 @@ int main()
             radio_screen->render();
             rss_screen.render();
             }, menu_tabs, ImVec4(0.05f, 0.5f, 0.05f, 1.0f)},
-            {"Conversions", [&conv_screen] { conv_screen.render(); }, menu_tabs}
+            {"Conversions", [&conv_screen] { conv_screen.render(); }, menu_tabs},
+            {"AI", [&gpt_screen, &gpt] { gpt_screen.render(gpt); }, menu_tabs, ImVec4(0.75f, 0.75f, 0.75f, 1.0f)}
         });
         main_screen screen{tabs};
 

@@ -4,13 +4,14 @@
 #include "../host/host.hpp"
 #include "../host/screen.hpp"
 #include "../views/assertion.hpp"
+#include "../cppgpt/screen.hpp"
 
 namespace dev_locked
 {
     struct screen
     {
         screen(host_local &localhost) : localhost{localhost} {}
-        void render()
+        void render(ignacionr::cppgpt &gpt)
         {
             hs.render(host::by_name("dev-locked"), localhost);
             if (ImGui::CollapsingHeader("Status"))
@@ -82,12 +83,14 @@ namespace dev_locked
                 }
                 if (ImGui::SameLine(); ImGui::Button("Code on dev-locked"))
                 {
-                        ShellExecuteA(nullptr, nullptr, "cmd.exe", "/c code --remote ssh-remote+dev-locked /home/ubuntu/arangodb-infra/dev-locked", nullptr, SW_SHOW);
+                    ShellExecuteA(nullptr, nullptr, "cmd.exe", "/c code --remote ssh-remote+dev-locked /home/ubuntu/arangodb-infra/dev-locked", nullptr, SW_SHOW);
                 }
+                cppgpt_screen.render(gpt);
             }
         }
     private:
         host_screen hs;
         host_local& localhost;
+        cppgpt::screen cppgpt_screen;
     };
 };
