@@ -56,8 +56,9 @@ namespace clocks {
         };
 
         void render() {
-            static const std::array<clock_t, 5> all_clocks {{
+            static const std::array<clock_t, 6> all_clocks {{
                 {"Los Angeles", std::chrono::hours(-8)},
+                {"New York", std::chrono::hours(-5)},
                 {"Buenos Aires", std::chrono::hours(-3)},
                 {"UTC", std::chrono::minutes(0)},
                 {"Moscow", std::chrono::hours(3)},
