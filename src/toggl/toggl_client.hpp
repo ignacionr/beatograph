@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include <curl/curl.h>
 #include <nlohmann/json.hpp>
+#include "../conversions/base64.hpp"
 
 class toggl_client
 {
@@ -12,19 +13,36 @@ public:
     toggl_client(const std::string &apiToken) : baseUrl("https://api.track.toggl.com/api/v9/")
     {
         std::string base_auth = apiToken + ":api_token";
-        std::string base64_auth_string = base64_encode(base_auth);
-        auth_header = "Authorization: Basic " + base64_auth_string;
+        std::string base64_auth_string = conversions::text_to_base64(base_auth);
+        auth_header = std::format("Authorization: Basic {}", base64_auth_string);
     }
 
     auto getTimeEntries()
     {
-        auto str = performRequest(baseUrl + "me/time_entries", "GET");
+        auto str = performRequest(std::format("{}me/time_entries", baseUrl), "GET");
         return nlohmann::json::parse(str);
     }
-    std::string startTimeEntry(const std::string &description)
+
+    std::string startTimeEntry(long long workspace_id, const std::string_view description_text)
     {
-        return performRequest(baseUrl + "time_entries/start", "POST", "{\"time_entry\":{\"description\":\"" + description + "\"}}");
+        auto const json {std::format(R"({{
+            "created_with": "Beat-o-graph",
+            "description":"{}",
+            "duration": -1,
+            "start": "{:%FT%T}Z",
+            "tags": ["adhoc"],
+            "workspace_id": {}
+        }})", 
+        description_text,
+        std::chrono::system_clock::now(),
+        workspace_id
+        )};
+        return performRequest(
+            std::format("{}workspaces/{}/time_entries", baseUrl, workspace_id), 
+            "POST", 
+            json);
     }
+
     std::string stopTimeEntry(auto &entry)
     {
         auto url = std::format("{}workspaces/{}/time_entries/{}", 
@@ -37,55 +55,18 @@ public:
         return performRequest(url, "PUT", data);
     }
 
+    void deleteTimeEntry(auto &entry)
+    {
+        auto url = std::format("{}workspaces/{}/time_entries/{}", 
+            baseUrl,
+            entry["workspace_id"].get<long long>(),
+            entry["id"].get<long long>());
+        performRequest(url, "DELETE");
+    }
+
 private:
     std::string auth_header;
     std::string baseUrl;
-
-    static std::string base64_encode(std::string const &src)
-    {
-        static const std::string base64_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-        std::string ret;
-        int i = 0;
-        int j = 0;
-        unsigned char char_array_3[3];
-        unsigned char char_array_4[4];
-        for (const auto &c : src)
-        {
-            char_array_3[i++] = c;
-            if (i == 3)
-            {
-                char_array_4[0] = (char_array_3[0] & 0xfc) >> 2;
-                char_array_4[1] = ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);
-                char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
-                char_array_4[3] = char_array_3[2] & 0x3f;
-                for (i = 0; (i < 4); i++)
-                {
-                    ret += base64_chars[char_array_4[i]];
-                }
-                i = 0;
-            }
-        }
-        if (i)
-        {
-            for (j = i; j < 3; j++)
-            {
-                char_array_3[j] = '\0';
-            }
-            char_array_4[0] = (char_array_3[0] & 0xfc) >> 2;
-            char_array_4[1] = ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);
-            char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
-            char_array_4[3] = char_array_3[2] & 0x3f;
-            for (j = 0; (j < i + 1); j++)
-            {
-                ret += base64_chars[char_array_4[j]];
-            }
-            while ((i++ < 3))
-            {
-                ret += '=';
-            }
-        }
-        return ret;
-    }
 
     std::string performRequest(const std::string &url, const std::string &method, const std::string &data = "")
     {

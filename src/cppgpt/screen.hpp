@@ -7,8 +7,8 @@
 namespace cppgpt {
     struct screen {
         void render(ignacionr::cppgpt &gpt) {
-            if (prompt.reserve(256); ImGui::InputTextMultiline("##prompt", prompt.data(), prompt.capacity())) {
-                prompt.resize(std::strlen(prompt.data()));
+            if (prompt.reserve(2500); ImGui::InputTextMultiline("##prompt", prompt.data(), prompt.capacity())) {
+                prompt = prompt.data();
             }
             if (ImGui::SmallButton("Run")) {
                 try {
@@ -17,12 +17,13 @@ namespace cppgpt {
                 catch(std::exception &e) {
                     result = e.what();
                 }
+                prompt.clear();
             }
             if (ImGui::SmallButton("Clear")) {
                 gpt.clear();
             }
             if (!result.empty()) {
-                ImGui::TextWrapped(result.c_str());
+                ImGui::TextWrapped("%s", result.c_str());
             }
         }
     private:

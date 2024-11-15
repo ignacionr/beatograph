@@ -118,14 +118,14 @@ namespace jira
                     }
                 }, true);
             if (summary_text_.reserve(256); ImGui::InputText("Summary", summary_text_.data(), summary_text_.capacity())) {
-                summary_text_.resize(std::strlen(summary_text_.data()));
+                summary_text_ = summary_text_.data();
             }
             if (ImGui::CollapsingHeader("Sub-Tasks", ImGuiTreeNodeFlags_DefaultOpen)) {
                 int i{0};
                 for (auto &subtask : subtasks_) {
                     ImGui::PushID(i++);
                     if (subtask.reserve(256); ImGui::InputText("Summary", subtask.data(), subtask.capacity())) {
-                        subtask.resize(std::strlen(subtask.data()));
+                        subtask = subtask.data();
                     }
                     if (ImGui::SameLine(); ImGui::SmallButton("-")) {
                         subtasks_.erase(std::next(subtasks_.begin(), i - 1));

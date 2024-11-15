@@ -1,14 +1,17 @@
 #pragma once
+#include <atomic>
 #include <chrono>
-#include <imgui.h>
 #include <ctime>
-#include <time.h>
+#include <format>
 #include <iomanip>
 #include <sstream>
 #include <string>
-#include <format>
 #include <thread>
+
+#include <imgui.h>
 #include <nlohmann/json.hpp>
+#include <time.h>
+
 #include "toggl_client.hpp"
 
 struct toggl_screen
@@ -55,7 +58,7 @@ struct toggl_screen
             ImGui::TableNextRow();
             ImGui::TableNextColumn();
             ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 0.0f, 1.0f, 1.0f)); // Light blue color
-            ImGui::Text("Day: %s", std::format("{:%Y-%m-%d}", current_day).c_str());
+            ImGui::TextUnformatted(std::format("{:%A, %Y-%m-%d}", current_day).c_str());
             ImGui::PopStyleColor();
             ImGui::TableNextColumn();
             ImGui::TableNextColumn();
@@ -87,7 +90,7 @@ struct toggl_screen
         ImGui::Text("%s", duration_formatted.c_str());
         if (is_running)
         {
-            if (ImGui::Button("Stop"))
+            if (ImGui::SameLine(); ImGui::SmallButton("Stop"))
             {
                 try
                 {
@@ -100,6 +103,29 @@ struct toggl_screen
                 }
             }
         }
+        if (ImGui::SameLine(); ImGui::SmallButton("Delete")) {
+            try
+            {
+                client.deleteTimeEntry(entry);
+                query();
+            }
+            catch (std::exception const &e)
+            {
+                std::string error_message = std::format("Failed to delete time entry: {}", e.what());
+                std::cerr << "Error: " << error_message << std::endl;
+            }
+        }
+    }
+
+    void query() {
+        try
+        {
+            time_entries = std::make_shared<nlohmann::json>(client.getTimeEntries());
+        }
+        catch (const std::exception &e)
+        {
+            time_entries = std::make_shared<nlohmann::json>(nlohmann::json::string_t(e.what()));
+        }
     }
 
     void render()
@@ -107,17 +133,7 @@ struct toggl_screen
         if (std::chrono::system_clock::now() - last_update > std::chrono::minutes(1))
         {
             last_update = std::chrono::system_clock::now();
-            std::thread update_thread = std::thread([this]
-                                                    {
-                try
-                {
-                    time_entries = std::make_shared<nlohmann::json>(client.getTimeEntries());
-                }
-                catch (const std::exception &e)
-                {
-                    time_entries = std::make_shared<nlohmann::json>(nlohmann::json::string_t(e.what()));
-                } });
-            update_thread.detach();
+            std::thread([this]{query();}).detach();
 
             std::time_t currentTime = std::time(nullptr);
             // Get the UTC time
@@ -150,10 +166,28 @@ struct toggl_screen
                     }
                     ImGui::EndTable();
                 }
+                ImGui::Columns(2);
                 if (ImGui::Button("Open Web"))
                 {
                     ShellExecuteA(nullptr, "open", "https://track.toggl.com/", nullptr, nullptr, SW_SHOW);
                 }
+                ImGui::NextColumn();
+                if (new_description.reserve(256); ImGui::InputText("New Task", new_description.data(), new_description.capacity(), ImGuiInputTextFlags_EnterReturnsTrue))
+                {
+                    try
+                    {
+                        new_description = new_description.data();
+                        client.startTimeEntry(current_workspace_id(), new_description);
+                        new_description.clear();
+                        query();
+                    }
+                    catch (std::exception const &e)
+                    {
+                        std::string error_message = std::format("Failed to start time entry: {}", e.what());
+                        std::cerr << "Error: " << error_message << std::endl;
+                    }
+                }
+                ImGui::Columns();
             }
             else
             {
@@ -169,9 +203,14 @@ struct toggl_screen
         ImGui::Columns();
     }
 
+    long long current_workspace_id() {
+        return time_entries.load()->front()["workspace_id"].get<long long>();
+    }
+
 private:
     toggl_client &client;
     std::chrono::system_clock::time_point last_update;
     std::atomic<std::shared_ptr<nlohmann::json>> time_entries;
     time_t utc_offset_seconds{};
+    std::string new_description;
 };

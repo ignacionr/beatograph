@@ -22,7 +22,7 @@ namespace conversions
                 auto &inout = states[name];
                 if (inout[0].reserve(1024); ImGui::InputText(name.c_str(), inout[0].data(), inout[0].capacity()))
                 {
-                    inout[0].resize(std::strlen(inout[0].data()));
+                    inout[0] = inout[0].data();
                     if (inout[0].empty())
                     {
                         inout[1].clear();

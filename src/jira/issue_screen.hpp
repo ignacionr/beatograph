@@ -50,7 +50,7 @@ namespace jira
             {
                 nlohmann::json::object_t const &fields {json.at("fields").get<nlohmann::json::object_t>()};
                 ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, {20, 20});
-                ImGui::PushStyleColor(ImGuiCol_FrameBg, color(color_name));
+                ImGui::PushStyleColor(ImGuiCol_FrameBg, IM_COL32(0, 0, 0, 255));
                 ImGui::BeginChild(std::format("summary-{}", key).c_str(), {ImGui::GetColumnWidth(), 0}, ImGuiChildFlags_FrameStyle | ImGuiChildFlags_AutoResizeY);
                 ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[1]);
                 ImGui::TextWrapped("%s\n \n", fields.at("summary").get<std::string>().c_str());

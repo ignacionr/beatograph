@@ -45,11 +45,10 @@ namespace rss
                                   ImGui::GetWindowWidth() - ImGui::GetCursorPosX() - 20,
                                   ImGui::GetWindowHeight() - tablestart_y - 20});
 
-            if (ImGui::BeginTable("##items", 1, ImGuiTableFlags_BordersInnerV))
+            if (ImGui::BeginTable("##items", 1, ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_RowBg))
             {
                 ImGui::TableSetupColumn("Title");
                 ImGui::TableHeadersRow();
-                auto draw_list = ImGui::GetWindowDrawList();
                 for (auto &item : current_feed_->items)
                 {
                     ImGui::TableNextRow();
@@ -58,19 +57,12 @@ namespace rss
                     auto starting_pos = ImGui::GetCursorScreenPos();
                     if (!item.enclosure.empty())
                     {
-                        constexpr ImU32 blue = IM_COL32(100, 100, 255, 255);
-                        constexpr ImU32 white = IM_COL32(255, 255, 255, 255);
-                        draw_list->AddCircleFilled({starting_pos.x + 11, starting_pos.y + 9}, 7, white);
-                        draw_list->AddCircleFilled({starting_pos.x + 12, starting_pos.y + 10}, 6, blue);
-                        draw_list->AddTriangleFilled(
-                            {starting_pos.x + 9, starting_pos.y + 7},
-                            {starting_pos.x + 9, starting_pos.y + 13},
-                            {starting_pos.x + 15, starting_pos.y + 10},
-                            white);
+                        ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[2]);
+                        ImGui::TextUnformatted("D");
+                        ImGui::PopFont();
+                        ImGui::SameLine();
                     }
-                    ImGui::Indent();
                     ImGui::TextUnformatted(item.title.c_str());
-                    ImGui::Unindent();
                     auto const mouse_pos = ImGui::GetMousePos();
                     ImVec2 const row_max{
                         starting_pos.x + ImGui::GetColumnWidth(),
