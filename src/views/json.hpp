@@ -72,6 +72,9 @@ namespace views
                     ImGui::EndTable();
                 }
             }
+            else if (json.is_string()) {
+                ImGui::TextUnformatted(json.get<std::string>().c_str());
+            }
             else
             {
                 ImGui::TextUnformatted(json.dump(4).c_str());

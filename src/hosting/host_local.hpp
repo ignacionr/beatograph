@@ -11,6 +11,9 @@
 #include <string_view>
 #include <vector>
 
+#include <nlohmann/json.hpp>
+#include <curl/curl.h>
+
 #include "ssh_execute.hpp"
 #include "local_process.hpp"
 
@@ -125,6 +128,31 @@ namespace hosting::local
                 hostname = execute_command("hostname");
             }
             return hostname;
+        }
+
+        static size_t WriteString(void *contents, size_t size, size_t nmemb, std::string *s) {
+            s->append((char *)contents, size * nmemb);
+            return size * nmemb;
+        };
+
+        nlohmann::json::object_t get_my_ip_and_geolocation() 
+        {
+            std::string location;
+            CURL *curl;
+            CURLcode res;
+            curl = curl_easy_init();
+            if (curl) {
+                curl_easy_setopt(curl, CURLOPT_URL, "https://ipinfo.io");
+                curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteString);
+                curl_easy_setopt(curl, CURLOPT_WRITEDATA, &location);
+                res = curl_easy_perform(curl);
+                if (res != CURLE_OK) {
+                    curl_easy_cleanup(curl);
+                    throw std::runtime_error("curl_easy_perform() failed: " + std::string(curl_easy_strerror(res)));
+                }
+                curl_easy_cleanup(curl);
+            }
+            return nlohmann::json::parse(location);
         }
 
     private:
