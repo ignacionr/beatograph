@@ -34,6 +34,7 @@
 #include "rss/screen.hpp"
 #include "imgcache.hpp"
 #include "conversions/screen.hpp"
+#include "clocks/screen.hpp"
 
 std::string get_env_variable(std::string_view key) {
     char *val = nullptr;
@@ -98,6 +99,8 @@ int main()
 
         cppgpt::screen gpt_screen;
 
+        clocks::screen clocks_screen;
+
         std::shared_ptr<screen_tabs> tabs;
 
         auto menu_tabs = [&tabs](std::string_view key){
@@ -147,6 +150,7 @@ int main()
             rss_screen.render();
             }, menu_tabs, ImVec4(0.05f, 0.5f, 0.05f, 1.0f)},
             {"Conversions", [&conv_screen] { conv_screen.render(); }, menu_tabs},
+            {"Clocks", [&clocks_screen] {clocks_screen.render(); }, menu_tabs},
             {"AI", [&gpt_screen, &gpt] { gpt_screen.render(gpt); }, menu_tabs, ImVec4(0.75f, 0.75f, 0.75f, 1.0f)}
         });
         main_screen screen{tabs};
