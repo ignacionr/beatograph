@@ -4,13 +4,13 @@
 #include <chrono>
 #include <format>
 #include <thread>
-#include "../host/host.hpp"
-#include "../host/screen.hpp"
+#include "../hosting/host.hpp"
+#include "../hosting/screen.hpp"
 
 struct cluster_report {
-    cluster_report(host_local &host_local) : host_local_{host_local} {
+    cluster_report(hosting::local::host &localhost) : localhost_{localhost} {
         for (auto &host : hosts_) {
-            host->resolve_from_ssh_conf(host_local_);
+            host->resolve_from_ssh_conf(localhost_);
         }
     }
 
@@ -20,14 +20,17 @@ struct cluster_report {
 
     void render() {
         for (auto &host : hosts_) {
-            host_screen_.render(host, host_local_);
+            host_screen_.render(host, localhost_);
         }
     }
     
 private:
-    std::array<host::ptr, 3> hosts_ {host::by_name("arangodb1"), host::by_name("arangodb2"), host::by_name("arangodb3")};
-    host_screen host_screen_;
-    host_local &host_local_;
+    std::array<hosting::ssh::host::ptr, 3> hosts_ {
+        hosting::ssh::host::by_name("arangodb1"), 
+        hosting::ssh::host::by_name("arangodb2"), 
+        hosting::ssh::host::by_name("arangodb3")};
+    hosting::ssh::screen host_screen_;
+    hosting::local::host &localhost_;
     std::atomic<bool> quit_{false};
     std::unique_ptr<std::jthread> refresh_thread;
 };

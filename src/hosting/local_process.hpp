@@ -1,19 +1,12 @@
 #pragma once
 
-#include <cstdio> // for popen and pclose
 #include <format>
 #include <functional>
-#include <iostream>
-#include <memory>
-#include <stdexcept>
-#include <stdio.h>
-#include <string>
-#include <string_view>
-#include <vector>
 
 #include "ssh_execute.hpp"
 
-struct host_local
+
+namespace hosting::local
 {
     struct running_process
     {
@@ -21,7 +14,7 @@ struct host_local
 
         running_process(const char *command)
         {
-            std::cerr << std::format("Process@{} running {}\n", reinterpret_cast<void*>(this), command);
+//            std::cerr << std::format("Process@{} running {}\n", reinterpret_cast<void *>(this), command);
             ZeroMemory(&pi, sizeof(pi));
             pi.hProcess = INVALID_HANDLE_VALUE;
             pi.hThread = INVALID_HANDLE_VALUE;
@@ -88,10 +81,12 @@ struct host_local
         {
             if (hReadPipe != INVALID_HANDLE_VALUE)
             {
-                try {
-                    read_all([](std::string_view){});
+                try
+                {
+                    read_all([](std::string_view) {});
                 }
-                catch(...) {
+                catch (...)
+                {
                     // ignore since we might be just inside a destructor
                 }
                 CloseHandle(hReadPipe), hReadPipe = INVALID_HANDLE_VALUE;
@@ -171,11 +166,12 @@ struct host_local
                         FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, 0, error_description, 256, NULL);
                         throw std::runtime_error(std::format("PeekNamedPipe failed! Error code: {} Error description: {}", error, error_description));
                     }
-                    if (bytesRead > 0) {
+                    if (bytesRead > 0)
+                    {
                         if (ReadFile(hReadPipe, buffer, sizeof(buffer), &bytesRead, NULL) && bytesRead != 0)
                         {
-                            auto contents {std::string_view{buffer, bytesRead}};
-                            std::cerr << std::format("Proces@{} received << \n{}\n >>\n({} bytes)\n", reinterpret_cast<void*>(this), std::string{contents}, bytesRead);
+                            auto contents{std::string_view{buffer, bytesRead}};
+//                            std::cerr << std::format("Proces@{} received << \n{}\n >>\n({} bytes)\n", reinterpret_cast<void *>(this), std::string{contents}, bytesRead);
                             sink(contents);
                         }
                         else
@@ -183,7 +179,8 @@ struct host_local
                             break; // No more data to read
                         }
                     }
-                    else {
+                    else
+                    {
                         // this is odd, the handle was signaled but there's nothing to read; for the time being, do nothing
                     }
                 }
@@ -201,112 +198,4 @@ struct host_local
         HANDLE hReadPipe{INVALID_HANDLE_VALUE}, hWritePipe{INVALID_HANDLE_VALUE};
         DWORD exitCode{};
     };
-
-    auto run(const char *command)
-    {
-        return std::make_unique<running_process>(command);
-    }
-
-    void execute_command(const char *command, auto sink)
-    {
-        auto proc{run(command)};
-        proc->read_all(sink);
-    }
-
-    std::string ssh(std::string_view command, std::string_view host_name, unsigned int timeout_seconds = 5) {
-        std::string key{host_name};
-        if (sessions.find(key) == sessions.end()) {
-            sessions[key] = std::make_unique<ssh_execute>(std::string{host_name}, timeout_seconds);
-        }
-        return sessions.at(key)->execute_command(std::string{command});
-    }
-
-    void recycle_session(std::string_view host_name) {
-        std::string key{host_name};
-        sessions.erase(key);
-    }
-
-    bool has_session(std::string_view host_name) {
-        std::string key{host_name};
-        return sessions.find(key) != sessions.end();
-    }
-
-    std::string execute_command(const char *command)
-    {
-        std::string result;
-        execute_command(command, [&result](std::string_view line)
-                        { result += line; });
-        return result;
-    }
-
-    bool IsPortInUse(unsigned short port) const
-    {
-        WSADATA wsaData;
-        SOCKET TestSocket = INVALID_SOCKET;
-        struct sockaddr_in service;
-
-        // Initialize Winsock
-        int iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
-        if (iResult != 0)
-        {
-            return false; // Winsock init failed, assume port is not in use
-        }
-
-        // Create a SOCKET for connecting to the server
-        TestSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-        if (TestSocket == INVALID_SOCKET)
-        {
-            WSACleanup();
-            return false; // Socket creation failed, assume port is not in use
-        }
-
-        // Set up the sockaddr_in structure
-        service.sin_family = AF_INET;
-        if (inet_pton(AF_INET, "127.0.0.1", &service.sin_addr) <= 0)
-        {
-            closesocket(TestSocket);
-            WSACleanup();
-            return false; // Address conversion failed, assume port is not in use
-        }
-        service.sin_port = htons(port); // Convert port number
-
-        // Attempt to connect to the port
-        iResult = connect(TestSocket, (SOCKADDR *)&service, sizeof(service));
-        if (iResult == SOCKET_ERROR)
-        {
-            // If the error is WSAECONNREFUSED or WSAETIMEDOUT, port is not in use
-            int errCode = WSAGetLastError();
-            if (errCode == WSAECONNREFUSED || errCode == WSAETIMEDOUT)
-            {
-                closesocket(TestSocket);
-                WSACleanup();
-                return false; // Port is not in use
-            }
-        }
-        else
-        {
-            // Connection succeeded, meaning the port is in use
-            closesocket(TestSocket);
-            WSACleanup();
-            return true; // Port is in use
-        }
-
-        // Cleanup
-        closesocket(TestSocket);
-        WSACleanup();
-        return false; // Port is not in use
-    }
-
-    std::string HostName()
-    {
-        if (hostname.empty())
-        {
-            hostname = execute_command("hostname");
-        }
-        return hostname;
-    }
-
-private:
-    std::string hostname;
-    std::unordered_map<std::string, std::unique_ptr<ssh_execute>> sessions;
-};
+}

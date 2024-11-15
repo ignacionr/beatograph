@@ -19,9 +19,9 @@
 #include "jira/screen.hpp"
 #include "calendar/screen.hpp"
 #include "data_offering/screen.hpp"
-#include "host/host.hpp"
-#include "host/host_local.hpp"
-#include "host/local_screen.hpp"
+#include "hosting/host.hpp"
+#include "hosting/host_local.hpp"
+#include "hosting/local_screen.hpp"
 #include "arangodb/cluster_report.hpp"
 #include "ssh/screen_all.hpp"
 #include <cppgpt/cppgpt.hpp>
@@ -70,7 +70,8 @@ int main()
 
         calendar_screen cs;
 
-        host_local localhost;
+        hosting::local::host localhost;
+        hosting::local::screen local_screen{localhost};
 
         git_host git{localhost};
         dataoffering::screen ds{localhost, groq_api_key, get_env_variable("DATAOFFERING_TOKEN")};
@@ -120,6 +121,7 @@ int main()
         };
 
         tabs = std::make_shared<screen_tabs>(std::vector<screen_tabs::tab_t> {
+            {"Local", [&local_screen] { local_screen.render(); }, menu_tabs},
             {"Backend Dev", [&dev_screen, &gpt] { dev_screen.render(gpt); }, menu_tabs},
             {"Data Offering", [&ds] { ds.render(); }, menu_tabs},
             {"ArangoDB", [&cr] { cr.render(); }, menu_tabs},

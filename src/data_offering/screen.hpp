@@ -9,11 +9,11 @@
 #include <imgui.h>
 #include <cppgpt/cppgpt.hpp>
 #include "importer_report.hpp"
-#include "../host/host.hpp"
-#include "../host/screen.hpp"
+#include "../hosting/host.hpp"
+#include "../hosting/screen.hpp"
 #include "../views/assertion.hpp"
 #include "../views/json.hpp"
-#include "../host/local_mapping.hpp"
+#include "../hosting/local_mapping.hpp"
 #include "apiclient.hpp"
 
 extern "C"
@@ -34,7 +34,7 @@ namespace dataoffering
         static constexpr auto hadoop_host{"hadoop1"};
         static constexpr auto hadoop_zookeeper_name{"hadoop-zookeeper-1"};
 
-        screen(host_local &localhost, std::string const &groq_api_key, std::string_view api_client_key)
+        screen(hosting::local::host &localhost, std::string const &groq_api_key, std::string_view api_client_key)
             : importer{localhost}, localhost_{localhost}, groq_api_key_{groq_api_key}
         {
             client = std::make_unique<api_client>(api_client_key);
@@ -48,23 +48,23 @@ namespace dataoffering
                 if (ImGui::CollapsingHeader("Storm Topology Status"))
                 {
                     views::Assertion("storm1 docker is running a zookeeper", [this]
-                                     { return host::by_name("storm1")->docker().is_container_running(zookeeper_name, localhost_); });
+                                     { return hosting::ssh::host::by_name("storm1")->docker().is_container_running(zookeeper_name, localhost_); });
                     views::Assertion("the zookeeper process is running", [this]
-                                     { return host::by_name("storm1")->docker().is_process_running(zookeeper_name, "/opt/java/openjdk/bin/java -Dzookeeper.log.dir=/logs", localhost_); });
+                                     { return hosting::ssh::host::by_name("storm1")->docker().is_process_running(zookeeper_name, "/opt/java/openjdk/bin/java -Dzookeeper.log.dir=/logs", localhost_); });
                     views::Assertion("zookeeper responds to the client", [this]
                                      {
-                    auto const result = host::by_name("storm1")->docker().execute_command(
+                    auto const result = hosting::ssh::host::by_name("storm1")->docker().execute_command(
                         std::format("docker exec {} zkCli.sh -server localhost:2181", zookeeper_name), localhost_);
                     if (result.find("(CONNECTED) 0") == std::string::npos) {
                         throw std::runtime_error(std::format("Error: expected 'ZooKeeper -', got '{}'", result));
                     }
                     return true; });
                     views::Assertion("storm1 docker is running a storm supervisor", [this]
-                                     { return host::by_name("storm1")->docker().is_container_running(supervisor_name, localhost_); });
+                                     { return hosting::ssh::host::by_name("storm1")->docker().is_container_running(supervisor_name, localhost_); });
                     views::Assertion("storm1 docker is running a storm nimbus", [this]
-                                     { return host::by_name("storm1")->docker().is_container_running(nimbus_name, localhost_); });
+                                     { return hosting::ssh::host::by_name("storm1")->docker().is_container_running(nimbus_name, localhost_); });
                     views::Assertion("storm1 docker is running a storm UI", [this]
-                                     { return host::by_name("storm1")->docker().is_container_running(ui_name, localhost_); });
+                                     { return hosting::ssh::host::by_name("storm1")->docker().is_container_running(ui_name, localhost_); });
                     if (storm_ui_mapping_)
                     {
                         auto const url{std::format("http://localhost:{}", storm_ui_mapping_->local_port())};
@@ -82,13 +82,13 @@ namespace dataoffering
                     {
                         if (ImGui::Button("Map Storm UI"))
                         {
-                            storm_ui_mapping_ = std::make_unique<host_local_mapping>(8080, "storm1", localhost_);
+                            storm_ui_mapping_ = std::make_unique<hosting::local::mapping>(8080, "storm1", localhost_);
                         }
                     }
                     views::cached_view<std::string>("Storm Topology", [this]
                                                     {
                     auto cmd = std::format("docker exec {} storm list", nimbus_name);
-                    return host::by_name("storm1")->docker().execute_command(cmd, localhost_); }, [](std::string const &output)
+                    return hosting::ssh::host::by_name("storm1")->docker().execute_command(cmd, localhost_); }, [](std::string const &output)
                                                     { ImGui::Text("%s", output.c_str()); });
                     if (!installing_topology_ && ImGui::Button("Install Storm Topology"))
                     {
@@ -99,7 +99,7 @@ namespace dataoffering
                                 installing_topology_ = true;
                                 // upload the file to storm1 from ignacio-bench
                                 // from the path /home/ubuntu/arangodb-infra/storm-topology/target/storm-topology-1.0-SNAPSHOT.jar
-                                auto storm1{host::by_name("storm1")};
+                                auto storm1{hosting::ssh::host::by_name("storm1")};
                                 auto const filename{"storm-topology-1.0-SNAPSHOT.jar"};
                                 auto on_storm1 = std::format("/tmp/{}", filename);
                                 auto on_nimbus = on_storm1;
@@ -107,7 +107,7 @@ namespace dataoffering
 
                                 std::string cmd_upload_from_ignacio_bench = std::format(
                                     "scp /home/ubuntu/arangodb-infra/storm-topology/target/{} storm1:/tmp/{}", filename, filename);
-                                topology_install_result_ = host::by_name("ignacio-bench")->docker().execute_command(cmd_upload_from_ignacio_bench, localhost_, false);
+                                topology_install_result_ = hosting::ssh::host::by_name("ignacio-bench")->docker().execute_command(cmd_upload_from_ignacio_bench, localhost_, false);
 
                                 // now upload it into the nimbus container
                                 topology_install_result_ += "\n\nCopying file to nimbus...";
@@ -117,7 +117,7 @@ namespace dataoffering
                                                                 localhost_);
                                 topology_install_result_ = "Installing topology...";
                                 auto cmd = std::format("docker exec {} storm jar {} {} {}", nimbus_name, on_nimbus, topology_class, topology_name);
-                                topology_install_result_ = host::by_name("storm1")->docker().execute_command(cmd, localhost_);
+                                topology_install_result_ = hosting::ssh::host::by_name("storm1")->docker().execute_command(cmd, localhost_);
                             }
                             catch (std::exception const &e)
                             {
@@ -133,7 +133,7 @@ namespace dataoffering
                                      {
                                     // verify that the container running nimbus can resolve its way into ignacio-bench host, using curl
                                     auto const cmd = std::format("docker exec {} curl http://rabbitmq", nimbus_name);
-                                    auto const result = host::by_name("storm1")->docker().execute_command(cmd, localhost_);
+                                    auto const result = hosting::ssh::host::by_name("storm1")->docker().execute_command(cmd, localhost_);
                                     // if curl says it can't resolve the host, it means we can't connect
                                     if (result.find("curl: (6) Could not resolve host") != std::string::npos)
                                     {
@@ -147,26 +147,26 @@ namespace dataoffering
                     ImGui::Text("* Hadoop Status");
                     ImGui::Text("* Hbase Status");
                     views::Assertion("Zookeeper is running on hadoop1", [this]
-                                     { return host::by_name(hadoop_host)->docker().is_container_running(hadoop_zookeeper_name, localhost_); });
+                                     { return hosting::ssh::host::by_name(hadoop_host)->docker().is_container_running(hadoop_zookeeper_name, localhost_); });
                     views::Assertion("Hadoop Resource Manager is running", [this]
-                                     { return host::by_name(hadoop_host)->docker().is_container_running("hadoop-resourcemanager-1", localhost_); });
+                                     { return hosting::ssh::host::by_name(hadoop_host)->docker().is_container_running("hadoop-resourcemanager-1", localhost_); });
                     views::Assertion("Hadoop Node Manager is running", [this]
-                                     { return host::by_name(hadoop_host)->docker().is_container_running("hadoop-nodemanager-1", localhost_); });
+                                     { return hosting::ssh::host::by_name(hadoop_host)->docker().is_container_running("hadoop-nodemanager-1", localhost_); });
                     views::Assertion("Hadoop Name Node is running", [this]
-                                     { return host::by_name(hadoop_host)->docker().is_container_running("hadoop-namenode-1", localhost_); });
+                                     { return hosting::ssh::host::by_name(hadoop_host)->docker().is_container_running("hadoop-namenode-1", localhost_); });
                     views::Assertion("Hadoop Data Node is running", [this]
-                                     { return host::by_name(hadoop_host)->docker().is_container_running("hadoop-datanode-1", localhost_); });
+                                     { return hosting::ssh::host::by_name(hadoop_host)->docker().is_container_running("hadoop-datanode-1", localhost_); });
                     views::Assertion("Hbase Region Server is running", [this]
-                                     { return host::by_name(hadoop_host)->docker().is_container_running("hadoop-hbase-regionserver-1", localhost_); });
+                                     { return hosting::ssh::host::by_name(hadoop_host)->docker().is_container_running("hadoop-hbase-regionserver-1", localhost_); });
                     views::Assertion("Hbase Master is running", [this]
-                                     { return host::by_name(hadoop_host)->docker().is_container_running("hadoop-hbase-master-1", localhost_); });
+                                     { return hosting::ssh::host::by_name(hadoop_host)->docker().is_container_running("hadoop-hbase-master-1", localhost_); });
                     auto retrieve_assessment_and_logs = [this](std::string const &service_type, std::vector<std::string> const &servers) -> std::array<std::string, 2>
                     {
                         std::string logs;
                         auto const per_log_limit{5000 / servers.size()};
                         for (auto const &server : servers)
                         {
-                            auto server_logs = host::by_name(hadoop_host)->docker().logs(server, localhost_);
+                            auto server_logs = hosting::ssh::host::by_name(hadoop_host)->docker().logs(server, localhost_);
                             server_logs = server_logs.substr(std::max(static_cast<long>(server_logs.size() - per_log_limit), 0l));
                             logs += std::format("Service: {}\n{}\n\n", server, server_logs);
                         }
@@ -202,7 +202,7 @@ namespace dataoffering
                                      {
                                         // verify that the container running nimbus can resolve its way into ignacio-bench host, using curl
                                         auto const cmd = std::format("docker exec {} curl http://host.docker.internal:16010", nimbus_name);
-                                        auto const result = host::by_name("storm1")->docker().execute_command(cmd, localhost_);
+                                        auto const result = hosting::ssh::host::by_name("storm1")->docker().execute_command(cmd, localhost_);
                                         // if curl says it can't resolve the host, it means we can't connect
                                         if (result.find("curl: (6) Could not resolve host") != std::string::npos)
                                         {
@@ -210,7 +210,7 @@ namespace dataoffering
                                         }
                                         return true; });
                     views::cached_view<std::string>("Checker", [this]() -> std::string
-                                                    { return host::by_name("storm1")->docker().execute_command(
+                                                    { return hosting::ssh::host::by_name("storm1")->docker().execute_command(
                                                           "docker logs --tail 1 storm-checker-1 2>&1",
                                                           localhost_); }, [](std::string const &output)
                                                     { ImGui::TextUnformatted(output.c_str()); });
@@ -249,9 +249,9 @@ namespace dataoffering
 
     private:
         importer_report importer;
-        host_local &localhost_;
-        host_screen host_screen_;
-        std::unique_ptr<host_local_mapping> storm_ui_mapping_;
+        hosting::local::host &localhost_;
+        hosting::ssh::screen host_screen_;
+        std::unique_ptr<hosting::local::mapping> storm_ui_mapping_;
         std::string topology_install_result_;
         bool installing_topology_{false};
         std::string groq_api_key_;

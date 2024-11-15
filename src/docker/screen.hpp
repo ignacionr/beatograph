@@ -4,12 +4,12 @@
 #include <ranges>
 #include <imgui.h>
 #include "host.hpp"
-#include "../host/host.hpp"
-#include "../host/host_local.hpp"
+#include "../hosting/host.hpp"
+#include "../hosting/host_local.hpp"
 
 struct docker_screen
 {
-    void render(auto getter, host_local &localhost)
+    void render(auto getter, ::hosting::local::host &localhost)
     {
         if (ImGui::CollapsingHeader("Containers"))
         {

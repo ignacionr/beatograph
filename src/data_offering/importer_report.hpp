@@ -9,8 +9,9 @@
 #include <vector>
 #include <nlohmann/json.hpp>
 #include <imgui.h>
-#include "../host/host.hpp"
-#include "../host/screen.hpp"
+#include "../hosting/host_local.hpp"
+#include "../hosting/host.hpp"
+#include "../hosting/screen.hpp"
 #include "../docker/host.hpp"
 #include "../docker/screen.hpp"
 #include "../views/assertion.hpp"
@@ -21,10 +22,10 @@ struct importer_report {
     static auto constexpr importer_container_name = "storm-java-producer-1";
     static auto constexpr importer_rabbitmq = "storm-rabbitmq-1";
 
-    importer_report(host_local &localhost): 
+    importer_report(::hosting::local::host &localhost): 
         localhost_{localhost} 
     {
-        host_importer_ = host::by_name(host_importer_name);
+        host_importer_ = hosting::ssh::host::by_name(host_importer_name);
         auto t = std::thread([host = host_importer_, &localhost] {
             host->resolve_from_ssh_conf(localhost);
             try {
@@ -64,6 +65,6 @@ struct importer_report {
     }
     
 private:
-    host::ptr host_importer_;
-    host_local &localhost_;
+    hosting::ssh::host::ptr host_importer_;
+    hosting::local::host &localhost_;
 };

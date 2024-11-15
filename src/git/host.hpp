@@ -9,11 +9,11 @@
 #include <thread>
 #include <vector>
 
-#include "../host/host_local.hpp"
+#include "../hosting/host_local.hpp"
 
 struct git_host
 {
-    git_host(host_local &localhost) : localhost_{localhost}
+    git_host(hosting::local::host &localhost) : localhost_{localhost}
     {
         async_harvest();
     }
@@ -96,6 +96,6 @@ struct git_host
     }
 
 private:
-    host_local &localhost_;
+    hosting::local::host &localhost_;
     std::atomic<std::shared_ptr<std::vector<std::string>>> m_repos;
 };

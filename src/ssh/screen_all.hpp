@@ -7,9 +7,9 @@
 #include <Windows.h>
 #include <Shlobj.h>
 #include <Shlobj_core.h>
-#include "../host/host_local.hpp"
-#include "../host/host.hpp"
-#include "../host/screen.hpp"
+#include "../hosting/host_local.hpp"
+#include "../hosting/host.hpp"
+#include "../hosting/screen.hpp"
 
 struct ssh_screen {
     ssh_screen() {
@@ -22,13 +22,13 @@ struct ssh_screen {
                 while (std::getline(file, line)) {
                     if (line.starts_with("Host ")) {
                         auto name = line.substr(5);
-                        hosts.emplace(name, host::by_name(name));
+                        hosts.emplace(name, hosting::ssh::host::by_name(name));
                     }
                 }
             }
         }
     }
-    void render(host_local &localhost) {
+    void render(hosting::local::host &localhost) {
         for (auto const &[name, host] : hosts) {
             if (ImGui::CollapsingHeader(name.c_str())) {
                 host_screen_.render(host, localhost);
@@ -36,6 +36,6 @@ struct ssh_screen {
         }
     }
 private:
-    std::map<std::string, host::ptr> hosts;
-    host_screen host_screen_;
+    std::map<std::string, hosting::ssh::host::ptr> hosts;
+    hosting::ssh::screen host_screen_;
 };

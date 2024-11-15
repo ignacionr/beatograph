@@ -3,20 +3,20 @@
 #include <format>
 #include <nlohmann/json.hpp>
 
-#include "../host/host_local.hpp"
+#include "../hosting/host_local.hpp"
+namespace docker {
+struct host {
+    host(std::string const &host_name) : host_name_{host_name} {}
 
-struct docker_host {
-    docker_host(std::string const &host_name) : host_name_{host_name} {}
-
-    std::string execute_command(std::string_view command, host_local &localhost, bool sudo = true) const {
+    std::string execute_command(std::string_view command, hosting::local::host &localhost, bool sudo = true) const {
         return localhost.ssh(std::format("{} {}", sudo ? "sudo" : "", command), host_name_);
     }
 
-    std::string execute_command(std::string_view command, std::string_view container_id, host_local &localhost, bool sudo = true) const {
+    std::string execute_command(std::string_view command, std::string_view container_id, ::hosting::local::host &localhost, bool sudo = true) const {
         return localhost.ssh(std::format("docker exec {} {} {}", container_id, sudo ? "sudo" : "", command), host_name_);
     }
 
-    void fetch_ps(host_local &localhost) {
+    void fetch_ps(::hosting::local::host &localhost) {
         auto result = execute_command("docker ps -a --format json", localhost);
         // the result is not a json, but a succession of json lines
         // we need to add the missing commas to make it a valid json array
@@ -40,7 +40,7 @@ struct docker_host {
         return docker_ps_.load();
     }
 
-    void open_shell(std::string const &container_id, host_local &localhost) const {
+    void open_shell(std::string const &container_id, ::hosting::local::host &localhost) const {
         auto ls_command = std::format("docker exec {} which bash zsh sh", container_id);
         auto ls_response = execute_command(ls_command, localhost);
         // use the first line of the response to determine the shell
@@ -73,20 +73,20 @@ struct docker_host {
             SW_SHOW);
     }
 
-    std::string logs(std::string const &container_id, host_local &localhost) const {
+    std::string logs(std::string const &container_id, ::hosting::local::host &localhost) const {
         return execute_command(std::format("docker logs {}", container_id), localhost);
     }
 
-    std::string all_processes(std::string const &container_id, host_local &localhost) const {
+    std::string all_processes(std::string const &container_id, ::hosting::local::host &localhost) const {
         return execute_command(std::format("docker exec {} ps aux", container_id), localhost);
     }
 
-    void copy_to_container(std::string const &file_path, std::string const &container_id, std::string const &destination, host_local &localhost) const {
+    void copy_to_container(std::string const &file_path, std::string const &container_id, std::string const &destination, hosting::local::host &localhost) const {
         auto cmd = std::format("docker cp {} {}:{}", file_path, container_id, destination);
         execute_command(cmd, localhost);
     }
 
-    bool is_container_running(std::string const &container_id_or_name, host_local &localhost) {
+    bool is_container_running(std::string const &container_id_or_name, ::hosting::local::host &localhost) {
         auto ps = this->ps();
         if (!ps) {
             fetch_ps(localhost);
@@ -122,7 +122,7 @@ struct docker_host {
         });
     }
 
-    bool is_process_running(std::string const &container_id, std::string const &process_name, host_local &localhost) const {
+    bool is_process_running(std::string const &container_id, std::string const &process_name, hosting::local::host &localhost) const {
         auto processes = all_processes(container_id, localhost);
         return processes.find(process_name) != std::string::npos;
     }
@@ -130,3 +130,4 @@ private:
     std::string host_name_;
     std::atomic<std::shared_ptr<nlohmann::json>> docker_ps_;
 };
+}
