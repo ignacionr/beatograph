@@ -30,9 +30,8 @@ namespace radio {
             auto const scroll_y = ImGui::GetScrollY();
             auto const offset_y = initial_pos.y - scroll_y;
 
-            constexpr auto green_on = IM_COL32(0, 160, 0, 255);
+            constexpr auto green_on = IM_COL32(0, 255, 0, 255);
             constexpr auto green_off = IM_COL32(0, 160, 0, 100);
-            // constexpr auto white = IM_COL32(255, 255, 255, 255);
             constexpr auto red = IM_COL32(255, 0, 0, 255);
             constexpr auto traslucid_gray = IM_COL32(128, 128, 128, 40);
             constexpr auto traslucid_yellow = IM_COL32(255, 255, 0, 40);
@@ -50,6 +49,7 @@ namespace radio {
 
             int current_row{1};
             auto const x_unit = dial_width / (presets.size() + 2);
+            ImGui::PushStyleColor(ImGuiCol_Text, green);
             for (auto ip{0}; ip < presets.size(); ++ip) {
                 auto const x = initial_pos.x + ip * x_unit;
                 auto start_x = x + 2;
@@ -77,6 +77,7 @@ namespace radio {
                 static constexpr int mapping[] = {3, 2, 0, 1};
                 current_row = mapping[current_row];
             }
+            ImGui::PopStyleColor();
             auto target_x = currently_playing.has_value() ? (initial_pos.x + currently_playing.value() * x_unit + 2) : initial_pos.x;
             if (dial_x < target_x) {
                 dial_x = std::min(target_x, dial_x + (target_x - dial_x) / 10 + 1);
