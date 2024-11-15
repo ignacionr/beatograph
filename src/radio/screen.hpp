@@ -30,7 +30,8 @@ namespace radio {
             auto const scroll_y = ImGui::GetScrollY();
             auto const offset_y = initial_pos.y - scroll_y;
 
-            constexpr auto green = IM_COL32(0, 160, 0, 255);
+            constexpr auto green_on = IM_COL32(0, 160, 0, 255);
+            constexpr auto green_off = IM_COL32(0, 160, 0, 100);
             // constexpr auto white = IM_COL32(255, 255, 255, 255);
             constexpr auto red = IM_COL32(255, 0, 0, 255);
             constexpr auto traslucid_gray = IM_COL32(128, 128, 128, 40);
@@ -44,6 +45,8 @@ namespace radio {
                 initial_pos.y + y_center + selectable_height - 5.0f, 
                 initial_pos.y + y_center + 2 * selectable_height
             };
+
+            auto const green {host_.is_playing() ? green_on : green_off};
 
             int current_row{1};
             auto const x_unit = dial_width / (presets.size() + 2);
@@ -97,10 +100,12 @@ namespace radio {
             draw_list->AddLine({dial_x + 1, offset_y}, {dial_x + 1, offset_y + dial_height}, red);
             draw_list->AddLine({dial_x + 2, offset_y}, {dial_x + 2, offset_y + dial_height}, red);
 
-            draw_list->AddRectFilledMultiColor(
-                {initial_pos.x, offset_y + 3}, 
-                {initial_pos.x + dial_width, offset_y + dial_height - 6},
-                traslucid_gray, traslucid_gray, traslucid_yellow, traslucid_yellow);
+            if (host_.is_playing()) {
+                draw_list->AddRectFilledMultiColor(
+                    {initial_pos.x, offset_y + 3}, 
+                    {initial_pos.x + dial_width, offset_y + dial_height - 6},
+                    traslucid_gray, traslucid_gray, traslucid_yellow, traslucid_yellow);
+            }
 
             ImGui::SetCursorPosX(initial_pos.x);
             ImGui::SetCursorPosY(initial_pos.y + dial_height + 10);
