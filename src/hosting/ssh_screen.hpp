@@ -22,6 +22,7 @@ namespace hosting::ssh
             if (ImGui::BeginChild(std::format("host-{}", host->name()).c_str(), {0, 0}, ImGuiChildFlags_FrameStyle | ImGuiChildFlags_AutoResizeY))
             {
                 // Render host screen
+                ImGui::PushID(host->name().c_str());
                 ImGui::LabelText("Hostname", "%s", host->name().c_str());
                 ImGui::Indent();
                 if (ImGui::CollapsingHeader("SSH Properties"))
@@ -130,7 +131,12 @@ namespace hosting::ssh
                         units.push_back(std::string_view{line.begin(), line.end()});
                     }
                     return units;
-                }, [](std::vector<unit> const &units) {
+                }, [this](std::vector<unit> const &units) {
+                    if (systemctl_filter_.reserve(200); ImGui::InputText("Filter", systemctl_filter_.data(), systemctl_filter_.capacity()))
+                    {
+                        systemctl_filter_ = systemctl_filter_.data();
+                    }
+
                     if (ImGui::BeginTable("SystemCtl Units", 5, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingFixedFit))
                     {
                         ImGui::TableSetupColumn("Name");
@@ -139,7 +145,8 @@ namespace hosting::ssh
                         ImGui::TableSetupColumn("Sub");
                         ImGui::TableSetupColumn("Description");
                         ImGui::TableHeadersRow();
-                        for (auto const &unit : units)
+                        for (auto const &unit : units | std::views::filter([&](unit const &unit) { 
+                            return unit.name.find(systemctl_filter_) != std::string::npos; }))
                         {
                             ImGui::TableNextRow();
                             ImGui::TableNextColumn();
@@ -167,6 +174,7 @@ namespace hosting::ssh
                     }
                 }
                 ImGui::Unindent();
+                ImGui::PopID();
             }
             ImGui::EndChild();
         }
@@ -174,5 +182,6 @@ namespace hosting::ssh
     private:
         metric_view metric_view_;
         docker_screen docker_screen_;
+        std::string systemctl_filter_;
     };
 }
