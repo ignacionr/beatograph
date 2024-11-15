@@ -10,7 +10,7 @@
 #include <cppgpt/cppgpt.hpp>
 #include "importer_report.hpp"
 #include "../hosting/host.hpp"
-#include "../hosting/screen.hpp"
+#include "../hosting/ssh_screen.hpp"
 #include "../views/assertion.hpp"
 #include "../views/json.hpp"
 #include "../hosting/local_mapping.hpp"

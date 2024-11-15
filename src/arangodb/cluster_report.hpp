@@ -5,7 +5,7 @@
 #include <format>
 #include <thread>
 #include "../hosting/host.hpp"
-#include "../hosting/screen.hpp"
+#include "../hosting/ssh_screen.hpp"
 
 struct cluster_report {
     cluster_report(hosting::local::host &localhost) : localhost_{localhost} {

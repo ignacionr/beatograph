@@ -2,7 +2,7 @@
 
 #include <imgui.h>
 #include "../hosting/host.hpp"
-#include "../hosting/screen.hpp"
+#include "../hosting/ssh_screen.hpp"
 #include "../views/assertion.hpp"
 #include "../cppgpt/screen.hpp"
 

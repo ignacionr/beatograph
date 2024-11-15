@@ -3,11 +3,15 @@
 #include <format>
 #include <numeric>
 #include <ranges>
+#include <vector>
+
 #include <imgui.h>
+
 #include "host.hpp"
 #include "host_local.hpp"
 #include "../metrics/metric_view.hpp"
 #include "../docker/screen.hpp"
+#include "../views/cached_view.hpp"
 
 namespace hosting::ssh
 {
@@ -87,6 +91,71 @@ namespace hosting::ssh
                 }
                 docker_screen_.render([host]() -> docker::host &
                                       { return host->docker(); }, localhost);
+                struct unit
+                {
+                    unit (std::string_view line) {
+                        auto parts = line | std::views::split(' ') | std::views::filter([](auto const &part) { return !part.empty(); });
+                        auto it = parts.begin();
+                        auto p = *it++;
+                        name = std::string{p.begin(), p.end()};
+                        p = *it++;
+                        load = std::string{p.begin(), p.end()};
+                        p = *it++;
+                        active = std::string{p.begin(), p.end()};
+                        p = *it++;
+                        sub = std::string{p.begin(), p.end()};
+                        description.clear();
+                        for (p = *it++; it != parts.end(); p = *it++)
+                        {
+                            description += std::string{p.begin(), p.end()} + " ";
+                        }
+                    }
+
+                    std::string name;
+                    std::string load;
+                    std::string active;
+                    std::string sub;
+                    std::string description;
+                };
+                views::cached_view<std::vector<unit>>("SystemCtl Units", [hostname = host->name(), &localhost]() {
+                    auto const result {localhost.ssh("sudo systemctl list-units", hostname)};
+                    std::vector<unit> units;
+                    for (auto const &line : std::string_view{result} | std::views::split('\n') | std::views::drop(1))
+                    {
+                        // break at an empty line
+                        if (line.empty())
+                        {
+                            break;
+                        }
+                        units.push_back(std::string_view{line.begin(), line.end()});
+                    }
+                    return units;
+                }, [](std::vector<unit> const &units) {
+                    if (ImGui::BeginTable("SystemCtl Units", 5, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingFixedFit))
+                    {
+                        ImGui::TableSetupColumn("Name");
+                        ImGui::TableSetupColumn("Load");
+                        ImGui::TableSetupColumn("Active");
+                        ImGui::TableSetupColumn("Sub");
+                        ImGui::TableSetupColumn("Description");
+                        ImGui::TableHeadersRow();
+                        for (auto const &unit : units)
+                        {
+                            ImGui::TableNextRow();
+                            ImGui::TableNextColumn();
+                            ImGui::Text("%s", unit.name.c_str());
+                            ImGui::TableNextColumn();
+                            ImGui::Text("%s", unit.load.c_str());
+                            ImGui::TableNextColumn();
+                            ImGui::Text("%s", unit.active.c_str());
+                            ImGui::TableNextColumn();
+                            ImGui::Text("%s", unit.sub.c_str());
+                            ImGui::TableNextColumn();
+                            ImGui::Text("%s", unit.description.c_str());
+                        }
+                        ImGui::EndTable();
+                    }
+                });
                 if (ImGui::Button("Connect..."))
                 {
                     // just spawn a new process

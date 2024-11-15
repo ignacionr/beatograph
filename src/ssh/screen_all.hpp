@@ -9,7 +9,7 @@
 #include <Shlobj_core.h>
 #include "../hosting/host_local.hpp"
 #include "../hosting/host.hpp"
-#include "../hosting/screen.hpp"
+#include "../hosting/ssh_screen.hpp"
 
 struct ssh_screen {
     ssh_screen() {

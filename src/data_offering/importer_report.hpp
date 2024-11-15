@@ -11,7 +11,7 @@
 #include <imgui.h>
 #include "../hosting/host_local.hpp"
 #include "../hosting/host.hpp"
-#include "../hosting/screen.hpp"
+#include "../hosting/ssh_screen.hpp"
 #include "../docker/host.hpp"
 #include "../docker/screen.hpp"
 #include "../views/assertion.hpp"
