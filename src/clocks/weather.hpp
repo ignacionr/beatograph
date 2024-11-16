@@ -34,7 +34,7 @@ namespace weather {
                 curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
                 curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
                 curl_easy_setopt(curl, CURLOPT_USERAGENT, "beat-o-graph/1.0");
-                curl_easy_setopt(curl, CURLOPT_TIMEOUT, 35L);
+                curl_easy_setopt(curl, CURLOPT_TIMEOUT, 15L);
                 curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 15L);
                 curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
                 curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);

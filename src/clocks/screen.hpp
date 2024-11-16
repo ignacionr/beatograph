@@ -99,8 +99,8 @@ namespace clocks
 
         void render()
         {
-            constexpr auto side_width{120};
-            constexpr auto cell_height{250};
+            constexpr auto side_width{210};
+            constexpr auto cell_height{340};
             int column_count = static_cast<int>(ImGui::GetWindowWidth()) / (side_width + 10);
             if (ImGui::BeginTable("Clocks", column_count, ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_BordersOuter | ImGuiTableFlags_RowBg, ImVec2{ImGui::GetWindowWidth() - 20, ImGui::GetWindowHeight() - 20}))
             {
@@ -116,15 +116,41 @@ namespace clocks
                         ImGui::BeginChild(city.label.data(), ImVec2{side_width, cell_height});
                         if (city.weather_info.is_object() && city.weather_info.contains("weather"))
                         {
+                            auto const start_y {ImGui::GetCursorPosY()};
+                            ImGui::TextUnformatted("\n\n\n\n");
                             auto const &weather = city.weather_info["weather"][0];
                             auto const local_icon = weather_client_.icon_local_file(weather["icon"]);
                             auto const texture{cache_.load_texture_from_file(local_icon)};
-                            render_clock(city.label, std::chrono::system_clock::now() + std::chrono::seconds{city.weather_info.at("timezone").get<int>()}, false);
-                            ImGui::Image(reinterpret_cast<void *>(static_cast<uintptr_t>(texture)), ImVec2{50, 50});
-                            ImGui::TextUnformatted(std::format("{:.1f}°C", city.weather_info["main"]["temp"].get<double>() - 273.15).c_str());
+                            auto const name = std::format("{}, {}",
+                                                          city.weather_info["name"].get<std::string>(),
+                                                          city.weather_info["sys"]["country"].get<std::string>());
+                            auto const tz = city.weather_info.at("timezone").get<int>();
+                            auto const feels_like {city.weather_info["main"]["feels_like"].get<double>() - 273.15};
+                            auto color = feels_like > 30.0f ? ImVec4{1.0f, 0.0f, 0.0f, 1.0f} : (feels_like < 18.0f ? ImVec4{0.0f, 0.0f, 1.0f, 1.0f} : ImVec4{1.0f, 1.0f, 1.0f, 1.0f});
+                            ImGui::PushStyleColor(ImGuiCol_Text, color);
+                            ImGui::TextUnformatted(std::format("{:.1f}°C like {:.1f}°C", 
+                                city.weather_info["main"]["temp"].get<double>() - 273.15,
+                                feels_like).c_str());
+                            ImGui::PopStyleColor();
+                            ImGui::TextUnformatted(std::format("{}% h", city.weather_info["main"]["humidity"].get<int>()).c_str());
+                            ImGui::TextUnformatted(std::format("{} m/s", city.weather_info["wind"]["speed"].get<double>()).c_str());
+                            auto const sunrise_seconds = city.weather_info["sys"]["sunrise"].get<int>() + tz;
+                            auto const sunset_seconds = city.weather_info["sys"]["sunset"].get<int>() + tz;
+                            auto sun_times = std::format(ICON_MD_ARROW_CIRCLE_UP " {}:{:02} " ICON_MD_ARROW_CIRCLE_DOWN " {}:{:02}" ,
+                                                        sunrise_seconds / 3600 % 24,
+                                                        sunrise_seconds / 60 % 60,
+                                                        sunset_seconds / 3600 % 24,
+                                                        sunset_seconds / 60 % 60
+                                                        );
+                            ImGui::TextUnformatted(sun_times.c_str());
                             if (show_details_) {
                                 json_view_.render(city.weather_info);
                             }
+                            ImGui::Image(reinterpret_cast<void *>(static_cast<uintptr_t>(texture)), ImVec2{50, 50});
+                            auto const restore_y {ImGui::GetCursorPosY()};
+                            ImGui::SetCursorPosY(start_y);
+                            render_clock(name, std::chrono::system_clock::now() + std::chrono::seconds{tz}, false);
+                            ImGui::SetCursorPosY(restore_y);
                         }
                         else
                         {
@@ -155,14 +181,15 @@ namespace clocks
         views::json json_view_;
         bool show_details_{false};
         std::vector<city_info> all_cities{{{"Los Angeles"},
-                                                    {"New York"},
-                                                    {"Buenos Aires"},
-                                                    {"Santa Fe, AR"},
-                                                    {"Rome, IT"},
-                                                    {"Moscow"},
-                                                    {"Bangkok"},
-                                                    {"Pattaya, TH"}
-                                                    }};
+                                            {"New York"},
+                                            {"Buenos Aires"},
+                                            {"Santa Fe, AR"},
+                                            {"Rome, IT"},
+                                            {"Saint Petersburg, RU"},
+                                            {"Irkutsk, RU"},
+                                            {"Bangkok"},
+                                            {"Pattaya, TH"}
+                                            }};
         std::jthread refresh_;
         std::mutex city_mutex_;
     };
