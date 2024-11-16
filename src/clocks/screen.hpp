@@ -128,7 +128,7 @@ namespace clocks
                             auto const feels_like {city.weather_info["main"]["feels_like"].get<double>() - 273.15};
                             auto color = feels_like > 30.0f ? ImVec4{1.0f, 0.0f, 0.0f, 1.0f} : (feels_like < 18.0f ? ImVec4{0.0f, 0.0f, 1.0f, 1.0f} : ImVec4{1.0f, 1.0f, 1.0f, 1.0f});
                             ImGui::PushStyleColor(ImGuiCol_Text, color);
-                            ImGui::TextUnformatted(std::format("{:.1f}°C like {:.1f}°C", 
+                            ImGui::TextUnformatted(std::format("{:.1f}°C like {:.1f}°C\n\n", 
                                 city.weather_info["main"]["temp"].get<double>() - 273.15,
                                 feels_like).c_str());
                             ImGui::PopStyleColor();
@@ -143,10 +143,11 @@ namespace clocks
                                                         sunset_seconds / 60 % 60
                                                         );
                             ImGui::TextUnformatted(sun_times.c_str());
+                            ImGui::TextUnformatted(city.weather_info.at("weather")[0].at("main").get<std::string>().c_str());
                             if (show_details_) {
                                 json_view_.render(city.weather_info);
                             }
-                            ImGui::Image(reinterpret_cast<void *>(static_cast<uintptr_t>(texture)), ImVec2{50, 50});
+                            ImGui::Image(reinterpret_cast<void *>(static_cast<uintptr_t>(texture)), ImVec2{90, 90});
                             auto const restore_y {ImGui::GetCursorPosY()};
                             ImGui::SetCursorPosY(start_y);
                             render_clock(name, std::chrono::system_clock::now() + std::chrono::seconds{tz}, false);
