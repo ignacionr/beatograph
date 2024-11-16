@@ -9,6 +9,9 @@
 #include <unordered_map>
 #include <imgui.h>
 
+#pragma execution_character_set("utf-8")
+#include "../../external/IconsMaterialDesign.h"
+
 namespace views {
     template<typename cached_t>
     void cached_view(
@@ -46,14 +49,14 @@ namespace views {
                 else {
                     auto const err{item_ptr->error()};
                     if (err == "Loading...") {
-                        ImGui::TextUnformatted(err.c_str());
+                        ImGui::TextUnformatted(ICON_MD_DOWNLOADING);
                     }
                     else {
                         constexpr ImVec4 red {ImVec4(1.0f, 0.0f, 0.0f, 1.0f)};
-                        ImGui::TextColored(red, "Error: %s", err.c_str());
+                        ImGui::TextColored(red, ICON_MD_ERROR " %s", err.c_str());
                     }
                 }
-                if (ImGui::Button("Refresh")) {
+                if (ImGui::SmallButton(ICON_MD_REFRESH)) {
                     cache.erase(item_id);
                 }
             }

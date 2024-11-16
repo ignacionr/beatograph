@@ -9,6 +9,9 @@
 #include "host.hpp"
 #include "../imgcache.hpp"
 
+#pragma execution_character_set("utf-8")
+#include "../../external/IconsMaterialDesign.h"
+
 namespace rss
 {
     struct screen
@@ -94,7 +97,7 @@ namespace rss
                 {
                     current_feed_.reset();
                 }
-                else if (ImGui::SameLine(); ImGui::Button("Refresh"))
+                else if (ImGui::SameLine(); ImGui::SmallButton(ICON_MD_REFRESH))
                 {
                     // we will re-add the selected feed into the host
                     host_.add_feeds({current_feed_->feed_link});

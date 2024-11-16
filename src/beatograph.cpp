@@ -8,6 +8,10 @@
 #include <ranges>
 #include <string>
 #include <unordered_map>
+
+#define IMGUI_USE_WCHAR32
+#include <imgui.h>
+
 #include "main_screen.hpp"
 #include "screen_tabs.hpp"
 #include "metrics/metrics_parser.hpp"
@@ -36,7 +40,11 @@
 #include "conversions/screen.hpp"
 #include "clocks/screen.hpp"
 
-std::string get_env_variable(std::string_view key) {
+#pragma execution_character_set("utf-8")
+#include "../external/IconsMaterialDesign.h"
+
+std::string get_env_variable(std::string_view key)
+{
     char *val = nullptr;
     size_t len = 0;
     if (_dupenv_s(&val, &len, key.data()) || val == nullptr)
@@ -44,6 +52,27 @@ std::string get_env_variable(std::string_view key) {
         throw std::runtime_error(std::format("Error: {} environment variable not set.", key));
     }
     return std::string{val, len - 1}; // len returns the count of all copied bytes, including the terminator
+}
+
+void setup_fonts()
+{
+    auto &io{ImGui::GetIO()};
+    float baseFontSize = 13.5f;
+    io.Fonts->AddFontFromFileTTF("assets/fonts/LiberationMono-Regular.ttf", baseFontSize, nullptr, io.Fonts->GetGlyphRangesCyrillic());
+
+    float iconFontSize = baseFontSize * 3.0f / 3.0f;
+
+    // merge in icons from Font Awesome
+    static const ImWchar icons_ranges[] = { 
+        static_cast<ImWchar>(ICON_MIN_MD), 
+        static_cast<ImWchar>(ICON_MAX_MD), 0 };
+    ImFontConfig icons_config;
+    icons_config.MergeMode = true;
+    icons_config.PixelSnapH = false;
+    io.Fonts->AddFontFromFileTTF("assets/fonts/MaterialIcons-Regular.ttf", iconFontSize, &icons_config, icons_ranges);
+
+    io.Fonts->AddFontFromFileTTF("assets/fonts/Montserrat-Regular.ttf", 16.0f, nullptr, io.Fonts->GetGlyphRangesCyrillic());
+    io.Fonts->AddFontFromFileTTF("assets/fonts/Font90Icons-2ePo.ttf", 13.5f);
 }
 
 #if defined(_WIN32)
@@ -56,6 +85,8 @@ int main()
     {
         // auto constexpr happy_bell_sound = "assets/mixkit-happy-bell-alert-601.wav";
         // auto constexpr impact_sound = "assets/mixkit-underground-explosion-impact-echo-1686.wav";
+        auto static constexpr jira_tab_name {ICON_MD_TASK " Jira"};
+        auto static constexpr radio_tab_name {ICON_MD_TV " Radio"};
 
         img_cache cache{"imgcache"};
 
@@ -66,7 +97,7 @@ int main()
         toggl_client tc(get_env_variable("TOGGL_API_TOKEN"));
         toggl_screen ts(tc);
 
-        jira::host jh {get_env_variable("JIRA_USER"), get_env_variable("JIRA_TOKEN")};
+        jira::host jh{get_env_variable("JIRA_USER"), get_env_variable("JIRA_TOKEN")};
         std::unique_ptr<jira::screen> js;
 
         calendar_screen cs;
@@ -89,11 +120,11 @@ int main()
         rss::host rss_host;
 
         rss::screen rss_screen{rss_host,
-            [&radio_host](std::string_view url) {
-                radio_host.play(std::string{url});
-            }, 
-            cache
-        };
+                               [&radio_host](std::string_view url)
+                               {
+                                   radio_host.play(std::string{url});
+                               },
+                               cache};
 
         conversions::screen conv_screen{};
 
@@ -103,39 +134,55 @@ int main()
 
         std::shared_ptr<screen_tabs> tabs;
 
-        auto menu_tabs = [&tabs](std::string_view key){
-            if (key == "Main") {
-                if (ImGui::BeginMenu("Tabs")) {
-                    if (ImGui::MenuItem("Jira", "Ctrl+J")) {
-                        tabs->select_tab("Jira");
+        auto menu_tabs = [&tabs](std::string_view key)
+        {
+            if (key == "Main")
+            {
+                if (ImGui::BeginMenu("Tabs"))
+                {
+                    if (ImGui::MenuItem(jira_tab_name, "Ctrl+J"))
+                    {
+                        tabs->select_tab(jira_tab_name);
                     }
-                    if (ImGui::MenuItem("Radio", "Ctrl+R")) {
-                        tabs->select_tab("Radio");
+                    if (ImGui::MenuItem(radio_tab_name, "Ctrl+R"))
+                    {
+                        tabs->select_tab(radio_tab_name);
                     }
                     ImGui::EndMenu();
                 }
             }
         };
-        auto menu_tabs_and = [&menu_tabs](std::function<void(std::string_view)>other) {
-            return [menu_tabs, other](std::string_view key) {
+        auto menu_tabs_and = [&menu_tabs](std::function<void(std::string_view)> other)
+        {
+            return [menu_tabs, other](std::string_view key)
+            {
                 other(key);
                 menu_tabs(key);
             };
         };
 
-        tabs = std::make_shared<screen_tabs>(std::vector<screen_tabs::tab_t> {
-            {"Local", [&local_screen] { local_screen.render(); }, menu_tabs},
-            {"Backend Dev", [&dev_screen, &gpt] { dev_screen.render(gpt); }, menu_tabs},
-            {"Data Offering", [&ds] { ds.render(); }, menu_tabs},
-            {"ArangoDB", [&cr] { cr.render(); }, menu_tabs},
-            {"Toggl", [&ts] { ts.render(); }, menu_tabs},
-            {"Jira", [&js, &jh] { js->render(jh); }, 
-                menu_tabs_and([&js](std::string_view item){ js->render_menu(item); }), 
-                ImVec4(0.5f, 0.5f, 1.0f, 1.0f)},
-            {"Calendar", [&cs] { cs.render(); }, menu_tabs},
-            {"SSH Hosts", [&ssh_screen, &localhost] { ssh_screen.render(localhost); }, menu_tabs},
-            {"Git Repositories", [&git]
-            {
+        tabs = std::make_shared<screen_tabs>(std::vector<screen_tabs::tab_t>{
+            {ICON_MD_COMPUTER, [&local_screen]
+             { local_screen.render(); }, menu_tabs},
+            {ICON_MD_GROUPS " Backend Dev", [&dev_screen, &gpt]
+             { dev_screen.render(gpt); }, menu_tabs},
+            {ICON_MD_GROUPS " Data Offering", [&ds]
+             { ds.render(); }, menu_tabs},
+            {ICON_MD_GROUPS " ArangoDB", [&cr]
+             { cr.render(); }, menu_tabs},
+            {ICON_MD_TASK " Toggl", [&ts]
+             { ts.render(); }, menu_tabs},
+            {jira_tab_name, [&js, &jh]
+             { js->render(jh); },
+             menu_tabs_and([&js](std::string_view item)
+                           { js->render_menu(item); }),
+             ImVec4(0.5f, 0.5f, 1.0f, 1.0f)},
+            {ICON_MD_CALENDAR_VIEW_WEEK, [&cs]
+             { cs.render(); }, menu_tabs},
+            {ICON_MD_SETTINGS_REMOTE " SSH Hosts", [&ssh_screen, &localhost]
+             { ssh_screen.render(localhost); }, menu_tabs},
+            {ICON_MD_CODE " Git Repositories", [&git]
+             {
                  ImGui::Text("Git Repositories");
                  if (auto repos = git.repos(); repos)
                  {
@@ -144,27 +191,28 @@ int main()
                          ImGui::Text("%s", repo.c_str());
                      }
                  }
-            }, menu_tabs},
-            {"Radio", [&radio_screen, &rss_screen] {
-            radio_screen->render();
-            rss_screen.render();
-            }, menu_tabs, ImVec4(0.05f, 0.5f, 0.05f, 1.0f)},
-            {"Conversions", [&conv_screen] { conv_screen.render(); }, menu_tabs},
-            {"Clocks", [&clocks_screen] {clocks_screen.render(); }, menu_tabs},
-            {"AI", [&gpt_screen, &gpt] { gpt_screen.render(gpt); }, menu_tabs, ImVec4(0.75f, 0.75f, 0.75f, 1.0f)}
-        });
+             },
+             menu_tabs},
+            {radio_tab_name, [&radio_screen, &rss_screen]
+             {
+                 radio_screen->render();
+                 rss_screen.render();
+             },
+             menu_tabs, ImVec4(0.05f, 0.5f, 0.05f, 1.0f)},
+            {ICON_MD_CURRENCY_EXCHANGE " Conversions", [&conv_screen]
+             { conv_screen.render(); }, menu_tabs},
+            {ICON_MD_WATCH " Clocks", [&clocks_screen]
+             { clocks_screen.render(); }, menu_tabs},
+            {ICON_MD_CHAT_BUBBLE " AI", [&gpt_screen, &gpt]
+             { gpt_screen.render(gpt); }, menu_tabs, ImVec4(0.75f, 0.75f, 0.75f, 1.0f)}});
         main_screen screen{tabs};
 
-        // time to setup our fonts
-        auto &io {ImGui::GetIO()};
-        // io.Fonts->AddFontDefault();
-        io.Fonts->AddFontFromFileTTF("assets/fonts/LiberationMono-Regular.ttf", 13.5f, nullptr, io.Fonts->GetGlyphRangesCyrillic());
-        io.Fonts->AddFontFromFileTTF("assets/fonts/Montserrat-Regular.ttf", 16.0f, nullptr, io.Fonts->GetGlyphRangesCyrillic());
-        io.Fonts->AddFontFromFileTTF("assets/fonts/Font90Icons-2ePo.ttf", 13.5f);
+        setup_fonts();
 
         radio_screen = std::make_unique<radio::screen>(radio_host, cache);
         js = std::make_unique<jira::screen>(cache);
-        screen.run([&tabs]{
+        screen.run([&tabs]
+                   {
             if (ImGui::IsKeyDown(ImGuiMod_Ctrl)) {
                 if (ImGui::IsKeyPressed(ImGuiKey_J)) {
                     tabs->select_tab("Jira");
@@ -172,8 +220,7 @@ int main()
                 else if (ImGui::IsKeyPressed(ImGuiKey_R)) {
                     tabs->select_tab("Radio");
                 }
-            }
-        });
+            } });
         views::quitting(true);
     }
     std::cerr << "Terminating.\n";

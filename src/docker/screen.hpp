@@ -7,6 +7,11 @@
 #include "../hosting/host.hpp"
 #include "../hosting/host_local.hpp"
 
+#pragma execution_character_set("utf-8")
+
+#pragma execution_character_set("utf-8")
+#include "../../external/IconsMaterialDesign.h"
+
 struct docker_screen
 {
     void render(auto getter, ::hosting::local::host &localhost)
@@ -105,7 +110,7 @@ struct docker_screen
             {
                 ImGui::Text("N/A");
             }
-            if (ImGui::Button("Refresh"))
+            if (ImGui::SmallButton(ICON_MD_REFRESH))
             {
                 auto t = std::thread([&localhost, &host]
                                      {

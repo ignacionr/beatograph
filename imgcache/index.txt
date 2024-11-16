@@ -1,6 +1,7 @@
 http://ichef.bbci.co.uk/images/ic/3000x3000/p09kz1gg.jpg imgcache\16402562058831218690.JPG
 http://softwareengineeringdaily.com/wp-content/uploads/2024/02/sed_logo.png imgcache\9986585877379090430.PNG
 https://audioboom.com/i/36237444.jpg imgcache\8343907837472486365.JPG
+https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/61e54a7f78cb69007137474b/8097336f-c248-4e75-bbd8-33e6f36fdfc9/48 imgcache\249918704940566352
 https://content.production.cdn.art19.com/images/33/c2/7e/14/33c27e14-97e1-476a-a898-d3c3b826d595/21b14bd5183d699136e7673004bb21be695145eda11b7a794a9cd48aa47392439e85af9245f0088f327a6ee3df403bf3c301956d2bf4bb9e44f20e94ffb6b80c.jpeg imgcache\669989114143409592.JPEG
 https://cppcast.com/static/cppcast-logo-square.png imgcache\8482647007716525230.PNG
 https://cuonda.com/storage/podcasts/184/image.jpg?gen=c9ef273f0eddb801a243d2b60af369a5 imgcache\15875405303810657508.JPG
@@ -45,6 +46,7 @@ https://ru-msk-dr3-1.store.cloud.mts.ru/mave/storage/podcasts/65cccd18-1aa6-4b25
 https://sbs-rss.streamguys1.com/sbs/20230515175235-SBS-Podcasts_SBSRussian_3000x3000px.jpeg imgcache\9264445197753353890.JPEG
 https://secure.gravatar.com/avatar/374712cc92f4bb1bfdc397832f47c5fd?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FIR-1.png imgcache\9169169967166952162
 https://secure.gravatar.com/avatar/63a6e45a56ff24f9333c037a477735c8?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FGN-2.png imgcache\5704486429601724353
+https://secure.gravatar.com/avatar/f883bb7b33a2e3532b122e374a073331?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FLD-5.png imgcache\12422035090099721576
 https://static.libsyn.com/p/assets/a/9/c/b/a9cb4d1dadb1ea21/all-in_logo.png imgcache\3239729757193283815.PNG
 https://studio-podplay.imgix.net/img/727fcff50bac8988e3e3cfc2d44656d8.jpg?auto=compress&h=1500&w=1500&s=e7fc74bb0104c42612bba83bd34dfcbb imgcache\16977882867581204498.JPG
 https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg imgcache\1579721969623822677.JPG
