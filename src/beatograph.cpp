@@ -68,7 +68,7 @@ void setup_fonts()
         static_cast<ImWchar>(ICON_MAX_MD), 0 };
     ImFontConfig icons_config;
     icons_config.MergeMode = true;
-    icons_config.PixelSnapH = false;
+    icons_config.GlyphOffset.y = 3;
     io.Fonts->AddFontFromFileTTF("assets/fonts/MaterialIcons-Regular.ttf", iconFontSize, &icons_config, icons_ranges);
 
     io.Fonts->AddFontFromFileTTF("assets/fonts/Montserrat-Regular.ttf", 16.0f, nullptr, io.Fonts->GetGlyphRangesCyrillic());
@@ -86,7 +86,7 @@ int main()
         // auto constexpr happy_bell_sound = "assets/mixkit-happy-bell-alert-601.wav";
         // auto constexpr impact_sound = "assets/mixkit-underground-explosion-impact-echo-1686.wav";
         auto static constexpr jira_tab_name {ICON_MD_TASK " Jira"};
-        auto static constexpr radio_tab_name {ICON_MD_TV " Radio"};
+        auto static constexpr radio_tab_name {ICON_MD_AUDIOTRACK " Radio"};
 
         img_cache cache{"imgcache"};
 
@@ -161,7 +161,7 @@ int main()
             };
         };
 
-        tabs = std::make_shared<screen_tabs>(std::vector<screen_tabs::tab_t>{
+        tabs = std::make_shared<screen_tabs>(std::vector<screen_tabs::tab_t> {
             {ICON_MD_COMPUTER, [&local_screen]
              { local_screen.render(); }, menu_tabs},
             {ICON_MD_GROUPS " Backend Dev", [&dev_screen, &gpt]
@@ -177,7 +177,7 @@ int main()
              menu_tabs_and([&js](std::string_view item)
                            { js->render_menu(item); }),
              ImVec4(0.5f, 0.5f, 1.0f, 1.0f)},
-            {ICON_MD_CALENDAR_VIEW_WEEK, [&cs]
+            {ICON_MD_CALENDAR_MONTH " Calendar", [&cs]
              { cs.render(); }, menu_tabs},
             {ICON_MD_SETTINGS_REMOTE " SSH Hosts", [&ssh_screen, &localhost]
              { ssh_screen.render(localhost); }, menu_tabs},

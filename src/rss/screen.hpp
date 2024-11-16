@@ -60,9 +60,7 @@ namespace rss
                     auto starting_pos = ImGui::GetCursorScreenPos();
                     if (!item.enclosure.empty())
                     {
-                        ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[2]);
-                        ImGui::TextUnformatted("D");
-                        ImGui::PopFont();
+                        ImGui::TextUnformatted(ICON_MD_PLAY_CIRCLE);
                         ImGui::SameLine();
                     }
                     ImGui::TextUnformatted(item.title.c_str());
@@ -93,11 +91,11 @@ namespace rss
         {
             if (current_feed_)
             {
-                if (ImGui::Button("Back"))
+                if (ImGui::Button(ICON_MD_ARROW_BACK))
                 {
                     current_feed_.reset();
                 }
-                else if (ImGui::SameLine(); ImGui::SmallButton(ICON_MD_REFRESH))
+                else if (ImGui::SameLine(); ImGui::Button(ICON_MD_REFRESH))
                 {
                     // we will re-add the selected feed into the host
                     host_.add_feeds({current_feed_->feed_link});
