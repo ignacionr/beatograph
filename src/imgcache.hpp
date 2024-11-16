@@ -121,14 +121,27 @@ struct img_cache {
                 curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
                 curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
                 curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 3L);
-                curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
-                curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
-                curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
+                curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
+                curl_easy_setopt(curl, CURLOPT_USERAGENT, "beat-o-graph/1.0");
+                curl_easy_setopt(curl, CURLOPT_TIMEOUT, 60L);
+                curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 10L);
                 curl_easy_setopt(curl, CURLOPT_WRITEDATA, &image_file);
+                curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
                 auto res = curl_easy_perform(curl);
                 if (res != CURLE_OK) {
                     curl_easy_cleanup(curl);
+                    image_file.close();
+                    std::filesystem::remove(file_path);
                     throw std::runtime_error(std::format("Failed to download image: {}", curl_easy_strerror(res)));
+                }
+                // get the status code
+                long http_code = 0;
+                curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+                if (http_code != 200) {
+                    curl_easy_cleanup(curl);
+                    image_file.close();
+                    std::filesystem::remove(file_path);
+                    throw std::runtime_error(std::format("Failed to download image: HTTP status code {}", http_code));
                 }
             }
             curl_easy_cleanup(curl);

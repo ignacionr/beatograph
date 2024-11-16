@@ -39,6 +39,7 @@
 #include "imgcache.hpp"
 #include "conversions/screen.hpp"
 #include "clocks/screen.hpp"
+#include "clocks/weather.hpp"
 
 #pragma execution_character_set("utf-8")
 #include "../external/IconsMaterialDesign.h"
@@ -89,6 +90,8 @@ int main()
 
         img_cache cache{"imgcache"};
 
+        weather::openweather_client weather_host{get_env_variable("OPENWEATHER_KEY")};
+
         // get the Groq API key from GROQ_API_KEY
         auto groq_api_key = get_env_variable("GROQ_API_KEY");
         ignacionr::cppgpt gpt{groq_api_key, ignacionr::cppgpt::groq_base};
@@ -129,7 +132,7 @@ int main()
 
         cppgpt::screen gpt_screen;
 
-        clocks::screen clocks_screen;
+        clocks::screen clocks_screen{weather_host, cache};
 
         std::shared_ptr<screen_tabs> tabs;
 
