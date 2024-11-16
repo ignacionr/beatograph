@@ -204,7 +204,8 @@ int main()
             {ICON_MD_CURRENCY_EXCHANGE " Conversions", [&conv_screen]
              { conv_screen.render(); }, menu_tabs},
             {ICON_MD_WATCH " Clocks", [&clocks_screen]
-             { clocks_screen.render(); }, menu_tabs},
+             { clocks_screen.render(); }, 
+             menu_tabs_and([&clocks_screen](auto i) {  clocks_screen.render_menu(i); })},
             {ICON_MD_CHAT_BUBBLE " AI", [&gpt_screen, &gpt]
              { gpt_screen.render(gpt); }, menu_tabs, ImVec4(0.75f, 0.75f, 0.75f, 1.0f)}});
         main_screen screen{tabs};
