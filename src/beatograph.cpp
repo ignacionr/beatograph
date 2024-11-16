@@ -72,7 +72,6 @@ void setup_fonts()
     io.Fonts->AddFontFromFileTTF("assets/fonts/MaterialIcons-Regular.ttf", iconFontSize, &icons_config, icons_ranges);
 
     io.Fonts->AddFontFromFileTTF("assets/fonts/Montserrat-Regular.ttf", 16.0f, nullptr, io.Fonts->GetGlyphRangesCyrillic());
-    io.Fonts->AddFontFromFileTTF("assets/fonts/Font90Icons-2ePo.ttf", 13.5f);
 }
 
 #if defined(_WIN32)

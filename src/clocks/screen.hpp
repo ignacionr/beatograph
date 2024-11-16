@@ -3,6 +3,7 @@
 #include <array>
 #include <chrono>
 #include <cmath>
+#include <format>
 #include <string>
 #include <math.h>
 
@@ -29,8 +30,9 @@ namespace clocks {
                 center.x + static_cast<float>(radius * 0.7 * std::cos(minute_angle)), 
                 center.y + static_cast<float>(radius * 0.7 * std::sin(minute_angle))
             };
-            bool const pm {hour > 12};
-            ImGui::TextUnformatted(pm ? "PM" : "AM");
+            ImGui::TextUnformatted(std::format("\n{:02}:{:02}", 
+                std::chrono::floor<std::chrono::hours>(time.time_since_epoch()).count() % 24,
+                std::chrono::floor<std::chrono::minutes>(time.time_since_epoch()).count() % 60).c_str());
             ImGui::TextUnformatted(label.data());
             dl->AddCircleFilled(center, radius, 
                 IM_COL32(0, 0, 0, 100),
