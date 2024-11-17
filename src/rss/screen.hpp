@@ -151,7 +151,7 @@ namespace rss
                                 }
                             }
                             else {
-                                data->AddRectFilled(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), IM_COL32(255, 255, 0, 200));
+                                data->AddRectFilled(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), IM_COL32(70, 70, 0, 190));
                             }
 
                             if (++i % col_count != 0)
