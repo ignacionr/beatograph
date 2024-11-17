@@ -75,6 +75,18 @@ void setup_fonts()
     io.Fonts->AddFontFromFileTTF("assets/fonts/Montserrat-Regular.ttf", 16.0f, nullptr, io.Fonts->GetGlyphRangesCyrillic());
 }
 
+void load_podcasts(auto &host) {
+    std::ifstream file("podcasts.txt");
+    // get all urls into a vector
+    std::vector<std::string> urls;
+    std::string line;
+    while (std::getline(file, line))
+    {
+        urls.push_back(line);
+    }
+    host.add_feeds(urls);
+}
+
 #if defined(_WIN32)
 int WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {
@@ -119,9 +131,9 @@ int main()
 
         dev_locked::screen dev_screen{localhost};
 
-        rss::host rss_host;
-
-        rss::screen rss_screen{rss_host,
+        rss::host podcast_host;
+        load_podcasts(podcast_host);
+        rss::screen rss_screen{podcast_host,
                                [&radio_host](std::string_view url)
                                {
                                    radio_host.play(std::string{url});
