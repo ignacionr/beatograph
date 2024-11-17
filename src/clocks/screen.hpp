@@ -181,16 +181,18 @@ namespace clocks
         bool quit_{false};
         views::json json_view_;
         bool show_details_{false};
-        std::vector<city_info> all_cities{{{"Los Angeles"},
-                                            {"New York"},
-                                            {"Buenos Aires"},
-                                            {"Santa Fe, AR"},
-                                            {"Rome, IT"},
-                                            {"Saint Petersburg, RU"},
-                                            {"Irkutsk, RU"},
-                                            {"Bangkok"},
-                                            {"Pattaya, TH"}
-                                            }};
+        std::vector<city_info> all_cities{{
+            {"Tel Aviv"},
+            {"Saint Petersburg, RU"},
+            {"Los Angeles"},
+            {"New York"},
+            {"Buenos Aires"},
+            {"Santa Fe, AR"},
+            {"Rome, IT"},
+            {"Irkutsk, RU"},
+            {"Bangkok"},
+            {"Pattaya, TH"}
+            }};
         std::jthread refresh_;
         std::mutex city_mutex_;
     };
