@@ -126,7 +126,7 @@ namespace clocks
                                                           city.weather_info["sys"]["country"].get<std::string>());
                             auto const tz = city.weather_info.at("timezone").get<int>();
                             auto const feels_like {city.weather_info["main"]["feels_like"].get<double>() - 273.15};
-                            auto color = feels_like > 30.0f ? ImVec4{1.0f, 0.0f, 0.0f, 1.0f} : (feels_like < 18.0f ? ImVec4{0.0f, 0.0f, 1.0f, 1.0f} : ImVec4{1.0f, 1.0f, 1.0f, 1.0f});
+                            auto color = feels_like > 30.0f ? ImVec4{1.0f, 0.0f, 0.0f, 1.0f} : (feels_like < 16.0f ? ImVec4{0.5f, 0.5f, 1.0f, 1.0f} : ImVec4{1.0f, 1.0f, 1.0f, 1.0f});
                             ImGui::PushStyleColor(ImGuiCol_Text, color);
                             ImGui::TextUnformatted(std::format("{:.1f}°C like {:.1f}°C\n\n", 
                                 city.weather_info["main"]["temp"].get<double>() - 273.15,
