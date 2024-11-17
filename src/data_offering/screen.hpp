@@ -32,6 +32,7 @@ namespace dataoffering
         static constexpr auto topology_name = "betmavrik-topology";
         static constexpr auto topology_class = "com.betmavrik.storm.TopologyMain";
         static constexpr auto hadoop_host{"hadoop1"};
+        static constexpr auto storm_host{"storm1"};
         static constexpr auto hadoop_zookeeper_name{"hadoop-zookeeper-1"};
 
         screen(hosting::local::host &localhost, std::string const &groq_api_key, std::string_view api_client_key)
@@ -48,23 +49,23 @@ namespace dataoffering
                 if (ImGui::CollapsingHeader("Storm Topology Status"))
                 {
                     views::Assertion("storm1 docker is running a zookeeper", [this]
-                                     { return hosting::ssh::host::by_name("storm1")->docker().is_container_running(zookeeper_name, localhost_); });
+                                     { return hosting::ssh::host::by_name(storm_host)->docker().is_container_running(zookeeper_name, localhost_); });
                     views::Assertion("the zookeeper process is running", [this]
-                                     { return hosting::ssh::host::by_name("storm1")->docker().is_process_running(zookeeper_name, "/opt/java/openjdk/bin/java -Dzookeeper.log.dir=/logs", localhost_); });
+                                     { return hosting::ssh::host::by_name(storm_host)->docker().is_process_running(zookeeper_name, "/opt/java/openjdk/bin/java -Dzookeeper.log.dir=/logs", localhost_); });
                     views::Assertion("zookeeper responds to the client", [this]
                                      {
-                    auto const result = hosting::ssh::host::by_name("storm1")->docker().execute_command(
+                    auto const result = hosting::ssh::host::by_name(storm_host)->docker().execute_command(
                         std::format("docker exec {} zkCli.sh -server localhost:2181", zookeeper_name), localhost_);
                     if (result.find("(CONNECTED) 0") == std::string::npos) {
                         throw std::runtime_error(std::format("Error: expected 'ZooKeeper -', got '{}'", result));
                     }
                     return true; });
                     views::Assertion("storm1 docker is running a storm supervisor", [this]
-                                     { return hosting::ssh::host::by_name("storm1")->docker().is_container_running(supervisor_name, localhost_); });
+                                     { return hosting::ssh::host::by_name(storm_host)->docker().is_container_running(supervisor_name, localhost_); });
                     views::Assertion("storm1 docker is running a storm nimbus", [this]
-                                     { return hosting::ssh::host::by_name("storm1")->docker().is_container_running(nimbus_name, localhost_); });
+                                     { return hosting::ssh::host::by_name(storm_host)->docker().is_container_running(nimbus_name, localhost_); });
                     views::Assertion("storm1 docker is running a storm UI", [this]
-                                     { return hosting::ssh::host::by_name("storm1")->docker().is_container_running(ui_name, localhost_); });
+                                     { return hosting::ssh::host::by_name(storm_host)->docker().is_container_running(ui_name, localhost_); });
                     if (storm_ui_mapping_)
                     {
                         auto const url{std::format("http://localhost:{}", storm_ui_mapping_->local_port())};
@@ -88,7 +89,7 @@ namespace dataoffering
                     views::cached_view<std::string>("Storm Topology", [this]
                                                     {
                     auto cmd = std::format("docker exec {} storm list", nimbus_name);
-                    return hosting::ssh::host::by_name("storm1")->docker().execute_command(cmd, localhost_); }, [](std::string const &output)
+                    return hosting::ssh::host::by_name(storm_host)->docker().execute_command(cmd, localhost_); }, [](std::string const &output)
                                                     { ImGui::Text("%s", output.c_str()); });
                     if (!installing_topology_ && ImGui::Button("Install Storm Topology"))
                     {
@@ -99,7 +100,7 @@ namespace dataoffering
                                 installing_topology_ = true;
                                 // upload the file to storm1 from ignacio-bench
                                 // from the path /home/ubuntu/arangodb-infra/storm-topology/target/storm-topology-1.0-SNAPSHOT.jar
-                                auto storm1{hosting::ssh::host::by_name("storm1")};
+                                auto storm1{hosting::ssh::host::by_name(storm_host)};
                                 auto const filename{"storm-topology-1.0-SNAPSHOT.jar"};
                                 auto on_storm1 = std::format("/tmp/{}", filename);
                                 auto on_nimbus = on_storm1;
@@ -117,7 +118,7 @@ namespace dataoffering
                                                                 localhost_);
                                 topology_install_result_ = "Installing topology...";
                                 auto cmd = std::format("docker exec {} storm jar {} {} {}", nimbus_name, on_nimbus, topology_class, topology_name);
-                                topology_install_result_ = hosting::ssh::host::by_name("storm1")->docker().execute_command(cmd, localhost_);
+                                topology_install_result_ = hosting::ssh::host::by_name(storm_host)->docker().execute_command(cmd, localhost_);
                             }
                             catch (std::exception const &e)
                             {
@@ -133,7 +134,7 @@ namespace dataoffering
                                      {
                                     // verify that the container running nimbus can resolve its way into ignacio-bench host, using curl
                                     auto const cmd = std::format("docker exec {} curl http://rabbitmq", nimbus_name);
-                                    auto const result = hosting::ssh::host::by_name("storm1")->docker().execute_command(cmd, localhost_);
+                                    auto const result = hosting::ssh::host::by_name(storm_host)->docker().execute_command(cmd, localhost_);
                                     // if curl says it can't resolve the host, it means we can't connect
                                     if (result.find("curl: (6) Could not resolve host") != std::string::npos)
                                     {
@@ -202,7 +203,7 @@ namespace dataoffering
                                      {
                                         // verify that the container running nimbus can resolve its way into ignacio-bench host, using curl
                                         auto const cmd = std::format("docker exec {} curl http://host.docker.internal:16010", nimbus_name);
-                                        auto const result = hosting::ssh::host::by_name("storm1")->docker().execute_command(cmd, localhost_);
+                                        auto const result = hosting::ssh::host::by_name(storm_host)->docker().execute_command(cmd, localhost_);
                                         // if curl says it can't resolve the host, it means we can't connect
                                         if (result.find("curl: (6) Could not resolve host") != std::string::npos)
                                         {
@@ -210,7 +211,7 @@ namespace dataoffering
                                         }
                                         return true; });
                     views::cached_view<std::string>("Checker", [this]() -> std::string
-                                                    { return hosting::ssh::host::by_name("storm1")->docker().execute_command(
+                                                    { return hosting::ssh::host::by_name(storm_host)->docker().execute_command(
                                                           "docker logs --tail 1 storm-checker-1 2>&1",
                                                           localhost_); }, [](std::string const &output)
                                                     { ImGui::TextUnformatted(output.c_str()); });
@@ -241,6 +242,13 @@ namespace dataoffering
                         [this](std::string result){
                             json_view.render(result);
                         });
+                }
+
+                if (ImGui::CollapsingHeader("Servers"))
+                {
+                    for (std::string host_name: {hadoop_host, storm_host}) {
+                        host_screen_.render(hosting::ssh::host::by_name(host_name), localhost_);
+                    }
                 }
 
                 ImGui::EndChild();

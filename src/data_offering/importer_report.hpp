@@ -40,7 +40,7 @@ struct importer_report {
 
     void render() 
     {
-        if (ImGui::CollapsingHeader("Importer Report", ImGuiTreeNodeFlags_DefaultOpen)) {
+        if (ImGui::CollapsingHeader("Importer Report")) {
             ImGui::Text("Our importer runs on a docker container");
             views::Assertion("Importer Container running", [this] {
                 return host_importer_->docker().is_container_running(importer_container_name, localhost_);

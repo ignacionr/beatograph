@@ -1,6 +1,7 @@
 #pragma once
 
 #include <format>
+#include <functional>
 #include <string>
 #include <stdexcept>
 #include <curl/curl.h>
@@ -9,14 +10,47 @@
 
 namespace toggl
 {
+    template <typename notifier_t>
     class client
     {
     public:
-        client(const std::string &apiToken) : baseUrl("https://api.track.toggl.com/api/v9/")
+        client(const std::string &apiToken, notifier_t notifier)
+            : baseUrl("https://api.track.toggl.com/api/v9/"), notifier_{notifier}
         {
             std::string base_auth = apiToken + ":api_token";
             std::string base64_auth_string = conversions::text_to_base64(base_auth);
             auth_header = std::format("Authorization: Basic {}", base64_auth_string);
+            check_today();
+        }
+
+        void check_today(int seconds_target = 9 * 3600)
+        {
+            try
+            {
+                auto entries = getTimeEntries();
+                // sum today's entries
+                auto today = std::chrono::system_clock::now();
+                auto today_start = std::chrono::floor<std::chrono::days>(today);
+                auto today_end = today_start + std::chrono::hours(24);
+                auto today_entries = entries | std::views::filter([today_start, today_end](auto const &entry) {
+                    auto start = std::chrono::system_clock::from_time_t(entry["start"].get<long long>());
+                    return start >= today_start && start < today_end; });
+                auto const today_seconds = std::accumulate(today_entries.begin(), today_entries.end(), 0ll, [](auto acc, auto const &entry) {
+                    auto duration = entry["duration"].get<long long>();
+                    return acc + (duration < 0 ? std::chrono::system_clock::now().time_since_epoch().count() / 1000000ll - entry["start"].get<long long>() : duration); });
+                if (today_seconds < 1)
+                {
+                    notifier_("No time entries today.");
+                }
+                else if (today_seconds >= seconds_target)
+                {
+                    notifier_("Today's target reached.");
+                }
+            }
+            catch (std::exception const &e)
+            {
+                notifier_(std::format("Failed to get time entries: {}", e.what()));
+            }
         }
 
         auto getTimeEntries()
@@ -129,5 +163,6 @@ namespace toggl
             ((std::string *)userp)->append((char *)contents, size * nmemb);
             return size * nmemb;
         }
+        notifier_t notifier_;
     };
 }

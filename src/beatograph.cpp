@@ -40,6 +40,8 @@
 #include "conversions/screen.hpp"
 #include "clocks/screen.hpp"
 #include "clocks/weather.hpp"
+#include "notify/host.hpp"
+#include "notify/screen.hpp"
 
 #pragma execution_character_set("utf-8")
 #include "../external/IconsMaterialDesign.h"
@@ -108,7 +110,10 @@ int main()
         auto groq_api_key = get_env_variable("GROQ_API_KEY");
         ignacionr::cppgpt gpt{groq_api_key, ignacionr::cppgpt::groq_base};
 
-        toggl::client tc(get_env_variable("TOGGL_API_TOKEN"));
+        notify::host notify_host;
+        notify::screen notify_screen{notify_host};
+
+        toggl::client tc(get_env_variable("TOGGL_API_TOKEN"), [&notify_host](std::string_view text) { notify_host(text, "Toggl"); });
         toggl::screen ts(tc);
 
         jira::host jh{get_env_variable("JIRA_USER"), get_env_variable("JIRA_TOKEN")};
@@ -217,7 +222,9 @@ int main()
             {ICON_MD_WATCH " Clocks", [&clocks_screen] { clocks_screen.render(); }, 
              menu_tabs_and([&clocks_screen](auto i) {  clocks_screen.render_menu(i); })},
             {ICON_MD_CHAT_BUBBLE " AI", [&gpt_screen, &gpt]
-             { gpt_screen.render(gpt); }, menu_tabs, ImVec4(0.75f, 0.75f, 0.75f, 1.0f)}});
+             { gpt_screen.render(gpt); }, menu_tabs, ImVec4(0.75f, 0.75f, 0.75f, 1.0f)},
+            {"Notifications", [&notify_screen] { notify_screen.render(); }, menu_tabs}
+        });
         main_screen screen{tabs};
 
         setup_fonts();

@@ -16,9 +16,10 @@
 
 namespace toggl
 {
+    template <typename client_t>
     struct screen
     {
-        screen(client &client) : client{client} {}
+        screen(client_t &client) : client{client} {}
 
         void render_entry(auto const &entry, auto &current_day, auto &current_day_seconds)
         {
@@ -33,7 +34,7 @@ namespace toggl
             auto day_start = std::chrono::floor<std::chrono::days>(start);
             if (current_day != day_start)
             {
-                if (current_day_seconds != 0)
+                if (current_day_seconds != 0) // only days with at least one entry
                 {
                     auto duration = std::chrono::seconds(current_day_seconds);
                     auto duration_formatted = std::format("{:%H:%M:%S}", duration);
@@ -227,7 +228,7 @@ namespace toggl
         }
 
     private:
-        client &client;
+        client_t &client;
         std::chrono::system_clock::time_point last_update;
         std::atomic<std::shared_ptr<nlohmann::json>> time_entries;
         time_t utc_offset_seconds{};
