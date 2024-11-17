@@ -108,8 +108,8 @@ int main()
         auto groq_api_key = get_env_variable("GROQ_API_KEY");
         ignacionr::cppgpt gpt{groq_api_key, ignacionr::cppgpt::groq_base};
 
-        toggl_client tc(get_env_variable("TOGGL_API_TOKEN"));
-        toggl_screen ts(tc);
+        toggl::client tc(get_env_variable("TOGGL_API_TOKEN"));
+        toggl::screen ts(tc);
 
         jira::host jh{get_env_variable("JIRA_USER"), get_env_variable("JIRA_TOKEN")};
         std::unique_ptr<jira::screen> js;
@@ -176,25 +176,24 @@ int main()
         };
 
         tabs = std::make_shared<screen_tabs>(std::vector<screen_tabs::tab_t> {
-            {ICON_MD_COMPUTER, [&local_screen]
-             { local_screen.render(); }, menu_tabs},
-            {ICON_MD_GROUPS " Backend Dev", [&dev_screen, &gpt]
-             { dev_screen.render(gpt); }, menu_tabs},
-            {ICON_MD_GROUPS " Data Offering", [&ds]
-             { ds.render(); }, menu_tabs},
-            {ICON_MD_GROUPS " ArangoDB", [&cr]
-             { cr.render(); }, menu_tabs},
-            {ICON_MD_TASK " Toggl", [&ts]
-             { ts.render(); }, menu_tabs},
-            {jira_tab_name, [&js, &jh]
-             { js->render(jh); },
+            {ICON_MD_COMPUTER, [&local_screen] { local_screen.render(); }, menu_tabs},
+            {ICON_MD_GROUPS " Backend Dev", [&dev_screen, &gpt] { dev_screen.render(gpt); }, menu_tabs},
+            {ICON_MD_GROUPS " Data Offering", [&ds] { ds.render(); }, menu_tabs},
+            {ICON_MD_GROUPS " ArangoDB", [&cr] { cr.render(); }, menu_tabs},
+            {ICON_MD_TASK " Toggl", [&ts] { ts.render(); }, menu_tabs},
+            {jira_tab_name, [&js, &jh, &ts] { js->render(jh, {
+                {"Start Toggl", [&ts](nlohmann::json const &entry) {
+                    auto const activity_description {std::format("{} - {}", 
+                        entry.at("fields").at("summary").get<std::string>(), 
+                        entry.at("key").get<std::string>())};
+                    ts.start_time_entry(activity_description);
+                } }
+            }); },
              menu_tabs_and([&js](std::string_view item)
                            { js->render_menu(item); }),
              ImVec4(0.5f, 0.5f, 1.0f, 1.0f)},
-            {ICON_MD_CALENDAR_MONTH " Calendar", [&cs]
-             { cs.render(); }, menu_tabs},
-            {ICON_MD_SETTINGS_REMOTE " SSH Hosts", [&ssh_screen, &localhost]
-             { ssh_screen.render(localhost); }, menu_tabs},
+            {ICON_MD_CALENDAR_MONTH " Calendar", [&cs] { cs.render(); }, menu_tabs},
+            {ICON_MD_SETTINGS_REMOTE " SSH Hosts", [&ssh_screen, &localhost] { ssh_screen.render(localhost); }, menu_tabs},
             {ICON_MD_CODE " Git Repositories", [&git]
              {
                  ImGui::Text("Git Repositories");
@@ -215,8 +214,7 @@ int main()
              menu_tabs, ImVec4(0.05f, 0.5f, 0.05f, 1.0f)},
             {ICON_MD_CURRENCY_EXCHANGE " Conversions", [&conv_screen]
              { conv_screen.render(); }, menu_tabs},
-            {ICON_MD_WATCH " Clocks", [&clocks_screen]
-             { clocks_screen.render(); }, 
+            {ICON_MD_WATCH " Clocks", [&clocks_screen] { clocks_screen.render(); }, 
              menu_tabs_and([&clocks_screen](auto i) {  clocks_screen.render_menu(i); })},
             {ICON_MD_CHAT_BUBBLE " AI", [&gpt_screen, &gpt]
              { gpt_screen.render(gpt); }, menu_tabs, ImVec4(0.75f, 0.75f, 0.75f, 1.0f)}});

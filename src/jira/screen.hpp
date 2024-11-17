@@ -78,12 +78,12 @@ namespace jira
                 });
         }
 
-        void render_list(host &h) {
+        void render_list(host &h, issue_screen::context_actions_t const &actions = {}) {
             ImGui::SetColumnWidth(0, ImGui::GetWindowWidth() - 200);
             // present the selected issues
             for (auto const &issue : selected_issues_)
             {
-                if (issue_screen_.render(issue, h, false, show_json_details_, show_assignee_)) {
+                if (issue_screen_.render(issue, h, false, actions, show_json_details_, show_assignee_)) {
                     query();
                     return;
                 }
@@ -147,7 +147,7 @@ namespace jira
             }
         }
 
-        void render(host &h)
+        void render(host &h, issue_screen::context_actions_t const &actions = {})
         {
             // lock the selection_mutex_
             std::lock_guard lock(selection_mutex_);
@@ -160,7 +160,7 @@ namespace jira
                 if (ImGui::Button("New Issue")) {
                     editing_new_ = true;
                 }
-                render_list(h);
+                render_list(h, actions);
             }
             ImGui::NextColumn();
             selection_tree(h);

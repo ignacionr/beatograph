@@ -16,6 +16,8 @@ namespace jira
 {
     struct issue_screen
     {
+        using context_actions_t = std::unordered_map<std::string, std::function<void(nlohmann::json::object_t const &)>>;
+
         issue_screen(img_cache &cache): user_screen_{cache} {
         }
 
@@ -33,7 +35,7 @@ namespace jira
             //}).detach();
         }
 
-        bool render(nlohmann::json const &json, host& h, bool expanded = false, bool show_json_details = false, bool show_assignee = false)
+        bool render(nlohmann::json const &json, host& h, bool expanded = false, context_actions_t const &actions = {}, bool show_json_details = false, bool show_assignee = false)
         {
             bool request_requery = false;
             auto const key{json.at("key").get<std::string>()};
@@ -87,6 +89,12 @@ namespace jira
                 if (ImGui::SameLine(); ImGui::SmallButton("Copy link")) {
                     ImGui::SetClipboardText(std::format("https://betmavrik.atlassian.net/browse/{}", key).c_str());
                 }
+                for (auto const &[action_name, action_fn] : actions) {
+                    if (ImGui::SmallButton(action_name.c_str())) {
+                        action_fn(json);
+                        request_requery = true;
+                    }
+                }
                 ImGui::EndChild();
                 ImGui::PopStyleColor();
                 ImGui::PopStyleVar();
@@ -97,7 +105,7 @@ namespace jira
                     nlohmann::json::array_t const &subtasks {fields.at("subtasks").get<nlohmann::json::array_t>()};
                     for (nlohmann::json const &subtask : subtasks)
                     {
-                        request_requery |= render(subtask, h, false, show_json_details, show_assignee);
+                        request_requery |= render(subtask, h, false, actions, show_json_details, show_assignee);
                     }
                     ImGui::Unindent();
                 }
