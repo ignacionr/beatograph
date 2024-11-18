@@ -74,7 +74,10 @@ void setup_fonts()
     icons_config.GlyphOffset.y = 3;
     io.Fonts->AddFontFromFileTTF("assets/fonts/MaterialIcons-Regular.ttf", iconFontSize, &icons_config, icons_ranges);
 
+    // font[1] for important content text
     io.Fonts->AddFontFromFileTTF("assets/fonts/Montserrat-Regular.ttf", 16.0f, nullptr, io.Fonts->GetGlyphRangesCyrillic());
+    // font[2] for titles
+    io.Fonts->AddFontFromFileTTF("assets/fonts/Montserrat-Bold.ttf", 23.0f, nullptr, io.Fonts->GetGlyphRangesCyrillic());
 }
 
 void load_podcasts(auto &host) {

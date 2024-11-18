@@ -92,6 +92,10 @@ namespace jira
 
         void render_new_editor(host &h) {
             ImGui::Text("New Issue");
+            if (ImGui::SameLine(); ImGui::SmallButton(ICON_MD_CANCEL)) {
+                editing_new_ = false;
+                return;
+            }
             views::cached_view<std::string>("Projects",
                 [&h]() {
                     auto all = nlohmann::json::parse(h.get_projects());
