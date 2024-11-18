@@ -7,6 +7,7 @@
 #include <curl/curl.h>
 #include <nlohmann/json.hpp>
 #include "../conversions/base64.hpp"
+#include "../conversions/date_time.hpp"
 
 namespace toggl
 {
@@ -29,15 +30,19 @@ namespace toggl
             {
                 auto entries = getTimeEntries();
                 // sum today's entries
-                auto today = std::chrono::system_clock::now();
-                auto today_start = std::chrono::floor<std::chrono::days>(today);
-                auto today_end = today_start + std::chrono::hours(24);
+                auto const today = std::chrono::system_clock::now();
+                auto const today_start = std::chrono::floor<std::chrono::days>(today);
+                auto const today_end = today_start + std::chrono::hours(24);
                 auto today_entries = entries | std::views::filter([today_start, today_end](auto const &entry) {
-                    auto start = std::chrono::system_clock::from_time_t(entry["start"].get<long long>());
+                    auto const start = conversions::date_time::from_string(entry["start"]);
                     return start >= today_start && start < today_end; });
-                auto const today_seconds = std::accumulate(today_entries.begin(), today_entries.end(), 0ll, [](auto acc, auto const &entry) {
-                    auto duration = entry["duration"].get<long long>();
-                    return acc + (duration < 0 ? std::chrono::system_clock::now().time_since_epoch().count() / 1000000ll - entry["start"].get<long long>() : duration); });
+                auto const today_seconds {std::accumulate(today_entries.begin(), 
+                    today_entries.end(), 
+                    0ll, 
+                    [](auto acc, auto const &entry) {
+                        auto duration = entry["duration"].get<long long>();
+                        return acc + (duration < 0 ? std::chrono::system_clock::now().time_since_epoch().count() / 1000000ll - entry["start"].get<long long>() : duration); 
+                    })};
                 if (today_seconds < 1)
                 {
                     notifier_("No time entries today.");
