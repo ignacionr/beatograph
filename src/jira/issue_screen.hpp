@@ -89,12 +89,14 @@ namespace jira
                 if (ImGui::SameLine(); ImGui::SmallButton("Copy link")) {
                     ImGui::SetClipboardText(std::format("https://betmavrik.atlassian.net/browse/{}", key).c_str());
                 }
+                ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(255, 90, 90, 255));
                 for (auto const &[action_name, action_fn] : actions) {
-                    if (ImGui::SmallButton(action_name.c_str())) {
+                    if (ImGui::SameLine(); ImGui::SmallButton(action_name.c_str())) {
                         action_fn(json);
                         request_requery = true;
                     }
                 }
+                ImGui::PopStyleColor();
                 ImGui::EndChild();
                 ImGui::PopStyleColor();
                 ImGui::PopStyleVar();
