@@ -114,17 +114,23 @@ namespace jira
                 }
                 views::cached_view<nlohmann::json>("Comments", 
                     [&h, &key] { return h.get_issue_comments(key); }, 
-                    [&h, &key](nlohmann::json const &comments) {
+                    [&h, &key, this](nlohmann::json const &comments) {
                         auto tt = comments.dump();
                         ImGui::TextWrapped("%s", tt.c_str());
-                    // for (nlohmann::json const &comment : comments.at("comments").get<nlohmann::json::array_t>())
-                    // {
-                    //     ImGui::Separator();
-                    //     ImGui::TextWrapped("%s", comment.at("body").get<std::string>().c_str());
-                    //     ImGui::Separator();
-                    //     ImGui::Text("By: %s", comment.at("author").at("displayName").get<std::string>().c_str());
-                    //     ImGui::Text("At: %s", comment.at("created").get<std::string>().c_str());
-                    // }
+                    for (nlohmann::json const &comment : comments.at("comments").get<nlohmann::json::array_t>())
+                    {
+                        auto id = comment.at("id").get<std::string>();
+                        if (ImGui::BeginChild(id.c_str()))
+                        {
+                            if (comment.contains("author")) {
+                                ImGui::Text("At: %s", comment.at("created").get<std::string>().c_str());
+                                user_screen_.render(comment.at("author"));
+                            }
+                            ImGui::Separator();
+                            ImGui::TextWrapped("%s", comment.at("body").dump().c_str());
+                        }
+                        ImGui::EndChild();
+                    }
                 });
                 if (show_json_details) {
                     ImGui::Indent();

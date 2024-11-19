@@ -10,6 +10,7 @@
 #include "host.hpp"
 #include "../views/cached_view.hpp"
 #include "../views/json.hpp"
+#include "../views/try_button.hpp"
 #include "issue_screen.hpp"
 #include "user_screen.hpp"
 #include "../imgcache.hpp"
@@ -43,12 +44,12 @@ namespace jira
             // now present the tree of options to select issues from different grouppings
             if (ImGui::TreeNode("My Assigned Issues"))
             {
-                if (ImGui::SmallButton("Except Done")) {
+                views::try_button("Except Done", [&h, this] {
                     select([&h] { return nlohmann::json::parse(h.get_assigned_issues()).at("issues").get<std::vector<nlohmann::json::object_t>>(); });
-                }
-                if (ImGui::SmallButton("All")) {
+                });
+                views::try_button("All", [&h, this] {
                     select([&h] { return nlohmann::json::parse(h.get_assigned_issues(true)).at("issues").get<std::vector<nlohmann::json::object_t>>(); });
-                }
+                });
                 ImGui::TreePop();
             }
             views::cached_view<nlohmann::json::array_t>("Projects",
@@ -174,10 +175,15 @@ namespace jira
         void query() {
             if (!selector_) return;
             std::thread([this] {
+                try {
                 auto result = selector_();
                 {
                     std::lock_guard lock(selection_mutex_);
                     selected_issues_ = result;
+                }
+                }
+                catch(...) {
+                    // TODO: handle appropriately
                 }
             }).detach();
         }
