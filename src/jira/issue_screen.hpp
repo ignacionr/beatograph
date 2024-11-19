@@ -8,6 +8,7 @@
 #include <nlohmann/json.hpp>
 #include <imgui.h>
 #include "../views/json.hpp"
+#include "../views/cached_view.hpp"
 #include "colors.hpp"
 #include "user_screen.hpp"
 #include "../imgcache.hpp"
@@ -111,6 +112,20 @@ namespace jira
                     }
                     ImGui::Unindent();
                 }
+                views::cached_view<nlohmann::json>("Comments", 
+                    [&h, &key] { return h.get_issue_comments(key); }, 
+                    [&h, &key](nlohmann::json const &comments) {
+                        auto tt = comments.dump();
+                        ImGui::TextWrapped("%s", tt.c_str());
+                    // for (nlohmann::json const &comment : comments.at("comments").get<nlohmann::json::array_t>())
+                    // {
+                    //     ImGui::Separator();
+                    //     ImGui::TextWrapped("%s", comment.at("body").get<std::string>().c_str());
+                    //     ImGui::Separator();
+                    //     ImGui::Text("By: %s", comment.at("author").at("displayName").get<std::string>().c_str());
+                    //     ImGui::Text("At: %s", comment.at("created").get<std::string>().c_str());
+                    // }
+                });
                 if (show_json_details) {
                     ImGui::Indent();
                     if (ImGui::CollapsingHeader("All Details"))

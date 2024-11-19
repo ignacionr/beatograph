@@ -116,6 +116,10 @@ namespace jira {
             return result;
         }
 
+        nlohmann::json get_issue_comments(std::string_view issue_key) {
+            return nlohmann::json::parse(get(std::format("issue/{}/comment", issue_key)));
+        }
+
         std::string send(std::string_view endpoint, std::string_view verb, std::string_view contents, std::string_view content_type){
             CURL* curl = curl_easy_init();
             if(!curl) {
