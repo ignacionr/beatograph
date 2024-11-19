@@ -48,7 +48,7 @@ namespace calendar
             ImGui::TextUnformatted(month_title.c_str());
             ImGui::PopFont();
 
-            if (ImGui::BeginTable("Month-View", 7, ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_Resizable))
+            if (ImGui::BeginTable("Month-View", 7, ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchSame))
             {
                 for (auto const day : days)
                 {
@@ -71,7 +71,7 @@ namespace calendar
                     if (i == current_day_of_month)
                     {
                         ImGui::SameLine();
-                        ImGui::TextUnformatted(" - Today");
+                        ImGui::TextUnformatted("Today");
                     }
                     ImGui::Separator();
                     auto const next_day {this_day + std::chrono::hours(24)};
@@ -107,10 +107,6 @@ namespace calendar
                     this_day = next_day;
                 }
                 ImGui::EndTable();
-                auto events_this_month = events.in_range(start_of_month, this_day);
-                for (auto const &it: events_this_month) {
-                    ImGui::TextWrapped(it.summary.c_str());
-                }
             }
         };
 
