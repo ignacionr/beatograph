@@ -25,10 +25,9 @@ namespace hosting::ssh
             {
                 return it->second.lock();
             }
-            return hosts_().emplace(
-                               name,
-                               std::shared_ptr<host>(new host{name}))
-                .first->second.lock();
+            auto res = std::shared_ptr<host>(new host{name});
+            hosts_().emplace(name, res);
+            return res;
         }
         static void destroy_all()
         {
