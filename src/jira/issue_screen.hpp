@@ -12,6 +12,7 @@
 #include "colors.hpp"
 #include "user_screen.hpp"
 #include "../imgcache.hpp"
+#include "jira_content_render.hpp"
 
 namespace jira
 {
@@ -114,9 +115,10 @@ namespace jira
                 }
                 views::cached_view<nlohmann::json>("Comments", 
                     [&h, &key] { return h.get_issue_comments(key); }, 
-                    [&h, &key, this](nlohmann::json const &comments) {
-                        auto tt = comments.dump();
-                        ImGui::TextWrapped("%s", tt.c_str());
+                    [&h, &key, this, show_json_details](nlohmann::json const &comments) {
+                    if (!comments.contains("comments")) {
+                        return;
+                    }
                     for (nlohmann::json const &comment : comments.at("comments").get<nlohmann::json::array_t>())
                     {
                         auto id = comment.at("id").get<std::string>();
@@ -127,7 +129,10 @@ namespace jira
                                 user_screen_.render(comment.at("author"));
                             }
                             ImGui::Separator();
-                            ImGui::TextWrapped("%s", comment.at("body").dump().c_str());
+                            jira::content::render(comment.at("body"));
+                            if (show_json_details) {
+                                ImGui::TextWrapped("%s", comment.at("body").dump().c_str());
+                            }
                         }
                         ImGui::EndChild();
                     }
