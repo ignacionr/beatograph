@@ -122,7 +122,8 @@ int main()
         jira::host jh{get_env_variable("JIRA_USER"), get_env_variable("JIRA_TOKEN")};
         std::unique_ptr<jira::screen> js;
 
-        calendar_screen cs;
+        calendar::host calendar_host{get_env_variable("CALENDAR_DELEGATE_URL")};
+        calendar::screen cs{calendar_host};
 
         hosting::local::host localhost;
         hosting::local::screen local_screen{localhost};
@@ -209,7 +210,7 @@ int main()
                  {
                      for (auto const &repo : *repos)
                      {
-                         ImGui::Text("%s", repo.c_str());
+                         ImGui::TextUnformatted(repo.c_str());
                      }
                  }
              },
