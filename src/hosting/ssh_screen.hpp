@@ -19,6 +19,11 @@ namespace hosting::ssh
     {
         void render(host::ptr host, local::host &localhost)
         {
+            if (!host)
+            {
+                ImGui::TextColored(ImVec4(1, 0, 0, 1), "Disconnected.");
+                return;
+            }
             if (ImGui::BeginChild(std::format("host-{}", host->name()).c_str(), {0, 0}, ImGuiChildFlags_FrameStyle | ImGuiChildFlags_AutoResizeY))
             {
                 // Render host screen
