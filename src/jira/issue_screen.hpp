@@ -114,8 +114,8 @@ namespace jira
                     ImGui::Unindent();
                 }
                 views::cached_view<nlohmann::json>("Comments", 
-                    [&h, &key] { return h.get_issue_comments(key); }, 
-                    [&h, &key, this, show_json_details](nlohmann::json const &comments) {
+                    [&h, key] { return h.get_issue_comments(key); }, 
+                    [&h, key, this, show_json_details](nlohmann::json const &comments) {
                     if (!comments.contains("comments")) {
                         return;
                     }
