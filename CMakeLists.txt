@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.16)
 # set(CMAKE_TOOLCHAIN_FILE "E:/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE STRING "Vcpkg toolchain file")
 # Enable CMake's find_package to use vcpkg
 set(VCPKG_TARGET_TRIPLET "x64-windows" CACHE STRING "Vcpkg target triplet")
-include("E:/vcpkg/scripts/buildsystems/vcpkg.cmake")
+include("/Program Files/Microsoft Visual Studio/2022/Community/VC/vcpkg/scripts/buildsystems/vcpkg.cmake")
 
 # Set the project name and version
 project(Beatograph VERSION 1.0 LANGUAGES CXX)
@@ -57,33 +57,33 @@ target_link_libraries(beatograph PRIVATE
 set_target_properties(beatograph PROPERTIES UNITY_BUILD ON)
 
 # Add the test executable target
-add_executable(beatograph_test 
-  src/pch.cpp
-  src/beatograph_test.cpp
-  src/metrics/metrics_parser.cpp
-)
+# add_executable(beatograph_test 
+#   src/pch.cpp
+#   src/beatograph_test.cpp
+#   src/metrics/metrics_parser.cpp
+# )
 
-target_link_directories(beatograph_test PRIVATE "build\\vcpkg_installed\\x64-windows\\lib\\")
+# target_link_directories(beatograph_test PRIVATE "build\\vcpkg_installed\\x64-windows\\lib\\")
 
-# Precompiled headers for Windows/MSVC for the test executable
-if (MSVC)
-    target_precompile_headers(beatograph_test PRIVATE "src/pch.h")
-    target_compile_options(beatograph_test PRIVATE /W4 /WX /MP /Zi /Od)
-endif()
+# # Precompiled headers for Windows/MSVC for the test executable
+# if (MSVC)
+#     target_precompile_headers(beatograph_test PRIVATE "src/pch.h")
+#     target_compile_options(beatograph_test PRIVATE /W4 /WX /MP /Zi /Od)
+# endif()
 
-# Include directories for test executable
-target_include_directories(beatograph_test PRIVATE "src" external)
+# # Include directories for test executable
+# target_include_directories(beatograph_test PRIVATE "src" external)
 
-# Link external libraries to beatograph_test
-target_link_libraries(beatograph_test PRIVATE 
-  CURL::libcurl 
-  SDL2::SDL2 SDL2_image::SDL2_image 
-  GLEW::GLEW
-  imgui::imgui
-  nlohmann_json::nlohmann_json
-  ${FFMPEG_LIBRARIES} avformat
-  GTest::gtest GTest::gtest_main
-)
+# # Link external libraries to beatograph_test
+# target_link_libraries(beatograph_test PRIVATE 
+#   CURL::libcurl 
+#   SDL2::SDL2 SDL2_image::SDL2_image 
+#   GLEW::GLEW
+#   imgui::imgui
+#   nlohmann_json::nlohmann_json
+#   ${FFMPEG_LIBRARIES} avformat
+#   GTest::gtest GTest::gtest_main
+# )
 
 # Include GoogleTest
 include(GoogleTest)
