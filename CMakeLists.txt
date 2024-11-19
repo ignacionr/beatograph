@@ -29,7 +29,7 @@ add_executable(beatograph
 # Precompiled headers for Windows/MSVC
 if (MSVC)
     target_precompile_headers(beatograph PRIVATE "src/pch.h")
-    target_compile_options(beatograph PRIVATE /W4 /WX /MP /Zi /Od)
+    target_compile_options(beatograph PRIVATE /W4 /WX /MP /Zi /Od /bigobj)
     target_link_options(beatograph PRIVATE /SUBSYSTEM:WINDOWS /INCREMENTAL)
 endif()
 
