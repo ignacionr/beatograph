@@ -68,28 +68,46 @@ namespace jira
                         ImGui::Text("Unassigned");
                     }
                 }
-                if (ImGui::SmallButton("Assign to me")) {
+                if (ImGui::SmallButton(ICON_MD_PERSON ICON_MD_JOIN_LEFT)) {
                     do_async([&h, key] { h.assign_issue_to_me(key); });
                     request_requery = true;
                 }
-                if (ImGui::SameLine(); ImGui::SmallButton("Unassign")) {
+                if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip)) {
+                    ImGui::SetTooltip("Assign to me");
+                }
+                if (ImGui::SameLine(); ImGui::SmallButton(ICON_MD_NO_ACCOUNTS)) {
                     do_async([&h, key] { h.unassign_issue(key); });
                     request_requery = true;
                 }
-                if (ImGui::SameLine(); ImGui::SmallButton("Mark as Done")) {
+                if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip)) {
+                    ImGui::SetTooltip("Unassign");
+                }
+                if (ImGui::SameLine(); ImGui::SmallButton(ICON_MD_DONE)) {
                     do_async([&h, key]{ h.transition_issue(key, "31");});
                     request_requery = true;
                 }
-                if (ImGui::SameLine(); ImGui::SmallButton("Mark In Progress")) {
+                if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip)) {
+                    ImGui::SetTooltip("Resolve");
+                }
+                if (ImGui::SameLine(); ImGui::SmallButton(ICON_MD_WORK)) {
                     do_async([&h, key]{ h.transition_issue(key, "21");});
                     request_requery = true;
                 }
-                if (ImGui::SmallButton("Open Web...")) {
+                if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip)) {
+                    ImGui::SetTooltip("Start Progress");
+                }
+                if (ImGui::SmallButton(ICON_MD_WEB)) {
                     auto const url = std::format("https://betmavrik.atlassian.net/browse/{}", key);
                     ShellExecuteA(nullptr, "open", url.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
                 }
-                if (ImGui::SameLine(); ImGui::SmallButton("Copy link")) {
+                if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip)) {
+                    ImGui::SetTooltip("Open in browser");
+                }
+                if (ImGui::SameLine(); ImGui::SmallButton(ICON_MD_CONTENT_COPY)) {
                     ImGui::SetClipboardText(std::format("https://betmavrik.atlassian.net/browse/{}", key).c_str());
+                }
+                if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip)) {
+                    ImGui::SetTooltip("Copy URL to clipboard");
                 }
                 ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(255, 90, 90, 255));
                 for (auto const &[action_name, action_fn] : actions) {

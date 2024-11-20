@@ -1,9 +1,10 @@
 #pragma once
 
 #include <functional>
-#include <vector>
 #include <mutex>
 #include <sstream>
+#include <unordered_map>
+#include <vector>
 
 #include <nlohmann/json.hpp>
 
@@ -84,9 +85,38 @@ namespace jira
         }
 
         void render_list(host &h, issue_screen::context_actions_t const &actions = {}) {
-            ImGui::SetColumnWidth(0, ImGui::GetWindowWidth() - 200);
+            if (selected_issues_.empty()) {
+                ImGui::Text("No issues selected.");
+                return;
+            }
+
+            if (issue_lanes_) {
+                if (ImGui::BeginChild("by_lane")) {
+                    // group by status name
+                    std::unordered_map<std::string, std::vector<nlohmann::json::object_t const*>> by_status;
+                    for (nlohmann::json::object_t const &issue : selected_issues_) {
+                        auto const status = issue.at("fields").at("status").at("name").get<std::string>();
+                        by_status[status].push_back(&issue);
+                    }
+                    // show the lanes
+                    ImGui::Columns(static_cast<int>(by_status.size()));
+                    for (auto const &[status, issues] : by_status) {
+                        ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[1]);
+                        ImGui::TextUnformatted(status.c_str());
+                        ImGui::PopFont();
+                        for (auto const &issue : issues) {
+                            if (issue_screen_.render(*issue, h, false, actions, show_json_details_, show_assignee_)) {
+                                query();
+                                return;
+                            }
+                        }
+                        ImGui::NextColumn();
+                    }
+                }
+                ImGui::EndChild();
+            }
             // present the selected issues
-            for (auto const &issue : selected_issues_)
+            else for (auto const &issue : selected_issues_)
             {
                 if (issue_screen_.render(issue, h, false, actions, show_json_details_, show_assignee_)) {
                     query();
@@ -162,6 +192,7 @@ namespace jira
             std::lock_guard lock(selection_mutex_);
 
             ImGui::Columns(2);
+            ImGui::SetColumnWidth(0, ImGui::GetWindowWidth() - 200);
             if (editing_new_) {
                 render_new_editor(h);
             }
@@ -169,6 +200,8 @@ namespace jira
                 if (ImGui::Button(ICON_MD_CREATE " New Issue")) {
                     editing_new_ = true;
                 }
+                ImGui::SameLine();
+                ImGui::Checkbox("Show Lanes", &issue_lanes_);
                 render_list(h, actions);
             }
             ImGui::NextColumn();
@@ -208,6 +241,7 @@ namespace jira
         bool show_json_details_{false};
         bool show_assignee_{false};
         bool editing_new_{false};
+        bool issue_lanes_{true};
         std::string summary_text_;
         int selected_project_{-1};
         std::string selected_project_key_;
