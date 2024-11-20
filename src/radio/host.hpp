@@ -118,6 +118,77 @@ namespace radio
             return result;
         }
 
+        void feed_the_beast(AVFormatContext *fmt_ctx, AVStream *audio_stream, AVCodecContext *codec_ctx, SwrContext *swr_ctx) {
+            AVPacket packet;
+            AVFrame *frame = av_frame_alloc();
+            uint8_t *audio_buf = nullptr;
+
+            playing = true;
+            for (int read_result = av_read_frame(fmt_ctx, &packet); keep_playing.load(); read_result = av_read_frame(fmt_ctx, &packet))
+            {
+                if (read_result < 0) {
+                    if (read_result == AVERROR_EOF) {
+                        std::cerr << "End of file" << std::endl;
+                        break;
+                    }
+                    // obtain the error
+                    char err[AV_ERROR_MAX_STRING_SIZE];
+                    av_strerror(read_result, err, AV_ERROR_MAX_STRING_SIZE);
+                    throw std::runtime_error(std::format("Failed to read frame, code: {}, {}", read_result, err));
+                }
+                if (packet.stream_index == audio_stream->index)
+                {
+                    auto const send_res = avcodec_send_packet(codec_ctx, &packet);
+                    if (send_res >= 0)
+                    {
+                        for (;;)
+                        {
+                            auto res = avcodec_receive_frame(codec_ctx, frame);
+                            if (res == AVERROR_EOF)
+                            {
+                                break;
+                            }
+                            else if (res == AVERROR(EAGAIN)) {
+                                break;
+                            }
+                            else if (res < 0)
+                            {
+                                // obtain the error description
+                                char err[AV_ERROR_MAX_STRING_SIZE];
+                                av_strerror(res, err, AV_ERROR_MAX_STRING_SIZE);
+                                throw std::runtime_error(std::format("Failed to receive frame, code: {}, {}", res, err));
+                            }
+                            int dst_nb_samples = static_cast<int>(av_rescale_rnd(swr_get_delay(swr_ctx, codec_ctx->sample_rate) + frame->nb_samples, codec_ctx->sample_rate, codec_ctx->sample_rate, AV_ROUND_UP));
+                            int dst_buf_size = av_samples_get_buffer_size(nullptr, obtained_spec.channels, dst_nb_samples, AV_SAMPLE_FMT_FLT, 1);
+                            audio_buf = (uint8_t *)av_malloc(dst_buf_size);
+                            auto converted = swr_convert(swr_ctx, &audio_buf, dst_nb_samples, (const uint8_t **)frame->extended_data, frame->nb_samples);
+                            if (converted < 0)
+                            {
+                                av_free(audio_buf);
+                                throw std::runtime_error("Failed to convert audio");
+                            }
+                            auto sdl_ret = SDL_QueueAudio(dev, audio_buf, dst_buf_size);
+                            if (sdl_ret < 0)
+                            {
+                                av_free(audio_buf);
+                                throw std::runtime_error("Failed to queue audio");
+                            }
+                            
+                            av_free(audio_buf);
+                        }
+                    }
+                    else {
+                        std::cerr << std::format("Failed to send packet to codec, code: {}\n", send_res);
+                    }
+                }
+                else {
+                    std::cerr << std::format("Skipping packet from stream {}\n", packet.stream_index);
+                }
+                av_packet_unref(&packet);
+            }
+            av_frame_free(&frame);
+        }
+
         void play_sync(std::string url)
         {
             keep_playing = true;
@@ -127,9 +198,7 @@ namespace radio
                 url = presets_[url];
             }
             else {
-                std::cerr << std::format("Incoming URL: {}", url) << std::endl;
                 url = resolve_redirections(url);
-                std::cerr << std::format("Resolved URL: {}", url) << std::endl;
             }
 
             // Initialize SDL
@@ -241,77 +310,10 @@ namespace radio
             // Start playing audio
             SDL_PauseAudioDevice(dev, 0);
 
-            AVPacket packet;
-            AVFrame *frame = av_frame_alloc();
-            uint8_t *audio_buf = nullptr;
-
-            playing = true;
             
-            for (int read_result = av_read_frame(fmt_ctx, &packet); keep_playing.load(); read_result = av_read_frame(fmt_ctx, &packet))
-            {
-                if (read_result < 0) {
-                    if (read_result == AVERROR_EOF) {
-                        std::cerr << "End of file" << std::endl;
-                        break;
-                    }
-                    // obtain the error
-                    char err[AV_ERROR_MAX_STRING_SIZE];
-                    av_strerror(read_result, err, AV_ERROR_MAX_STRING_SIZE);
-                    throw std::runtime_error(std::format("Failed to read frame, code: {}, {}", read_result, err));
-                }
-                if (packet.stream_index == audio_stream->index)
-                {
-                    auto const send_res = avcodec_send_packet(codec_ctx, &packet);
-                    if (send_res >= 0)
-                    {
-                        for (;;)
-                        {
-                            auto res = avcodec_receive_frame(codec_ctx, frame);
-                            if (res == AVERROR_EOF)
-                            {
-                                break;
-                            }
-                            else if (res == AVERROR(EAGAIN)) {
-                                break;
-                            }
-                            else if (res < 0)
-                            {
-                                // obtain the error description
-                                char err[AV_ERROR_MAX_STRING_SIZE];
-                                av_strerror(res, err, AV_ERROR_MAX_STRING_SIZE);
-                                throw std::runtime_error(std::format("Failed to receive frame, code: {}, {}", res, err));
-                            }
-                            int dst_nb_samples = static_cast<int>(av_rescale_rnd(swr_get_delay(swr_ctx, codec_ctx->sample_rate) + frame->nb_samples, codec_ctx->sample_rate, codec_ctx->sample_rate, AV_ROUND_UP));
-                            int dst_buf_size = av_samples_get_buffer_size(nullptr, obtained_spec.channels, dst_nb_samples, AV_SAMPLE_FMT_FLT, 1);
-                            audio_buf = (uint8_t *)av_malloc(dst_buf_size);
-                            auto converted = swr_convert(swr_ctx, &audio_buf, dst_nb_samples, (const uint8_t **)frame->extended_data, frame->nb_samples);
-                            if (converted < 0)
-                            {
-                                av_free(audio_buf);
-                                throw std::runtime_error("Failed to convert audio");
-                            }
-                            auto sdl_ret = SDL_QueueAudio(dev, audio_buf, dst_buf_size);
-                            if (sdl_ret < 0)
-                            {
-                                av_free(audio_buf);
-                                throw std::runtime_error("Failed to queue audio");
-                            }
-                            
-                            av_free(audio_buf);
-                        }
-                    }
-                    else {
-                        std::cerr << std::format("Failed to send packet to codec, code: {}\n", send_res);
-                    }
-                }
-                else {
-                    std::cerr << std::format("Skipping packet from stream {}\n", packet.stream_index);
-                }
-                av_packet_unref(&packet);
-            }
+            feed_the_beast(fmt_ctx, audio_stream, codec_ctx, swr_ctx);
 
             // Clean up
-            av_frame_free(&frame);
             swr_free(&swr_ctx);
             avcodec_free_context(&codec_ctx);
             avformat_close_input(&fmt_ctx);

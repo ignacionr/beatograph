@@ -134,7 +134,7 @@ namespace jira
                 ImGui::Indent();
                 views::cached_view<nlohmann::json>("Comments", 
                     [&h, key] { return h.get_issue_comments(key); }, 
-                    [&h, key, this, show_json_details](nlohmann::json const &comments) {
+                    [&h, key, this, show_json_details, &request_requery](nlohmann::json const &comments) {
                     if (!comments.contains("comments")) {
                         return;
                     }
@@ -154,6 +154,12 @@ namespace jira
                             }
                         }
                         ImGui::EndChild();
+                    }
+                    std::string comment_body;
+                    if (comment_body.reserve(256); ImGui::InputText("Comment", comment_body.data(), comment_body.capacity(), ImGuiInputTextFlags_EnterReturnsTrue)) {
+                        comment_body = comment_body.data();
+                        do_async([&h, key, comment_body] { h.add_comment(key, comment_body); });
+                        request_requery = true;
                     }
                 });
                 ImGui::Unindent();

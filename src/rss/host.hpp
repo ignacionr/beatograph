@@ -68,15 +68,18 @@ namespace rss
             return parser;
         }
 
-        void add_feeds(std::vector<std::string> urls, std::function<void()> callback = {})
+        void add_feeds(std::vector<std::string> urls, std::function<void(std::string_view)> error_sink, std::function<void()> callback = {})
         {
-            std::thread([this, urls, callback] {
+            std::thread([this, urls, callback, error_sink] {
                 for (auto const &url_str : urls) {
                     try {
                         add_feed_sync(url_str);
                     }
+                    catch(std::exception const &e) {
+                        error_sink(std::format("Failed to add feed {}: {}\n", url_str, e.what()));
+                    }
                     catch(...) {
-                        // ignore
+                        error_sink(std::format("Failed to add feed {}\n", url_str));
                     }
                 }
                 if (callback) callback(); })

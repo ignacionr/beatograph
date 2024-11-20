@@ -107,7 +107,6 @@ namespace jira
                         for (auto const &issue : issues) {
                             if (issue_screen_.render(*issue, h, false, actions, show_json_details_, show_assignee_)) {
                                 query();
-                                return;
                             }
                         }
                         ImGui::NextColumn();

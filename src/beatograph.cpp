@@ -80,7 +80,7 @@ void setup_fonts()
     io.Fonts->AddFontFromFileTTF("assets/fonts/Montserrat-Bold.ttf", 23.0f, nullptr, io.Fonts->GetGlyphRangesCyrillic());
 }
 
-void load_podcasts(auto &host) {
+void load_podcasts(auto &host, auto sink) {
     std::ifstream file("podcasts.txt");
     // get all urls into a vector
     std::vector<std::string> urls;
@@ -89,7 +89,7 @@ void load_podcasts(auto &host) {
     {
         urls.push_back(line);
     }
-    host.add_feeds(urls);
+    host.add_feeds(urls, sink);
 }
 
 #if defined(_WIN32)
@@ -141,7 +141,7 @@ int main()
         dev_locked::screen dev_screen{localhost};
 
         rss::host podcast_host;
-        load_podcasts(podcast_host);
+        load_podcasts(podcast_host, [&notify_host](auto text){ notify_host(text, "RSS"); });
         rss::screen rss_screen{podcast_host,
                                [&radio_host](std::string_view url)
                                {

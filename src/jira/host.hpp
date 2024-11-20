@@ -120,6 +120,29 @@ namespace jira {
             return nlohmann::json::parse(get(std::format("issue/{}/comment", issue_key)));
         }
 
+        auto add_comment(std::string_view issue_key, std::string_view comment_body) {
+            nlohmann::json::object_t contents = {
+                {"body", {
+                    {"type", "doc"},
+                    {"version", 1},
+                    {"content", {{
+                        {"type", "paragraph"},
+                        {"content", {{
+                            {"type", "text"},
+                            {"text", comment_body}
+                        }}}
+                    }}}
+                }}
+            };
+            auto const result_string = post(
+                std::format("issue/{}/comment", issue_key), contents);
+            auto const result = nlohmann::json::parse(result_string);
+            if (result.contains("errorMessages")) {
+                throw std::runtime_error(result_string);
+            }
+            return result;
+        }
+
         std::string send(std::string_view endpoint, std::string_view verb, std::string_view contents, std::string_view content_type){
             CURL* curl = curl_easy_init();
             if(!curl) {
