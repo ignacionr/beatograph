@@ -1,4 +1,5 @@
 #include "pch.h"
+#pragma execution_character_set("utf-8")
 #include <algorithm>
 #include <numeric>
 #include <format>
@@ -43,7 +44,6 @@
 #include "notify/host.hpp"
 #include "notify/screen.hpp"
 
-#pragma execution_character_set("utf-8")
 #include "../external/IconsMaterialDesign.h"
 
 std::string get_env_variable(std::string_view key)

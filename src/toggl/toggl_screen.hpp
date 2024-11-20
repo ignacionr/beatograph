@@ -13,6 +13,7 @@
 #include <time.h>
 
 #include "toggl_client.hpp"
+#include "../external/IconsMaterialDesign.h"
 
 namespace toggl
 {
@@ -94,7 +95,7 @@ namespace toggl
             ImGui::Text("%s", duration_formatted.c_str());
             if (is_running)
             {
-                if (ImGui::SameLine(); ImGui::SmallButton("Stop"))
+                if (ImGui::SameLine(); ImGui::SmallButton(ICON_MD_STOP))
                 {
                     try
                     {
@@ -107,7 +108,7 @@ namespace toggl
                     }
                 }
             }
-            if (ImGui::SameLine(); ImGui::SmallButton("Delete"))
+            if (ImGui::SameLine(); ImGui::SmallButton(ICON_MD_DELETE))
             {
                 try
                 {
