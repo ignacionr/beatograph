@@ -113,6 +113,7 @@ namespace jira
                     }
                     ImGui::Unindent();
                 }
+                ImGui::Indent();
                 views::cached_view<nlohmann::json>("Comments", 
                     [&h, key] { return h.get_issue_comments(key); }, 
                     [&h, key, this, show_json_details](nlohmann::json const &comments) {
@@ -137,6 +138,7 @@ namespace jira
                         ImGui::EndChild();
                     }
                 });
+                ImGui::Unindent();
                 if (show_json_details) {
                     ImGui::Indent();
                     if (ImGui::CollapsingHeader("All Details"))

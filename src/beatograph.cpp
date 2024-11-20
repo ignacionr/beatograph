@@ -191,7 +191,7 @@ int main()
             {ICON_MD_GROUPS " ArangoDB", [&cr] { cr.render(); }, menu_tabs},
             {ICON_MD_TASK " Toggl", [&ts] { ts.render(); }, menu_tabs},
             {jira_tab_name, [&js, &jh, &ts] { js->render(jh, {
-                {"Start Toggl", [&ts](nlohmann::json const &entry) {
+                {ICON_MD_PUNCH_CLOCK " Start Toggl", [&ts](nlohmann::json const &entry) {
                     auto const activity_description {std::format("{} - {}", 
                         entry.at("fields").at("summary").get<std::string>(), 
                         entry.at("key").get<std::string>())};

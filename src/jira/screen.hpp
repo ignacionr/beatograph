@@ -41,11 +41,15 @@ namespace jira
         }
 
         void selection_tree(host &h) {
+            auto except_done{[&h] { return nlohmann::json::parse(h.get_assigned_issues()).at("issues").get<std::vector<nlohmann::json::object_t>>(); }};
+            if (!selector_) {
+                select (except_done);
+            }
             // now present the tree of options to select issues from different grouppings
             if (ImGui::TreeNode("My Assigned Issues"))
             {
-                views::try_button("Except Done", [&h, this] {
-                    select([&h] { return nlohmann::json::parse(h.get_assigned_issues()).at("issues").get<std::vector<nlohmann::json::object_t>>(); });
+                views::try_button("Except Done", [&h, this, except_done] {
+                    select(except_done);
                 });
                 views::try_button("All", [&h, this] {
                     select([&h] { return nlohmann::json::parse(h.get_assigned_issues(true)).at("issues").get<std::vector<nlohmann::json::object_t>>(); });
@@ -92,7 +96,7 @@ namespace jira
         }
 
         void render_new_editor(host &h) {
-            ImGui::Text("New Issue");
+            ImGui::Text(ICON_MD_CREATE  " New Issue");
             if (ImGui::SameLine(); ImGui::SmallButton(ICON_MD_CANCEL)) {
                 editing_new_ = false;
                 return;
@@ -162,7 +166,7 @@ namespace jira
                 render_new_editor(h);
             }
             else {
-                if (ImGui::Button("New Issue")) {
+                if (ImGui::Button(ICON_MD_CREATE " New Issue")) {
                     editing_new_ = true;
                 }
                 render_list(h, actions);
