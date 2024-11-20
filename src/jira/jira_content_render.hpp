@@ -24,6 +24,13 @@ namespace jira{
                     ImGui::Text("");
                     render_subcontent(el);
                 }},
+                {"inlineCard", [](nlohmann::json::object_t const &el) {
+                    ImGui::SameLine();
+                    std::string const url {el.at("attrs").at("url").get<std::string>()};
+                    if (ImGui::Selectable(url.c_str())) {
+                        ShellExecuteA(nullptr, "open", url.c_str(), nullptr, nullptr, SW_SHOW);
+                    }
+                }},
                 {"bulletList", render_subcontent},
                 {"listItem", render_subcontent},
                 {"hardBreak", [](nlohmann::json::object_t const &) { ImGui::Text(""); }},
