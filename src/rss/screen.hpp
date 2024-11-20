@@ -54,6 +54,10 @@ namespace rss
                 ImGui::TableHeadersRow();
                 for (auto &item : current_feed_->items)
                 {
+                    if (!filter_.empty() && item.title.find(filter_) == std::string::npos)
+                    {
+                        continue;
+                    }
                     ImGui::TableNextRow();
                     ImGui::PushID(&item);
                     ImGui::TableNextColumn();
@@ -100,8 +104,13 @@ namespace rss
                     // we will re-add the selected feed into the host
                     host_.add_feeds({current_feed_->feed_link}, [](std::string_view) {});
                 }
-                else
+                else 
                 {
+                    if (ImGui::SameLine(), filter_.reserve(256); ImGui::InputTextWithHint("##search", "Search", filter_.data(), filter_.capacity()))
+                    {
+                        filter_ = filter_.data();
+                    }
+
                     ImGui::Columns(2);
                     render_flag();
                     ImGui::NextColumn();
@@ -171,5 +180,6 @@ namespace rss
         player_t player_;
         img_cache &cache_;
         std::shared_ptr<rss::feed> current_feed_;
+        std::string filter_;
     };
 }
