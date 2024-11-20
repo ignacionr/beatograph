@@ -2,3 +2,4 @@ build
 imgui.ini
 vcpkg_installed
 last_played.txt
+imgcache
