@@ -50,6 +50,12 @@ namespace rss {
                             feed_image_url = url->GetText();
                         }
                     }
+                    else {
+                        auto itunes_image = channel->FirstChildElement("itunes:image");
+                        if (itunes_image) {
+                            feed_image_url = itunes_image->Attribute("href");
+                        }
+                    }
                     auto xml_item = channel->FirstChildElement("item");
                     while (xml_item) {
                         item new_item;

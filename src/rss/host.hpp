@@ -73,7 +73,10 @@ namespace rss
             std::thread([this, urls, callback, error_sink] {
                 for (auto const &url_str : urls) {
                     try {
-                        add_feed_sync(url_str);
+                        auto const ptr = add_feed_sync(url_str);
+                        if (ptr->feed_image_url.empty()) {
+                            error_sink(std::format("Feed {}: no image found\n", url_str));
+                        }
                     }
                     catch(std::exception const &e) {
                         error_sink(std::format("Failed to add feed {}: {}\n", url_str, e.what()));
@@ -86,7 +89,7 @@ namespace rss
                 .detach();
         }
 
-        void add_feed_sync(std::string_view url)
+        auto add_feed_sync(std::string_view url)
         {
             auto feed_ptr = std::make_shared<rss::feed>(get_feed(url));
             {
@@ -106,10 +109,11 @@ namespace rss
                 }
                 else
                 {
-                    feeds->emplace_back(std::move(feed_ptr));
+                    feeds->emplace_back(feed_ptr);
                 }
                 feeds_.store(feeds);
             }
+            return feed_ptr;
         }
 
         auto feeds()
