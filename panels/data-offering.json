@@ -1,0 +1,95 @@
+{
+    "title": " Data Offering",
+    "contents": [
+        {
+            "type": "group",
+            "title": "Importer Report",
+            "contents": [
+                {
+                    "type": "assertion",
+                    "title": "Importer container is running",
+                    "test": {
+                        "type": "docker-container-running",
+                        "container": "storm-java-producer-1",
+                        "host": "storm1"
+                    }
+                },
+                {
+                    "type": "assertion",
+                    "title": "Java process running in the importer container",
+                    "test": {
+                        "type": "docker-process-running",
+                        "container": "storm-java-producer-1",
+                        "host": "storm1",
+                        "process": "java"
+                    }
+                },
+                {
+                    "type": "assertion",
+                    "title": "RabbitMQ container is running",
+                    "test": {
+                        "type": "docker-container-running",
+                        "container": "storm-rabbitmq-1",
+                        "host": "storm1"
+                    }
+                },
+                {
+                    "type": "assertion",
+                    "title": "RabbitMQ process running in the RabbitMQ container",
+                    "test": {
+                        "type": "docker-process-running",
+                        "container": "storm-rabbitmq-1",
+                        "host": "storm1",
+                        "process": "rabbitmq"
+                    }
+                },
+                {
+                    "type": "container-command-output",
+                    "title": "RabbitMQ Queues",
+                    "command": "rabbitmqctl list_queues",
+                    "container": "storm-rabbitmq-1",
+                    "host": "storm1"
+                }
+            ]
+        },
+        {
+            "type": "group",
+            "title": "Storm Topology Status",
+            "contents": []
+        },
+        {
+            "type": "group",
+            "title": "Hadoop and Hbase Status",
+            "contents": []
+        },
+        {
+            "type": "group",
+            "title": "Storm to Hadoop Data Transfer",
+            "contents": []
+        },
+        {
+            "type": "group",
+            "title": "Tools",
+            "contents": []
+        },
+        {
+            "type": "group",
+            "title": "API",
+            "contents": []
+        },
+        {
+            "type": "group",
+            "title": "Servers",
+            "contents": [
+                {
+                    "type": "ssh-host",
+                    "name": "hadoop1"
+                },
+                {
+                    "type": "ssh-host",
+                    "name": "storm1"
+                }
+            ]
+        }
+    ]
+}

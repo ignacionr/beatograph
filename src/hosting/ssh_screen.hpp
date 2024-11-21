@@ -13,6 +13,8 @@
 #include "../docker/screen.hpp"
 #include "../views/cached_view.hpp"
 
+#include "../external/IconsMaterialDesign.h"
+
 namespace hosting::ssh
 {
     struct screen
@@ -24,12 +26,14 @@ namespace hosting::ssh
                 ImGui::TextColored(ImVec4(1, 0, 0, 1), "Disconnected.");
                 return;
             }
-            if (ImGui::BeginChild(std::format("host-{}", host->name()).c_str(), {0, 0}, ImGuiChildFlags_FrameStyle | ImGuiChildFlags_AutoResizeY))
+            if (ImGui::BeginChild(std::format("host-{}", host->name()).c_str(), {0, 0}, 
+                ImGuiChildFlags_FrameStyle | ImGuiChildFlags_AutoResizeY))
             {
                 // Render host screen
                 ImGui::PushID(host->name().c_str());
                 ImGui::LabelText("Hostname", "%s", host->name().c_str());
                 ImGui::Indent();
+                ImGui::Columns(3);
                 if (ImGui::CollapsingHeader("SSH Properties"))
                 {
                     if (localhost.has_session(host->name()))
@@ -38,7 +42,7 @@ namespace hosting::ssh
                         ImGui::TextUnformatted("Connected");
                         ImGui::PopStyleColor();
                         ImGui::SameLine();
-                        if (ImGui::Button("Recycle Session"))
+                        if (ImGui::Button( ICON_MD_RECYCLING ))
                         {
                             localhost.recycle_session(host->name());
                         }
@@ -56,6 +60,11 @@ namespace hosting::ssh
                         ImGui::LabelText(key.c_str(), "%s", value.c_str());
                     }
                 }
+                ImGui::NextColumn();
+                if (ImGui::CollapsingHeader("OS Release")) {
+                    ImGui::TextUnformatted(host->get_os_release(localhost).c_str());
+                }
+                ImGui::NextColumn();
                 if (ImGui::CollapsingHeader("Performance Metrics"))
                 {
                     std::shared_ptr<metrics_model> model = host->metrics(localhost);
@@ -95,6 +104,8 @@ namespace hosting::ssh
                         ImGui::Text("Metrics not available");
                     }
                 }
+                ImGui::NextColumn();
+                ImGui::Columns();
                 docker_screen_.render([host]() -> docker::host &
                                       { return host->docker(); }, localhost);
                 struct unit

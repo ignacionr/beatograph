@@ -10,6 +10,7 @@
 #include "../hosting/host.hpp"
 #include "../hosting/ssh_screen.hpp"
 #include "../views/assertion.hpp"
+#include "../views/cached_view.hpp"
 
 namespace panel {
     struct config {
@@ -43,6 +44,20 @@ namespace panel {
                         }
                     };
                 }},
+                {"container-command-output", [&localhost] (nlohmann::json const &element) -> fn_t {
+                    auto const host_name = element.at("host").get<std::string>();
+                    auto const container_name = element.at("container").get<std::string>();
+                    auto const command = element.at("command").get<std::string>();
+                    auto const title = element.at("title").get<std::string>();
+                    return [command, host_name, container_name, &localhost, title]{
+                        views::cached_view<std::string>(title,
+                        [host_name, command, container_name, &localhost]{ return hosting::ssh::host::by_name(host_name)->docker()
+                        .execute_command(command, container_name, localhost, false);},
+                        [](std::string const &output) {
+                            ImGui::TextWrapped("%s", output.c_str());
+                        });
+                    };
+                }},
                 {"assertion", [&localhost](nlohmann::json const &element) -> fn_t {
                     // render assertion
                     std::function<bool()> test = []{ return false; };
@@ -57,7 +72,7 @@ namespace panel {
                                 .is_container_running(container_name, localhost);
                             };
                         }},
-                        {"process-running", [&test_element, &localhost, &test]{
+                        {"docker-process-running", [&test_element, &localhost, &test]{
                             auto const process_name = test_element.at("process").get<std::string>();
                             auto const host_name = test_element.at("host").get<std::string>();
                             auto const container_name = test_element.at("container").get<std::string>();
@@ -78,7 +93,6 @@ namespace panel {
                                 .execute_command(command, container_name, localhost, false));
                             };
                         }}
-
                     };
                     if (auto it = tests.find(type_name); it != tests.end()) {
                         it->second();

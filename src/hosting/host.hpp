@@ -116,6 +116,20 @@ namespace hosting::ssh
             return *docker_host_;
         }
 
+        std::string execute_command(std::string const &command, local::host &localhost)
+        {
+            return docker().execute_command(command, localhost);
+        }
+
+        std::string get_os_release(local::host &localhost)
+        {
+            if (os_release_.empty())
+            {
+                os_release_ = execute_command("cat /etc/os-release", localhost);
+            }
+            return os_release_;
+        }
+
     private:
         static hosts_by_name_t &hosts_()
         {
@@ -124,6 +138,7 @@ namespace hosting::ssh
         }
 
         std::string name_;
+        std::string os_release_;
         std::atomic<std::shared_ptr<properties_t>> properties_ = std::make_shared<properties_t>();
         std::atomic<std::shared_ptr<local::mapping>> nodeexporter_mapping_;
         std::atomic<std::shared_ptr<metrics_model>> metrics_;

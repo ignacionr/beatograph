@@ -25,7 +25,7 @@
                         "type": "assertion",
                         "title": "xrdp is running for dev1",
                         "test": {
-                            "type": "process-running",
+                            "type": "docker-process-running",
                             "host": "dev-locked",
                             "container": "dev1_container",
                             "process": "xrdp"
@@ -59,7 +59,7 @@
                         "type": "assertion",
                         "title": "xrdp is running for dev2",
                         "test": {
-                            "type": "process-running",
+                            "type": "docker-process-running",
                             "host": "dev-locked",
                             "container": "dev2_container",
                             "process": "xrdp"
@@ -93,7 +93,7 @@
                         "type": "assertion",
                         "title": "xrdp is running for dev3",
                         "test": {
-                            "type": "process-running",
+                            "type": "docker-process-running",
                             "host": "dev-locked",
                             "container": "dev3_container",
                             "process": "xrdp"
@@ -124,7 +124,7 @@
                     "type": "assertion",
                     "title": "externalizer service is running (socat)",
                     "test": {
-                        "type": "process-running",
+                        "type": "docker-process-running",
                         "host": "dev-locked",
                         "container": "socat-proxy",
                         "process": "socat"

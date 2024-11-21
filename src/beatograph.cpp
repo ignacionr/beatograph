@@ -184,7 +184,7 @@ int main()
 
         tabs = std::make_shared<screen_tabs>(std::vector<screen_tabs::tab_t> {
             {ICON_MD_COMPUTER, [&local_screen] { local_screen.render(); }, menu_tabs},
-            {ICON_MD_GROUPS " Data Offering", [&ds] { ds.render(); }, menu_tabs},
+            {ICON_MD_GROUPS " (Old) Data Offering", [&ds] { ds.render(); }, menu_tabs},
             {ICON_MD_TASK " Toggl", [&ts] { ts.render(); }, menu_tabs},
             {jira_tab_name, [&js, &jh, &ts] { js->render(jh, {
                 {ICON_MD_PUNCH_CLOCK " Start Toggl", [&ts](nlohmann::json const &entry) {

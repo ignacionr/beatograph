@@ -21,6 +21,8 @@ namespace hosting::local
 {
     struct host
     {
+        host() = default;
+        host(const host &) = delete;
 
         auto run(const char *command)
         {
