@@ -102,7 +102,8 @@ namespace clocks
             constexpr auto side_width{210};
             constexpr auto cell_height{340};
             int column_count = static_cast<int>(ImGui::GetWindowWidth()) / (side_width + 10);
-            if (ImGui::BeginTable("Clocks", column_count, ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_BordersOuter | ImGuiTableFlags_RowBg, ImVec2{ImGui::GetWindowWidth() - 20, ImGui::GetWindowHeight() - 20}))
+            if (column_count > 0 &&
+                ImGui::BeginTable("Clocks", column_count, ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_BordersOuter | ImGuiTableFlags_RowBg, ImVec2{ImGui::GetWindowWidth() - 20, ImGui::GetWindowHeight() - 20}))
             {
                 ImGui::TableNextColumn();
                 ImGui::BeginChild("UTC", ImVec2{side_width, cell_height});
