@@ -43,6 +43,7 @@
 #include "clocks/weather.hpp"
 #include "notify/host.hpp"
 #include "notify/screen.hpp"
+#include "panel/screen.hpp"
 
 #include "../external/IconsMaterialDesign.h"
 
@@ -229,7 +230,28 @@ int main()
              { gpt_screen.render(gpt); }, menu_tabs, ImVec4(0.75f, 0.75f, 0.75f, 1.0f)},
             {"Notifications", [&notify_screen] { notify_screen.render(); }, menu_tabs}
         });
+
         main_screen screen{tabs};
+
+        panel::screen panel_screen{};
+        // enumerate the ./panels directory
+        std::filesystem::path panel_dir{"panels"};
+        if (std::filesystem::exists(panel_dir) && std::filesystem::is_directory(panel_dir))
+        {
+            for (auto const &entry : std::filesystem::directory_iterator{panel_dir})
+            {
+                if (entry.is_regular_file() && entry.path().extension() == ".json")
+                {
+                    std::ifstream file{entry.path()};
+                    nlohmann::json panel;
+                    file >> panel;
+                    tabs->add_tab({panel.at("title").get<std::string>(),
+                                   [&panel_screen, panel, &localhost] { 
+                                    panel_screen.render(panel.at("contents"), localhost); },
+                                   menu_tabs});
+                }
+            }
+        }
 
         setup_fonts();
 

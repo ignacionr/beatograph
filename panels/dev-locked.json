@@ -1,0 +1,188 @@
+{
+    "title": "Backend Development Environment",
+    "contents" : [
+        {
+            "type": "ssh-host",
+            "name": "dev-locked"
+        },
+        {
+            "type": "group",
+            "title": "Status",
+            "contents": [
+                {
+                    "type": "group",
+                    "title": "dev1",
+                    "contents": [                {
+                        "type": "assertion",
+                        "title": "dev1_container is running",
+                        "test": {
+                            "type": "docker-container-running",
+                            "container": "dev1_container",
+                            "host": "dev-locked"
+                        }
+                    },
+                    {
+                        "type": "assertion",
+                        "title": "xrdp is running for dev1",
+                        "test": {
+                            "type": "process-running",
+                            "host": "dev-locked",
+                            "container": "dev1_container",
+                            "process": "xrdp"
+                        }
+                    },
+                    {
+                        "type": "assertion",
+                        "title": "dev1 can log in for gitservice usage with ssh",
+                        "test": {
+                            "type": "container-command",
+                            "host": "dev-locked",
+                            "container": "dev1_container",
+                            "command": "su - dev1 -c 'ssh -T git@gitservice'",
+                            "should-contain": "Welcome to git-server-docker!"
+                        }
+                    }]
+                },
+                {
+                    "type": "group",
+                    "title": "dev2",
+                    "contents": [                {
+                        "type": "assertion",
+                        "title": "dev2_container is running",
+                        "test": {
+                            "type": "docker-container-running",
+                            "container": "dev2_container",
+                            "host": "dev-locked"
+                        }
+                    },
+                    {
+                        "type": "assertion",
+                        "title": "xrdp is running for dev2",
+                        "test": {
+                            "type": "process-running",
+                            "host": "dev-locked",
+                            "container": "dev2_container",
+                            "process": "xrdp"
+                        }
+                    },
+                    {
+                        "type": "assertion",
+                        "title": "dev2 can log in for gitservice usage with ssh",
+                        "test": {
+                            "type": "container-command",
+                            "host": "dev-locked",
+                            "container": "dev2_container",
+                            "command": "su - dev2 -c 'ssh -T git@gitservice'",
+                            "should-contain": "Welcome to git-server-docker!"
+                        }
+                    }]
+                },
+                {
+                    "type": "group",
+                    "title": "dev3",
+                    "contents": [                {
+                        "type": "assertion",
+                        "title": "dev3_container is running",
+                        "test": {
+                            "type": "docker-container-running",
+                            "container": "dev3_container",
+                            "host": "dev-locked"
+                        }
+                    },
+                    {
+                        "type": "assertion",
+                        "title": "xrdp is running for dev3",
+                        "test": {
+                            "type": "process-running",
+                            "host": "dev-locked",
+                            "container": "dev3_container",
+                            "process": "xrdp"
+                        }
+                    },
+                    {
+                        "type": "assertion",
+                        "title": "dev3 can log in for gitservice usage with ssh",
+                        "test": {
+                            "type": "container-command",
+                            "host": "dev-locked",
+                            "container": "dev3_container",
+                            "command": "su - dev3 -c 'ssh -T git@gitservice'",
+                            "should-contain": "Welcome to git-server-docker!"
+                        }
+                    }]
+                },
+                {
+                    "type": "assertion",
+                    "title": "gitservice is running",
+                    "test": {
+                        "type": "docker-container-running",
+                        "container": "gitservice",
+                        "host": "dev-locked"
+                    }
+                },
+                {
+                    "type": "assertion",
+                    "title": "externalizer service is running (socat)",
+                    "test": {
+                        "type": "process-running",
+                        "host": "dev-locked",
+                        "container": "socat-proxy",
+                        "process": "socat"
+                    }
+                },
+                {
+                    "type": "assertion",
+                    "title": "the pipeline runner service is running",
+                    "test": {
+                        "type": "docker-container-running",
+                        "container": "pipeline-runner",
+                        "host": "dev-locked"
+                    }
+                },
+                {
+                    "type": "assertion",
+                    "title": "root on the pipeline runner can access the gitservice",
+                    "test": {
+                        "type": "container-command",
+                        "host": "dev-locked",
+                        "container": "pipeline-runner",
+                        "command": "ssh -T git@gitservice",
+                        "should-contain": "Welcome to git-server-docker!"
+                    }
+                },
+                {
+                    "type": "group",
+                    "title": "staging",
+                    "contents": [
+                        {
+                            "type": "assertion",
+                            "title": "staging deployment is running",
+                            "test": {
+                                "type": "docker-container-running",
+                                "container": "foxbetbackend",
+                                "host": "dev-locked"
+                            }
+                        },
+                        {
+                            "type": "shell-open",
+                            "command": "http://57.129.70.83:3333/api/lastbets",
+                            "title": "open in browser..."
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "group",
+            "title": "Tools",
+            "contents": [
+                {
+                    "type": "shell-execute",
+                    "title": "Open VSCode in dev-locked",
+                    "command": "cmd.exe",
+                    "args": "/c code --remote ssh-remote+dev-locked /home/ubuntu/arangodb-infra/dev-locked"
+                }
+            ]
+        }
+    ]
+}

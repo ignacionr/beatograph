@@ -13,7 +13,9 @@ struct screen_tabs {
         std::function<void(std::string_view)> render_menu = {};
         ImVec4 color = ImVec4(0.1f, 0.1f, 0.5f, 1.0f);
     };
+
     screen_tabs(std::vector<tab_t> tabs) : tabs{std::move(tabs)} {}
+
     void render()
     {
         if (ImGui::BeginTabBar("Tabs")) {
@@ -41,14 +43,21 @@ struct screen_tabs {
             ImGui::EndTabBar();
         }
     }
+
     void render_menu(std::string_view item) {
         if (current_menu) {
             current_menu(item);
         }
     }
+
     void select_tab(std::string_view name) {
         select_tab_ = name;
     }
+
+    void add_tab(tab_t tab) {
+        tabs.push_back(tab);
+    }
+    
 private:
     std::vector<tab_t> tabs;
     std::function<void(std::string_view)> current_menu{};
