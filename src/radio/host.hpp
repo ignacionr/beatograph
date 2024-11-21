@@ -84,12 +84,16 @@ namespace radio
             }).detach();
         }
 
-        void stop() {
+        void stop(bool active = false) {
             if (dev != 0) {
                 SDL_PauseAudioDevice(dev, 1);
                 SDL_ClearQueuedAudio(dev);
             }
             keep_playing = false;
+            if (active) {
+                // remove last_played.txt
+                std::remove("last_played.txt");
+            }
         }
 
         static size_t ignore_write(void *, size_t size, size_t nmemb, void *)  {
