@@ -128,7 +128,7 @@ struct img_cache {
                 curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 3L);
                 curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
                 curl_easy_setopt(curl, CURLOPT_USERAGENT, "beat-o-graph/1.0");
-                curl_easy_setopt(curl, CURLOPT_TIMEOUT, 60L);
+                curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10L);
                 curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 10L);
                 curl_easy_setopt(curl, CURLOPT_WRITEDATA, &image_file);
                 curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);

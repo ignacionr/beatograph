@@ -1,0 +1,17 @@
+{
+    "title": " ArangoDB Cluster",
+    "contents" : [
+        {
+            "type": "ssh-host",
+            "name": "arangodb1"
+        },
+        {
+            "type": "ssh-host",
+            "name": "arangodb2"
+        },
+        {
+            "type": "ssh-host",
+            "name": "arangodb3"
+        }
+    ]
+}

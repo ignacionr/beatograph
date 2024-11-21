@@ -27,7 +27,6 @@
 #include "hosting/host.hpp"
 #include "hosting/host_local.hpp"
 #include "hosting/local_screen.hpp"
-#include "arangodb/cluster_report.hpp"
 #include "ssh/screen_all.hpp"
 #include <cppgpt/cppgpt.hpp>
 #include "views/assertion.hpp"
@@ -133,7 +132,6 @@ int main()
         git_host git{localhost};
         dataoffering::screen ds{localhost, groq_api_key, get_env_variable("DATAOFFERING_TOKEN")};
 
-        cluster_report cr{localhost};
         ssh_screen ssh_screen;
 
         radio::host radio_host;
@@ -187,7 +185,6 @@ int main()
         tabs = std::make_shared<screen_tabs>(std::vector<screen_tabs::tab_t> {
             {ICON_MD_COMPUTER, [&local_screen] { local_screen.render(); }, menu_tabs},
             {ICON_MD_GROUPS " Data Offering", [&ds] { ds.render(); }, menu_tabs},
-            {ICON_MD_GROUPS " ArangoDB", [&cr] { cr.render(); }, menu_tabs},
             {ICON_MD_TASK " Toggl", [&ts] { ts.render(); }, menu_tabs},
             {jira_tab_name, [&js, &jh, &ts] { js->render(jh, {
                 {ICON_MD_PUNCH_CLOCK " Start Toggl", [&ts](nlohmann::json const &entry) {
