@@ -34,7 +34,6 @@
 #include "git/host.hpp"
 #include "radio/host.hpp"
 #include "radio/screen.hpp"
-#include "dev-locked/screen.hpp"
 #include "rss/host.hpp"
 #include "rss/screen.hpp"
 #include "imgcache.hpp"
@@ -45,6 +44,7 @@
 #include "notify/screen.hpp"
 #include "panel/screen.hpp"
 #include "panel/config.hpp"
+#include "cppgpt/screen.hpp"
 
 #include "../external/IconsMaterialDesign.h"
 
@@ -140,8 +140,6 @@ int main()
 
         std::unique_ptr<radio::screen> radio_screen;
 
-        dev_locked::screen dev_screen{localhost};
-
         rss::host podcast_host;
         load_podcasts(podcast_host, [&notify_host](auto text){ notify_host(text, "RSS"); });
         rss::screen rss_screen{podcast_host,
@@ -188,7 +186,6 @@ int main()
 
         tabs = std::make_shared<screen_tabs>(std::vector<screen_tabs::tab_t> {
             {ICON_MD_COMPUTER, [&local_screen] { local_screen.render(); }, menu_tabs},
-            {ICON_MD_GROUPS " Backend Dev", [&dev_screen, &gpt] { dev_screen.render(gpt); }, menu_tabs},
             {ICON_MD_GROUPS " Data Offering", [&ds] { ds.render(); }, menu_tabs},
             {ICON_MD_GROUPS " ArangoDB", [&cr] { cr.render(); }, menu_tabs},
             {ICON_MD_TASK " Toggl", [&ts] { ts.render(); }, menu_tabs},
