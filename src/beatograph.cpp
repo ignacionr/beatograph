@@ -44,6 +44,7 @@
 #include "notify/host.hpp"
 #include "notify/screen.hpp"
 #include "panel/screen.hpp"
+#include "panel/config.hpp"
 
 #include "../external/IconsMaterialDesign.h"
 
@@ -245,9 +246,11 @@ int main()
                     std::ifstream file{entry.path()};
                     nlohmann::json panel;
                     file >> panel;
+                    auto config = std::make_shared<panel::config>(
+                        panel.at("contents").get<nlohmann::json::array_t>(), localhost);
                     tabs->add_tab({panel.at("title").get<std::string>(),
-                                   [&panel_screen, panel, &localhost] { 
-                                    panel_screen.render(panel.at("contents"), localhost); },
+                                   [&panel_screen, config] { 
+                                    panel_screen.render(*config); },
                                    menu_tabs});
                 }
             }
