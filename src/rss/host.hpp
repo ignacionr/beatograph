@@ -68,7 +68,7 @@ namespace rss
             return parser;
         }
 
-        void add_feeds(std::vector<std::string> urls, std::function<void(std::string_view)> error_sink, std::function<void()> callback = {})
+        void add_feeds(std::vector<std::string> urls, std::function<void(std::string_view)> error_sink, std::function<bool()> callback = []{ return true; })
         {
             std::thread([this, urls, callback, error_sink] {
                 for (auto const &url_str : urls) {
@@ -84,8 +84,9 @@ namespace rss
                     catch(...) {
                         error_sink(std::format("Failed to add feed {}\n", url_str));
                     }
+                    if (!callback()) break;
                 }
-                if (callback) callback(); })
+                })
                 .detach();
         }
 

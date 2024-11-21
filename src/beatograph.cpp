@@ -91,7 +91,7 @@ void load_podcasts(auto &host, auto sink) {
     {
         urls.push_back(line);
     }
-    host.add_feeds(urls, sink);
+    host.add_feeds(urls, sink, []{ return !views::quitting(); });
 }
 
 #if defined(_WIN32)
@@ -153,7 +153,7 @@ int main()
 
         cppgpt::screen gpt_screen;
 
-        clocks::screen clocks_screen{weather_host, cache};
+        clocks::screen clocks_screen{weather_host, cache, []{ return views::quitting(); }};
 
         std::shared_ptr<screen_tabs> tabs;
 

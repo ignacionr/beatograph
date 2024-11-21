@@ -7,7 +7,6 @@ https://anchor.fm/s/5e295028/podcast/rss
 https://anchor.fm/s/f35c22c4/podcast/rss
 https://ankar.io/this-american-life-archive/TALArchive.xml
 https://audioboom.com/channels/5021027.rss
-https://audioboom.com/channels/5021027.rss
 https://changelog.com/podcast/feed
 https://cppcast.com/feed.rss
 https://cuonda.com/monos-estocasticos/feed

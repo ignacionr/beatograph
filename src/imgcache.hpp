@@ -32,7 +32,12 @@ struct img_cache {
         }
     }
     ~img_cache() {
-        save();
+        try {
+            save();
+        }
+        catch(...) {
+            // ignore, after all this is a destructor
+        }
     }
 
     void save() {
