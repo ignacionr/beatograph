@@ -101,7 +101,7 @@ struct main_screen
         running = true;
         while (running)
         {
-            while (SDL_WaitEventTimeout(&event, 1000 / 120))
+            while (SDL_PollEvent(&event))
             {
                 if (event.type == SDL_QUIT)
                 {
@@ -126,8 +126,6 @@ private:
         ImGui_ImplSDL2_NewFrame();
         ImGui::NewFrame();
 
-        // SDL_SetRenderDrawColor(sdl_renderer, 0, 0, 0, 255);
-        // SDL_RenderClear(sdl_renderer);
         ImGuiIO &io{ImGui::GetIO()};
         auto const &display_size = io.DisplaySize;
         auto size = ImVec2(display_size.x, display_size.y);
