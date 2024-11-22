@@ -43,6 +43,7 @@
 #include "panel/screen.hpp"
 #include "panel/config.hpp"
 #include "cppgpt/screen.hpp"
+#include "gtts/host.hpp"
 
 #include "../external/IconsMaterialDesign.h"
 
@@ -76,9 +77,26 @@ void load_podcasts(auto &host, auto sink) {
     std::string line;
     while (std::getline(file, line))
     {
-        urls.push_back(line);
+        if (!line.empty() && line[0] != '#'){
+            urls.push_back(line);
+        }
     }
     host.add_feeds(urls, sink, []{ return !views::quitting(); });
+}
+
+std::optional<std::string> load_last_played() {
+    std::ifstream file("last_played.txt");
+    if (file.is_open()) {
+        std::string line;
+        std::getline(file, line);
+        return line;
+    }
+    return std::nullopt;
+}
+
+void save_last_played(std::string_view url) {
+    std::ofstream file("last_played.txt");
+    file << url;
 }
 
 #if defined(_WIN32)
@@ -104,7 +122,20 @@ int main()
         auto groq_api_key = localhost.get_env_variable("GROQ_API_KEY");
         ignacionr::cppgpt gpt{groq_api_key, ignacionr::cppgpt::groq_base};
 
+        gtts::host gtts_host{"./gtts_cache"};
         notify::host notify_host;
+        radio::host::init();
+        radio::host notifications_radio_host;
+        notify_host.sink([&gtts_host, &notifications_radio_host](std::string_view text, std::string_view title) {
+            try {
+                auto const mp3 = gtts_host.tts_to_cache(std::format("{}: {}", title, text));
+                notifications_radio_host.play_sync(mp3);
+            }
+            catch(const std::exception &e) {
+                std::cerr << "Error: " << e.what() << std::endl;
+            }
+        });
+
         notify::screen notify_screen{notify_host};
 
         toggl::client tc(localhost.get_env_variable("TOGGL_API_TOKEN"), [&notify_host](std::string_view text) { notify_host(text, "Toggl"); });
@@ -123,6 +154,10 @@ int main()
         ssh_screen ssh_screen;
 
         radio::host radio_host;
+        if (auto last_played = load_last_played(); last_played)
+        {
+            radio_host.play(*last_played);
+        }
 
         std::unique_ptr<radio::screen> radio_screen;
 
@@ -161,6 +196,7 @@ int main()
                 }
             }
         };
+
         auto menu_tabs_and = [&menu_tabs](std::function<void(std::string_view)> other)
         {
             return [menu_tabs, other](std::string_view key)
@@ -251,6 +287,15 @@ int main()
                     tabs->select_tab("Radio");
                 }
             } });
+
+        if (auto last_played = radio_host.last_played(); last_played) {
+            save_last_played(*last_played);
+        }
+        else {
+            // remove the last played file
+            std::filesystem::remove("last_played.txt");
+        }
+
         views::quitting(true);
     }
     std::cerr << "Terminating.\n";

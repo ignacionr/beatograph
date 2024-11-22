@@ -1,10 +1,10 @@
 http://feeds.feedburner.com/VenganzasDelPasado
 https://allinchamathjason.libsyn.com/rss
-https://anchor.fm/s/28fef6f0/podcast/rss
-https://anchor.fm/s/4cc7fadc/podcast/rss
-https://anchor.fm/s/5936c94c/podcast/rss
-https://anchor.fm/s/5e295028/podcast/rss
-https://anchor.fm/s/f35c22c4/podcast/rss
+# https://anchor.fm/s/28fef6f0/podcast/rss
+# https://anchor.fm/s/4cc7fadc/podcast/rss
+# https://anchor.fm/s/5936c94c/podcast/rss
+# https://anchor.fm/s/5e295028/podcast/rss
+# https://anchor.fm/s/f35c22c4/podcast/rss
 https://ankar.io/this-american-life-archive/TALArchive.xml
 https://audioboom.com/channels/5021027.rss
 https://changelog.com/podcast/feed
@@ -29,7 +29,7 @@ https://feeds.transistor.fm/test-and-code
 https://feeds.twit.tv/brickhouse.xml
 https://feeds.twit.tv/twit.xml
 https://mavecloud.s3mts.ru/storage/feeds/41353.xml
-https://podcasts.files.bbci.co.uk/p02nq0gn.rss
+# https://podcasts.files.bbci.co.uk/p02nq0gn.rss
 https://rss.art19.com/the-lead
 https://rss.podplaystudio.com/2743.xml
 https://sbs-ondemand.streamguys1.com/sbs-russian/

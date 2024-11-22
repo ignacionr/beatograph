@@ -70,7 +70,7 @@ namespace radio {
                         currently_playing = ip;
                     }
                     else {
-                        host_.stop(true);
+                        host_.stop();
                         currently_playing.reset();
                     }
                 }
@@ -122,7 +122,7 @@ namespace radio {
                     host_.play(presets[currently_playing.value()]);
                 }
                 else {
-                    host_.stop(true);
+                    host_.stop();
                     currently_playing.reset();
                 }
             }

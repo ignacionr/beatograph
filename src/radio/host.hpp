@@ -43,14 +43,6 @@ namespace radio
                     }
                 }
             }
-            // load the last played url from file
-            std::ifstream last_played_file("last_played.txt");
-            if (last_played_file.is_open())
-            {
-                std::string line;
-                std::getline(last_played_file, line);
-                play(line);
-            }
         }
         ~host() { stop(); }
 
@@ -58,11 +50,7 @@ namespace radio
         using audio_converter_t = std::function<release_audio_t(void *, uint32_t, void **, uint32_t *)>;
 
         void play(std::string url) {
-            // save the last played ulr on file
-            {
-                std::ofstream file("last_played.txt");
-                file << url;
-            }
+            last_played_ = url;
             // start the player in a separate thread
             std::thread([this, url]() {
                 if (is_playing())
@@ -84,16 +72,12 @@ namespace radio
             }).detach();
         }
 
-        void stop(bool active = false) {
+        void stop() {
             if (dev != 0) {
                 SDL_PauseAudioDevice(dev, 1);
                 SDL_ClearQueuedAudio(dev);
             }
             keep_playing = false;
-            if (active) {
-                // remove last_played.txt
-                std::remove("last_played.txt");
-            }
         }
 
         static size_t ignore_write(void *, size_t size, size_t nmemb, void *)  {
@@ -193,6 +177,14 @@ namespace radio
             av_frame_free(&frame);
         }
 
+        static void init() {
+            // Initialize SDL
+            if (SDL_Init(SDL_INIT_AUDIO) < 0)
+            {
+                throw std::runtime_error("Failed to initialize SDL");
+            }
+        }
+
         void play_sync(std::string url)
         {
             keep_playing = true;
@@ -203,12 +195,6 @@ namespace radio
             }
             else {
                 url = resolve_redirections(url);
-            }
-
-            // Initialize SDL
-            if (SDL_Init(SDL_INIT_AUDIO) < 0)
-            {
-                throw std::runtime_error("Failed to initialize SDL");
             }
 
             // Open the audio stream
@@ -314,7 +300,7 @@ namespace radio
             // Start playing audio
             SDL_PauseAudioDevice(dev, 0);
 
-            
+            last_played_ = url;
             feed_the_beast(fmt_ctx, audio_stream, codec_ctx, swr_ctx);
 
             // Clean up
@@ -349,6 +335,14 @@ namespace radio
         auto last_error() const {
             return last_error_;
         }
+
+        std::optional<std::string> last_played() const {
+            if (!playing || last_played_.empty()) {
+                return std::nullopt;
+            }
+            return last_played_;
+        }
+
     private:
 
         std::map<std::string, std::string> presets_;
@@ -360,5 +354,6 @@ namespace radio
         std::atomic<float> level{0.0f};
         std::atomic<bool> has_error_{false};
         std::string last_error_;
+        std::string last_played_;
     };
 }
