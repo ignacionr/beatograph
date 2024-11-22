@@ -58,6 +58,28 @@ namespace panel {
                         });
                     };
                 }},
+                {"ssh-command-output", [&localhost] (nlohmann::json const &element) -> fn_t {
+                    auto const host_name = element.at("host").get<std::string>();
+                    auto const command = element.at("command").get<std::string>();
+                    auto const title = element.at("title").get<std::string>();
+                    return [command, host_name, &localhost, title]{
+                        views::cached_view<std::string>(title,
+                        [host_name, command, &localhost]{ return hosting::ssh::host::by_name(host_name)->execute_command(command, localhost);},
+                        [](std::string const &output) {
+                            ImGui::TextWrapped("%s", output.c_str());
+                        });
+                    };
+                }},
+                {"map-port", [&localhost, this] (nlohmann::json const &element) -> fn_t {
+                    auto const host_name = element.at("host").get<std::string>();
+                    auto const port = element.at("port").get<int>();
+                    auto const title = element.at("title").get<std::string>();
+                    return [host_name, port, &localhost, title, this]{
+                        if (ImGui::Button(title.c_str())) {
+                            mappings_.push_back(std::make_unique<hosting::local::mapping>(port, host_name, localhost));
+                        }
+                    };
+                }},
                 {"assertion", [&localhost](nlohmann::json const &element) -> fn_t {
                     // render assertion
                     std::function<bool()> test = []{ return false; };
@@ -85,9 +107,19 @@ namespace panel {
                             auto const host_name = test_element.at("host").get<std::string>();
                             auto const container_name = test_element.at("container").get<std::string>();
                             auto const command = test_element.at("command").get<std::string>();
-                            auto string_test = [content = test_element.at("should-contain").get<std::string>()](std::string const &actual) {
-                                return actual.find(content) != std::string::npos;
-                            };
+                            std::function<bool(std::string_view)> string_test = [](std::string_view result){ return !result.empty(); };
+                            if (test_element.contains("should-contain")) {
+                                auto content = test_element.at("should-contain").get<std::string>();
+                                string_test = [content](std::string_view actual) -> bool {
+                                    return actual.find(content) != std::string::npos;
+                                };
+                            }
+                            else if (test_element.contains("should-not-contain")) {
+                                auto content = test_element.at("should-not-contain").get<std::string>();
+                                string_test = [content](std::string_view actual) -> bool {
+                                    return actual.find(content) == std::string::npos;
+                                };
+                            }
                             test = [command, host_name, container_name, &localhost, string_test]{
                                 return string_test(hosting::ssh::host::by_name(host_name)->docker()
                                 .execute_command(command, container_name, localhost, false));
@@ -136,5 +168,6 @@ namespace panel {
 
         std::function<void()> render_;
         hosting::ssh::screen ssh_screen_;
+        std::vector<std::unique_ptr<hosting::local::mapping>> mappings_;
     };
 }

@@ -55,27 +55,222 @@
         {
             "type": "group",
             "title": "Storm Topology Status",
-            "contents": []
+            "contents": [
+                {
+                    "type": "assertion",
+                    "title": "storm1 docker is running a zookeeper",
+                    "test": {
+                        "type": "docker-container-running",
+                        "container": "storm-zookeeper",
+                        "host": "storm1"
+                    }
+                },
+                {
+                    "type": "assertion",
+                    "title": "the zookeeper process is running",
+                    "test": {
+                        "type": "docker-process-running",
+                        "container": "storm-zookeeper",
+                        "host": "storm1",
+                        "process": "/opt/java/openjdk/bin/java -Dzookeeper.log.dir=/logs"
+                    }
+                },
+                {
+                    "type": "assertion",
+                    "title": "zookeeper responds to the client",
+                    "test": {
+                        "type": "container-command",
+                        "container": "storm-zookeeper",
+                        "host": "storm1",
+                        "command": "zkCli.sh -server localhost:2181",
+                        "should-contain": "(CONNECTED) 0"
+                    }
+                },
+                {
+                    "type": "assertion",
+                    "title": "storm1 docker is running a storm supervisor",
+                    "test": {
+                        "type": "docker-container-running",
+                        "container": "storm-supervisor",
+                        "host": "storm1"
+                    }
+                },
+                {
+                    "type": "assertion",
+                    "title": "storm1 docker is running a storm nimbus",
+                    "test": {
+                        "type": "docker-container-running",
+                        "container": "storm-nimbus",
+                        "host": "storm1"
+                    }
+                },
+                {
+                    "type": "assertion",
+                    "title": "storm1 docker is running a storm UI",
+                    "test": {
+                        "type": "docker-container-running",
+                        "container": "storm-ui",
+                        "host": "storm1"
+                    }
+                },
+                {
+                    "type": "map-port",
+                    "title": "Map Storm UI",
+                    "host": "storm1",
+                    "port": 8080
+                },
+                {
+                    "type": "container-command-output",
+                    "title": "Storm Topology",
+                    "command": "storm list",
+                    "container": "storm-nimbus",
+                    "host": "storm1"
+                },
+                {
+                    "type": "assertion",
+                    "title": "Storm Topology can resolve rabbitmq",
+                    "test": {
+                        "type": "container-command",
+                        "container": "storm-nimbus",
+                        "host": "storm1",
+                        "command": "curl http://rabbitmq",
+                        "should-not-contain": "curl: (6) Could not resolve host"
+                    }
+                }
+            ]
         },
         {
             "type": "group",
             "title": "Hadoop and Hbase Status",
-            "contents": []
+            "contents": [
+                {
+                    "type": "assertion",
+                    "title": "Zookeeper is running on hadoop1",
+                    "test": {
+                        "type": "docker-container-running",
+                        "container": "hadoop-zookeeper-1",
+                        "host": "hadoop1"
+                    }
+                },
+                {
+                    "type": "assertion",
+                    "title": "Hadoop Resource Manager is running",
+                    "test": {
+                        "type": "docker-container-running",
+                        "container": "hadoop-resourcemanager-1",
+                        "host": "hadoop1"
+                    }
+                },
+                {
+                    "type": "assertion",
+                    "title": "Hadoop Node Manager is running",
+                    "test": {
+                        "type": "docker-container-running",
+                        "container": "hadoop-nodemanager-1",
+                        "host": "hadoop1"
+                    }
+                },
+                {
+                    "type": "assertion",
+                    "title": "Hadoop Name Node is running",
+                    "test": {
+                        "type": "docker-container-running",
+                        "container": "hadoop-namenode-1",
+                        "host": "hadoop1"
+                    }
+                },
+                {
+                    "type": "assertion",
+                    "title": "Hadoop Data Node is running",
+                    "test": {
+                        "type": "docker-container-running",
+                        "container": "hadoop-datanode-1",
+                        "host": "hadoop1"
+                    }
+                },
+                {
+                    "type": "assertion",
+                    "title": "Hbase Region Server is running",
+                    "test": {
+                        "type": "docker-container-running",
+                        "container": "hadoop-hbase-regionserver-1",
+                        "host": "hadoop1"
+                    }
+                },
+                {
+                    "type": "assertion",
+                    "title": "Hbase Master is running",
+                    "test": {
+                        "type": "docker-container-running",
+                        "container": "hadoop-hbase-master-1",
+                        "host": "hadoop1"
+                    }
+                }
+            ]
         },
         {
             "type": "group",
             "title": "Storm to Hadoop Data Transfer",
-            "contents": []
+            "contents": [
+                {
+                    "type": "assertion",
+                    "title": "Storm topology can reach the Hbase port",
+                    "test": {
+                        "type": "container-command",
+                        "container": "storm-nimbus",
+                        "host": "storm1",
+                        "command": "curl http://host.docker.internal:16010",
+                        "should-not-contain": "curl: (6) Could not resolve host"
+                    }
+                },
+                {
+                    "type": "ssh-command-output",
+                    "title": "Checker Logs",
+                    "command": "docker logs --tail 1 storm-checker-1 2>&1",
+                    "host": "storm1"
+                }
+            ]
         },
         {
             "type": "group",
             "title": "Tools",
-            "contents": []
+            "contents": [
+                {
+                    "type": "shell-execute",
+                    "title": "Code on Storm1",
+                    "command": "cmd.exe",
+                    "args": "/c code --remote ssh-remote+storm1 /home/ubuntu/arangodb-infra/storm"
+                },
+                {
+                    "type": "shell-execute",
+                    "title": "Code on Hadoop1",
+                    "command": "cmd.exe",
+                    "args": "/c code --remote ssh-remote+hadoop1 /home/ubuntu/repos/arangodb-infra/hadoop"
+                },
+                {
+                    "type": "shell-execute",
+                    "title": "Open Hbase Shell",
+                    "command": "cmd.exe",
+                    "args": "/c ssh -t hadoop1 docker exec -it hadoop-hbase-master-1 hbase shell"
+                }
+            ]
         },
         {
             "type": "group",
             "title": "API",
-            "contents": []
+            "contents": [
+                {
+                    "type": "input",
+                    "title": "Item ID",
+                    "variable": "item_id"
+                },
+                {
+                    "type": "shell-execute",
+                    "title": "Get Item",
+                    "command": "curl",
+                    "args": "-H \"Authorization: Bearer ${DATAOFFERING_TOKEN}\" http://localhost:8080/api/items/${item_id}"
+                }
+            ]
         },
         {
             "type": "group",
