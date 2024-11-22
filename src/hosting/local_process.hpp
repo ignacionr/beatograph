@@ -11,10 +11,10 @@ namespace hosting::local
     struct running_process
     {
         using sink_t = std::function<void(std::string_view)>;
+        using environment_getter_t = std::function<std::string(std::string_view)>;
 
-        running_process(const char *command)
+        running_process(std::string_view command, environment_getter_t env)
         {
-//            std::cerr << std::format("Process@{} running {}\n", reinterpret_cast<void *>(this), command);
             ZeroMemory(&pi, sizeof(pi));
             pi.hProcess = INVALID_HANDLE_VALUE;
             pi.hThread = INVALID_HANDLE_VALUE;
@@ -44,7 +44,19 @@ namespace hosting::local
             si.hStdError = hWritePipe;
 
             // Construct the command line
-            std::string command_str = command;
+            std::string command_str = std::string{command.data(), command.size()};
+
+            // perform environment variable substitutions with ${VAR} syntax
+            for (size_t pos = 0; (pos = command_str.find("${", pos)) != std::string::npos;)
+            {
+                size_t end = command_str.find('}', pos);
+                if (end == std::string::npos)
+                {
+                    throw std::runtime_error("Invalid environment variable substitution syntax.");
+                }
+                std::string_view var_name {command_str.data() + pos + 2, end - pos - 2};
+                command_str.replace(pos, end - pos + 1, env(var_name));
+            }
 
             // Create a mutable buffer for lpCommandLine
             std::vector<char> command_line_vec(command_str.begin(), command_str.end());
@@ -64,6 +76,7 @@ namespace hosting::local
             // Close the write end of the pipe in the parent process
             CloseHandle(hWritePipe), hWritePipe = INVALID_HANDLE_VALUE;
         }
+
         ~running_process()
         {
             close_pipes();

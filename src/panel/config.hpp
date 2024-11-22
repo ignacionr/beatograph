@@ -11,6 +11,7 @@
 #include "../hosting/ssh_screen.hpp"
 #include "../views/assertion.hpp"
 #include "../views/cached_view.hpp"
+#include "../views/json.hpp"
 
 namespace panel {
     struct config {
@@ -68,6 +69,42 @@ namespace panel {
                         [](std::string const &output) {
                             ImGui::TextWrapped("%s", output.c_str());
                         });
+                    };
+                }},
+                {"command-output", [&localhost] (nlohmann::json const &element) -> fn_t {
+                    auto const command = element.at("command").get<std::string>();
+                    auto const title = element.at("title").get<std::string>();
+                    auto const view_type = element.contains("view") ? element.at("view").get<std::string>() : "text";
+                    if (view_type == "json") {
+                        return [command, &localhost, title]{
+                            views::cached_view<nlohmann::json>(title,
+                            [command, &localhost]{ return nlohmann::json::parse(localhost.execute_command(command));},
+                            [](nlohmann::json const &output) {
+                                static views::json jv;
+                                jv.render(output);
+                            });
+                        };
+                    }
+                    return [command, &localhost, title]{
+                        views::cached_view<std::string>(title,
+                        [command, &localhost] {
+                            return localhost.execute_command(command);
+                        },
+                        [](std::string const &output) {
+                            ImGui::TextWrapped("%s", output.c_str());
+                        });
+                    };
+                }},
+                {"input", [&localhost, this] (nlohmann::json const &element) -> fn_t {
+                    auto const title = element.at("title").get<std::string>();
+                    auto const variable_name = element.at("variable").get<std::string>();
+                    auto const max_size = element.contains("max-size") ? element.at("max-size").get<int>() : 256;
+                    return [title, variable_name, &localhost, max_size, this] {
+                        auto &str {input_values_[ImGui::GetID(&variable_name)]};
+                        if (str.reserve(max_size); ImGui::InputText(title.c_str(), str.data(), max_size)) {
+                            str = str.data();
+                            localhost.set_env_variable(variable_name, str);
+                        }
                     };
                 }},
                 {"map-port", [&localhost, this] (nlohmann::json const &element) -> fn_t {
@@ -169,5 +206,6 @@ namespace panel {
         std::function<void()> render_;
         hosting::ssh::screen ssh_screen_;
         std::vector<std::unique_ptr<hosting::local::mapping>> mappings_;
+        std::unordered_map<ImGuiID, std::string> input_values_;
     };
 }

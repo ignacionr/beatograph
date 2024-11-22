@@ -24,12 +24,29 @@ namespace hosting::local
         host() = default;
         host(const host &) = delete;
 
-        auto run(const char *command)
+        std::string get_env_variable(std::string const &key)
         {
-            return std::make_unique<running_process>(command);
+            char *val = nullptr;
+            size_t len = 0;
+            if (_dupenv_s(&val, &len, key.c_str()) || val == nullptr)
+            {
+                return std::string{};
+            }
+            return std::string{val, len - 1}; // len returns the count of all copied bytes, including the terminator
         }
 
-        void execute_command(const char *command, auto sink)
+        void set_env_variable(std::string const &key, std::string const &value)
+        {
+            _putenv_s(key.c_str(), value.c_str());
+        }
+
+        auto run(std::string_view command)
+        {
+            return std::make_unique<running_process>(command, [this](std::string_view key)
+                                                      { return get_env_variable(std::string{key}); });
+        }
+
+        void execute_command(std::string_view command, auto sink)
         {
             auto proc{run(command)};
             proc->read_all(sink);
@@ -57,7 +74,7 @@ namespace hosting::local
             return sessions.find(key) != sessions.end();
         }
 
-        std::string execute_command(const char *command)
+        std::string execute_command(std::string_view command)
         {
             std::string result;
             execute_command(command, [&result](std::string_view line)

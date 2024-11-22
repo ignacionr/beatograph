@@ -23,7 +23,6 @@
 #include "jira/host.hpp"
 #include "jira/screen.hpp"
 #include "calendar/screen.hpp"
-#include "data_offering/screen.hpp"
 #include "hosting/host.hpp"
 #include "hosting/host_local.hpp"
 #include "hosting/local_screen.hpp"
@@ -46,17 +45,6 @@
 #include "cppgpt/screen.hpp"
 
 #include "../external/IconsMaterialDesign.h"
-
-std::string get_env_variable(std::string_view key)
-{
-    char *val = nullptr;
-    size_t len = 0;
-    if (_dupenv_s(&val, &len, key.data()) || val == nullptr)
-    {
-        throw std::runtime_error(std::format("Error: {} environment variable not set.", key));
-    }
-    return std::string{val, len - 1}; // len returns the count of all copied bytes, including the terminator
-}
 
 void setup_fonts()
 {
@@ -106,31 +94,31 @@ int main()
         auto static constexpr jira_tab_name {ICON_MD_TASK " Jira"};
         auto static constexpr radio_tab_name {ICON_MD_AUDIOTRACK " Radio"};
 
+        hosting::local::host localhost;
+
         img_cache cache{"imgcache"};
 
-        weather::openweather_client weather_host{get_env_variable("OPENWEATHER_KEY")};
+        weather::openweather_client weather_host{localhost.get_env_variable("OPENWEATHER_KEY")};
 
         // get the Groq API key from GROQ_API_KEY
-        auto groq_api_key = get_env_variable("GROQ_API_KEY");
+        auto groq_api_key = localhost.get_env_variable("GROQ_API_KEY");
         ignacionr::cppgpt gpt{groq_api_key, ignacionr::cppgpt::groq_base};
 
         notify::host notify_host;
         notify::screen notify_screen{notify_host};
 
-        toggl::client tc(get_env_variable("TOGGL_API_TOKEN"), [&notify_host](std::string_view text) { notify_host(text, "Toggl"); });
+        toggl::client tc(localhost.get_env_variable("TOGGL_API_TOKEN"), [&notify_host](std::string_view text) { notify_host(text, "Toggl"); });
         toggl::screen ts(tc);
 
-        jira::host jh{get_env_variable("JIRA_USER"), get_env_variable("JIRA_TOKEN")};
+        jira::host jh{localhost.get_env_variable("JIRA_USER"), localhost.get_env_variable("JIRA_TOKEN")};
         std::unique_ptr<jira::screen> js;
 
-        calendar::host calendar_host{get_env_variable("CALENDAR_DELEGATE_URL")};
+        calendar::host calendar_host{localhost.get_env_variable("CALENDAR_DELEGATE_URL")};
         calendar::screen cs{calendar_host};
 
-        hosting::local::host localhost;
         hosting::local::screen local_screen{localhost};
 
         git_host git{localhost};
-        dataoffering::screen ds{localhost, groq_api_key, get_env_variable("DATAOFFERING_TOKEN")};
 
         ssh_screen ssh_screen;
 
@@ -184,7 +172,6 @@ int main()
 
         tabs = std::make_shared<screen_tabs>(std::vector<screen_tabs::tab_t> {
             {ICON_MD_COMPUTER, [&local_screen] { local_screen.render(); }, menu_tabs},
-            {ICON_MD_GROUPS " (Old) Data Offering", [&ds] { ds.render(); }, menu_tabs},
             {ICON_MD_TASK " Toggl", [&ts] { ts.render(); }, menu_tabs},
             {jira_tab_name, [&js, &jh, &ts] { js->render(jh, {
                 {ICON_MD_PUNCH_CLOCK " Start Toggl", [&ts](nlohmann::json const &entry) {

@@ -265,10 +265,10 @@
                     "variable": "item_id"
                 },
                 {
-                    "type": "shell-execute",
+                    "type": "command-output",
                     "title": "Get Item",
-                    "command": "curl",
-                    "args": "-H \"Authorization: Bearer ${DATAOFFERING_TOKEN}\" http://localhost:8080/api/items/${item_id}"
+                    "command": "curl -s -H \"Authorization: Bearer ${DATAOFFERING_TOKEN}\" http://57.129.39.115:5000/items/${item_id}",
+                    "view": "json"
                 }
             ]
         },
