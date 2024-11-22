@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <filesystem>
 #include <format>
 #include <fstream>
@@ -36,8 +37,8 @@ namespace gtts {
             }
         }
 
-        void tts_to_file(std::string_view text, const std::string &file_name) {
-            auto url = std::format("https://translate.google.com/translate_tts?ie=UTF-8&tl=en-US&client=tw-ob&q={}", text);
+        void tts_to_file(std::string_view text, const std::string &file_name, std::string_view lang = "en-US") {
+            auto url = std::format("https://translate.google.com/translate_tts?ie=UTF-8&tl={}&client=tw-ob&q={}", lang, text);
             CURL *curl = curl_easy_init();
             if (curl) {
                 FILE *file = nullptr;
@@ -54,17 +55,32 @@ namespace gtts {
             }
         }
 
-        std::string tts_to_cache(std::string_view text) {
+        std::string tts_to_cache(std::string_view text, std::string_view lang = "en-US") {
             auto const text_as_uri_component {conversions::uri::encode_component(text)};
-            auto it = cache_.find(text_as_uri_component);
+            auto const cache_key {std::format("{}-{}", lang, text_as_uri_component)};
+            auto it = cache_.find(cache_key);
             if (it != cache_.end()) {
                 return it->second;
             }
             auto local_name = std::format("{}.mp3", cache_.size());
             auto file_name = (cache_path_ / local_name).string();
-            tts_to_file(text_as_uri_component, file_name);
-            cache_[text_as_uri_component] = file_name;
+            tts_to_file(text_as_uri_component, file_name, lang);
+            cache_[cache_key] = file_name;
             return file_name;
+        }
+
+        void tts_job(std::string_view text, std::function<void(std::string_view file_produced)> sink, std::string_view lang = "en-US") {
+            // cut down to word boundaries up to 200 characters
+            size_t slice_size;
+            for (std::string_view slice = text; !slice.empty(); slice = slice.substr(slice_size)) {
+                slice_size = std::min(slice.size(), 200ull);
+                while (std::isalpha(slice[slice_size - 1])|| std::isdigit(slice[slice_size - 1])) {
+                    --slice_size;
+                }
+                auto slice_text = slice.substr(0, slice_size);
+                auto file_name = tts_to_cache(slice_text, lang);
+                sink(file_name);
+            }
         }
 
     private:

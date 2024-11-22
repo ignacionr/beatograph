@@ -1,5 +1,6 @@
 #include "pch.h"
 #pragma execution_character_set("utf-8")
+#include "../external/IconsMaterialDesign.h"
 #include <algorithm>
 #include <numeric>
 #include <format>
@@ -44,8 +45,7 @@
 #include "panel/config.hpp"
 #include "cppgpt/screen.hpp"
 #include "gtts/host.hpp"
-
-#include "../external/IconsMaterialDesign.h"
+#include "report/host.hpp"
 
 void setup_fonts()
 {
@@ -128,8 +128,9 @@ int main()
         radio::host notifications_radio_host;
         notify_host.sink([&gtts_host, &notifications_radio_host](std::string_view text, std::string_view title) {
             try {
-                auto const mp3 = gtts_host.tts_to_cache(std::format("{}: {}", title, text));
-                notifications_radio_host.play_sync(mp3);
+                gtts_host.tts_job(std::format("{}: {}", title, text), [&notifications_radio_host](std::string_view file_produced) {
+                    notifications_radio_host.play_sync(std::string{file_produced.data(), file_produced.size()});
+                });
             }
             catch(const std::exception &e) {
                 std::cerr << "Error: " << e.what() << std::endl;
@@ -272,6 +273,27 @@ int main()
                 }
             }
         }
+
+        report::host report_host{localhost};
+        std::jthread report_thread{[&report_host, &notify_host]
+        {
+            while (!views::quitting())
+            {
+                try
+                {
+                    auto contents = report_host();
+                    notify_host(contents, "Report");
+                }
+                catch (const std::exception &e)
+                {
+                    notify_host(e.what(), "Report");
+                }
+                for (int i = 0; i < 3600 && !views::quitting(); ++i)
+                {
+                    std::this_thread::sleep_for(std::chrono::seconds(1));
+                }
+            }
+        }};
 
         setup_fonts();
 
