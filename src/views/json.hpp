@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../external/IconsMaterialDesign.h"
+
 #include <algorithm>
 #include <expected>
 #include <functional>
@@ -14,7 +16,22 @@ namespace views
     struct json
     {
         using selector_t = std::function<nlohmann::json(nlohmann::json const &)>;
-        void render(nlohmann::json const &src, selector_t selector = {})
+
+
+
+        void render(nlohmann::json const &json, selector_t selector = {})
+        {
+            render_internal(json);
+            if (ImGui::SmallButton(ICON_MD_CONTENT_COPY " Copy"))
+            {
+                ImGui::LogToClipboard();
+                ImGui::LogText(json.dump(4).c_str());
+                ImGui::LogFinish();
+            }
+            // ImGui::SameLine();
+        }
+
+        void render_internal(nlohmann::json const &src, selector_t selector = {})
         {
             auto const &json = selector ? selector(src) : src;
             // use as an array
@@ -49,7 +66,7 @@ namespace views
                                 ImGui::TableNextColumn();
                                 if (item.find(name) != item.end())
                                 {
-                                    render(item[name]);
+                                    render_internal(item[name]);
                                 }
                             }
                         }
@@ -67,7 +84,7 @@ namespace views
                         ImGui::TableNextColumn();
                         ImGui::TextUnformatted(item.key().c_str());
                         ImGui::TableNextColumn();
-                        render(item.value());
+                        render_internal(item.value());
                     }
                     ImGui::EndTable();
                 }
@@ -97,7 +114,7 @@ namespace views
             }
             if (json_)
             {
-                render(*json_, selector);
+                render_internal(*json_, selector);
             }
             else
             {

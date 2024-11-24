@@ -42,9 +42,12 @@ namespace clocks
                                                 {
                                                     std::cerr << "Error fetching weather: " << e.what() << std::endl;
                                                 }
-                                                std::this_thread::sleep_for(std::chrono::seconds(1));
+                                                std::this_thread::sleep_for(std::chrono::seconds(3));
+                                                if (quitting()) {
+                                                    break;
+                                                }
                                             }
-                                            for (int i = 0; i < 60 && !quitting(); ++i) {
+                                            for (int i = 0; i < 130 && !quitting(); ++i) {
                                                 std::this_thread::sleep_for(std::chrono::seconds(1));
                                             }
                                         }
@@ -189,16 +192,26 @@ namespace clocks
         img_cache &cache_;
         views::json json_view_;
         bool show_details_{false};
-        std::vector<city_info> all_cities{{{"Tel Aviv"},
-                                           {"Saint Petersburg, RU"},
-                                           {"Los Angeles"},
-                                           {"New York"},
-                                           {"Buenos Aires"},
-                                           {"Santa Fe, AR"},
-                                           {"Rome, IT"},
-                                           {"Irkutsk, RU"},
-                                           {"Bangkok"},
-                                           {"Pattaya, TH"}}};
+        std::vector<city_info> all_cities{{
+            {"Los Angeles"},
+            {"Mexico City"},
+            {"New York"},
+            {"Sao Paulo"},
+            {"Buenos Aires"},
+            {"Cordoba, AR"},
+            {"Santa Fe, AR"},
+            {"Parana, AR"},
+            {"Rosario, AR"},
+            {"London"},
+            {"Rome, IT"},
+            {"Tel Aviv"},
+            {"Saint Petersburg, RU"},
+            {"Antalya, TR"},
+            {"Dubai, AE"},
+            {"Bangkok"},
+            {"Pattaya, TH"},
+            {"Irkutsk, RU"},
+        }};
         std::jthread refresh_;
         std::mutex city_mutex_;
     };
