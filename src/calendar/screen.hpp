@@ -15,7 +15,8 @@ namespace calendar
 {
     struct screen
     {
-        screen(host &h) : host_(h), today_{std::chrono::system_clock::now()} {
+        screen(host &h) : host_(h) {
+            today_ = std::chrono::floor<std::chrono::days>(std::chrono::system_clock::now());
             selected_day_ = today_;
         }
 
@@ -30,13 +31,11 @@ namespace calendar
             static constexpr std::array<std::string_view, 7> days = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
             static constexpr std::array<std::string_view, 12> months = {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
             // determine what day of the week the first day of the month is
-            auto const now = selected_day_;
-            auto const now_time = std::chrono::system_clock::to_time_t(now);
+            auto const now_time = std::chrono::system_clock::to_time_t(today_);
             std::tm tm;
             localtime_s(&tm, &now_time);
             auto const current_month = tm.tm_mon;
             auto const current_year = 1900 + tm.tm_year;
-            auto const current_day_of_month = tm.tm_mday;
             tm.tm_mday = 1;
             tm.tm_hour = 0;
             tm.tm_min = 0;
@@ -49,25 +48,34 @@ namespace calendar
             auto const month_title{std::format("{} {}", months[current_month], current_year)};
             ImGui::TextUnformatted(month_title.c_str());
             ImGui::PopFont();
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(235.0f);
             // determine how many days are in the month
             tm.tm_mday = 32;
             std::mktime(&tm);
             auto const days_in_month = 32 - tm.tm_mday;
-            using label_and_fn_t = std::pair<std::string_view, std::function<void()>>;
-            for (auto const &[text, callback] : std::array<label_and_fn_t, 5>{
-                     label_and_fn_t{ICON_MD_SKIP_PREVIOUS, [this, days_in_month] { selected_day_ -= std::chrono::days(week_view_ ? 7 : days_in_month); }},
-                     label_and_fn_t{ICON_MD_SKIP_NEXT, [this, days_in_month] { selected_day_ += std::chrono::days(week_view_ ? 7 : days_in_month); }},
-                     label_and_fn_t{ICON_MD_TODAY, [this] { selected_day_ = today_; }},
-                     label_and_fn_t{ICON_MD_CALENDAR_VIEW_MONTH, [this] { week_view_ = false; }},
-                     label_and_fn_t{ICON_MD_CALENDAR_VIEW_WEEK, [this] { week_view_ = true; }}
+
+            struct label_and_fn_t {
+                std::string_view label;
+                std::function<void()> action;
+                ImGuiKey key;
+            };
+
+            for (auto const &[text, callback, key] : std::array<label_and_fn_t, 5>{
+                     label_and_fn_t{ICON_MD_SKIP_PREVIOUS, [this, days_in_month] { selected_day_ -= std::chrono::days(week_view_ ? 7 : days_in_month); }, ImGuiKey_LeftArrow},
+                     label_and_fn_t{ICON_MD_SKIP_NEXT, [this, days_in_month] { selected_day_ += std::chrono::days(week_view_ ? 7 : days_in_month); }, ImGuiKey_RightArrow},
+                     label_and_fn_t{ICON_MD_TODAY, [this] { selected_day_ = today_; }, ImGuiKey_Home},
+                     label_and_fn_t{ICON_MD_CALENDAR_VIEW_MONTH, [this] { week_view_ = false; }, ImGuiKey_M},
+                     label_and_fn_t{ICON_MD_CALENDAR_VIEW_WEEK, [this] { week_view_ = true; }, ImGuiKey_W}
                 })
             {
-                ImGui::SameLine();
-                if (ImGui::SmallButton(text.data()))
+                if (ImGui::SmallButton(text.data()) || ImGui::IsKeyPressed(key))
                 {
                     callback();
                 }
+                ImGui::SameLine();
             }
+            ImGui::NewLine();
             if (ImGui::BeginTable("Month-View", 7, ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchSame))
             {
                 for (auto const day : days)
@@ -75,12 +83,14 @@ namespace calendar
                     ImGui::TableSetupColumn(day.data());
                 }
                 ImGui::TableHeadersRow();
+                auto const default_bg_color = ImGui::GetStyleColorVec4(ImGuiCol_FrameBg);
                 if (week_view_) {
                     auto this_day {selected_day_ - std::chrono::days((first_day_of_month + 2) % 7)};
                     const auto day_height {ImGui::GetWindowHeight() / 1.3f};
                     for (int i = 0; i < 7; ++i)
                     {
                         ImGui::TableNextColumn();
+                        ImGui::PushStyleColor(ImGuiCol_FrameBg, (this_day == today_) ? ImGui::GetStyleColorVec4(ImGuiCol_NavHighlight) : default_bg_color);
                         ImGui::BeginChild(ImGui::GetID(reinterpret_cast<void*>(static_cast<long long>(i))), {0, day_height}, ImGuiChildFlags_FrameStyle);
                         ImGui::TextUnformatted(std::format("{:%d}", this_day).c_str());
                         if (this_day == today_)
@@ -89,7 +99,7 @@ namespace calendar
                             ImGui::TextUnformatted("Today");
                         }
                         ImGui::Separator();
-                        auto const next_day = this_day + std::chrono::hours(24);
+                        auto const next_day = this_day + std::chrono::days(1);
                         auto events_this_day = events.in_range(this_day, next_day);
                         if (!events_this_day.empty())
                         {
@@ -120,6 +130,7 @@ namespace calendar
                             }
                         }
                         ImGui::EndChild();
+                        ImGui::PopStyleColor();
                         this_day = next_day;
                     }
                 }
@@ -133,15 +144,16 @@ namespace calendar
                     for (int i = 1; i <= days_in_month; ++i)
                     {
                         ImGui::TableNextColumn();
+                        ImGui::PushStyleColor(ImGuiCol_FrameBg, (this_day == today_) ? ImGui::GetStyleColorVec4(ImGuiCol_NavHighlight) : default_bg_color);
                         ImGui::BeginChild(i, {0, day_height}, ImGuiChildFlags_FrameStyle);
                         ImGui::Text("%d", i);
-                        if (i == current_day_of_month)
+                        if (this_day == today_)
                         {
                             ImGui::SameLine();
                             ImGui::TextUnformatted("Today");
                         }
                         ImGui::Separator();
-                        auto const next_day {this_day + std::chrono::hours(24)};
+                        auto const next_day {this_day + std::chrono::days(1)};
                         auto events_this_day = events.in_range(this_day, next_day);
                         if (!events_this_day.empty())
                         {
@@ -172,6 +184,7 @@ namespace calendar
                             }
                         }
                         ImGui::EndChild();
+                        ImGui::PopStyleColor();
                         this_day = next_day;
                     }
                 }
@@ -182,6 +195,6 @@ namespace calendar
     private:
         host &host_;
         std::chrono::system_clock::time_point selected_day_, today_;
-        bool week_view_ {false};
+        bool week_view_ {true};
     };
 }

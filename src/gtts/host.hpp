@@ -70,6 +70,7 @@ namespace gtts {
         }
 
         void tts_job(std::string_view text, std::function<void(std::string_view file_produced)> sink, std::string_view lang = "en-US") {
+            std::vector<std::string> file_names;
             // cut down to word boundaries up to 200 characters
             size_t slice_size;
             for (std::string_view slice = text; !slice.empty(); slice = slice.substr(slice_size)) {
@@ -79,6 +80,9 @@ namespace gtts {
                 }
                 auto slice_text = slice.substr(0, slice_size);
                 auto file_name = tts_to_cache(slice_text, lang);
+                file_names.push_back(file_name);
+            }
+            for (auto const &file_name : file_names) {
                 sink(file_name);
             }
         }

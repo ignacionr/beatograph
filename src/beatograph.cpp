@@ -153,16 +153,17 @@ int main()
         gtts::host gtts_host{"./gtts_cache"};
         notify::host notify_host;
         radio::host::init();
-        radio::host notifications_radio_host;
-        notify_host.sink([&gtts_host, &notifications_radio_host](std::string_view text, std::string_view title) {
+        notify_host.sink([&gtts_host](std::string_view text, std::string_view title) {
+            std::thread([&gtts_host, text=std::string{text}, title=std::string{title}] {
             try {
+                radio::host notifications_radio_host;
                 gtts_host.tts_job(std::format("{}: {}", title, text), [&notifications_radio_host](std::string_view file_produced) {
                     notifications_radio_host.play_sync(std::string{file_produced.data(), file_produced.size()});
                 });
             }
             catch(const std::exception &e) {
                 std::cerr << "Error: " << e.what() << std::endl;
-            }
+            }}).detach();
         });
 
         notify::screen notify_screen{notify_host};
@@ -203,7 +204,12 @@ int main()
 
         cppgpt::screen gpt_screen;
 
-        clocks::screen clocks_screen{weather_host, cache, []{ return views::quitting(); }};
+        clocks::screen clocks_screen{
+            weather_host, 
+            cache, 
+            []{ return views::quitting(); }, 
+            std::move(gpt.new_conversation()), 
+            [&notify_host](std::string_view text) { notify_host(text, "Clocks"); }};
 
         std::shared_ptr<screen_tabs> tabs;
 

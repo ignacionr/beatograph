@@ -16,6 +16,10 @@ namespace ignacionr
         static constexpr auto  groq_base = "https://api.groq.com/openai/v1";
         cppgpt(const std::string &api_key, const std::string &base_url) : api_key_(api_key), base_url_{base_url} {}
 
+        cppgpt new_conversation() {
+            return cppgpt(api_key_, base_url_);
+        }
+
         void add_instructions(std::string_view instructions, std::string_view role = "system")
         {
             conversation.push_back({{"role", role}, {"content", instructions}});

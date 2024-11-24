@@ -4,6 +4,7 @@
 #include <chrono>
 #include <cmath>
 #include <format>
+#include <functional>
 #include <mutex>
 #include <stdexcept>
 #include <string>
@@ -18,13 +19,14 @@
 #include "../views/json.hpp"
 #include "weather.hpp"
 #include "../imgcache.hpp"
+#include "../external/cppgpt/cppgpt.hpp"
 
 namespace clocks
 {
     struct screen
     {
-        screen(weather::openweather_client &weather_client, img_cache &cache, std::function<bool()> quitting)
-            : weather_client_{weather_client}, cache_{cache}
+        screen(weather::openweather_client &weather_client, img_cache &cache, std::function<bool()> quitting, ignacionr::cppgpt &&gpt, std::function<void(std::string_view)> notify)
+            : weather_client_{weather_client}, cache_{cache}, gpt_{gpt}, notify_{notify}
         {
             refresh_ = std::jthread([this, quitting]
                                     {
@@ -65,9 +67,9 @@ namespace clocks
                                                std::chrono::floor<std::chrono::minutes>(time.time_since_epoch()).count() % 60)
                                        .c_str());
             auto const startY = ImGui::GetCursorPosY() + ImGui::GetWindowPos().y;
-            auto const current_second = std::chrono::floor<std::chrono::seconds>(time);
-            auto const minute_angle = 2 * M_PI * (current_second.time_since_epoch().count() % 3600) / 3600.0 - M_PI / 2.0;
-            auto const hour{current_second.time_since_epoch().count() % 43200};
+            auto const current_milli = std::chrono::floor<std::chrono::milliseconds>(time);
+            auto const minute_angle = 2 * M_PI * ((current_milli.time_since_epoch().count() / 1000) % 3600) / 3600.0 - M_PI / 2.0;
+            auto const hour{(current_milli.time_since_epoch().count() / 1000) % 43200};
             auto const hour_angle = 2 * M_PI * (hour) / 43200.0 - M_PI / 2.0;
             auto dl = ImGui::GetWindowDrawList();
             auto const center = ImVec2{
@@ -92,11 +94,11 @@ namespace clocks
                         2);
             if (show_seconds)
             {
-                auto const second_angle = 2 * M_PI * (current_second.time_since_epoch().count() % 60) / 60.0 - M_PI / 2.0;
+                auto const second_angle = 2 * M_PI * (current_milli.time_since_epoch().count() % 60000) / 60000.0 - M_PI / 2.0;
                 auto const second_hand = ImVec2{
                     center.x + static_cast<float>(radius * 0.9 * std::cos(second_angle)),
                     center.y + static_cast<float>(radius * 0.9 * std::sin(second_angle))};
-                dl->AddLine(center, second_hand, IM_COL32(255, 0, 0, 255), 2);
+                dl->AddLine(center, second_hand, IM_COL32(255, 128, 0, 255), 2);
             }
         }
 
@@ -161,8 +163,25 @@ namespace clocks
                             ImGui::Image(reinterpret_cast<void *>(static_cast<uintptr_t>(texture)), ImVec2{90, 90});
                             auto const restore_y{ImGui::GetCursorPosY()};
                             ImGui::SetCursorPosY(start_y);
-                            render_clock(name, std::chrono::system_clock::now() + std::chrono::seconds{tz}, false);
+                            auto const local_time {std::chrono::system_clock::now() + std::chrono::seconds{tz}};
+                            render_clock(name, local_time, false);
                             ImGui::SetCursorPosY(restore_y);
+                            if (ImGui::SmallButton("Announce")) {
+                                try {
+                                    gpt_.add_instructions(std::format("You are a senior weather forecaster with a long experience in interpreting weather data. "
+                                        "You will be presented with a JSON object representing the current conditions of a place. "
+                                        "Do not use markdown, since this is a text-to-speech application. "
+                                        "Use exclusively metric units. "
+                                        "If there are upcoming local holidays, mention it together with a short reference to what is celebrated. "
+                                        "The local date and time is {:%Y-%m-%d %H:%M:%S}", local_time)
+                                    );
+                                    std::string const result = gpt_.sendMessage(city.weather_info.dump(), "user", "llama-3.2-90b-text-preview").at("choices").at(0).at("message").at("content");
+                                    notify_(result);
+                                }
+                                catch(std::exception &e) {
+                                    std::cerr << "Error sending to GPT: " << e.what() << std::endl;
+                                }
+                            }
                         }
                         else
                         {
@@ -214,5 +233,7 @@ namespace clocks
         }};
         std::jthread refresh_;
         std::mutex city_mutex_;
+        ignacionr::cppgpt gpt_;
+        std::function<void(std::string_view)> notify_;
     };
 }
