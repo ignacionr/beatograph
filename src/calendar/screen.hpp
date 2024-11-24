@@ -15,7 +15,9 @@ namespace calendar
 {
     struct screen
     {
-        screen(host &h) : host_(h) {}
+        screen(host &h) : host_(h), today_{std::chrono::system_clock::now()} {
+            selected_day_ = today_;
+        }
 
         void render() {
             views::cached_view<event_set>("calendar", 
@@ -28,7 +30,7 @@ namespace calendar
             static constexpr std::array<std::string_view, 7> days = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
             static constexpr std::array<std::string_view, 12> months = {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
             // determine what day of the week the first day of the month is
-            auto const now = std::chrono::system_clock::now();
+            auto const now = selected_day_;
             auto const now_time = std::chrono::system_clock::to_time_t(now);
             std::tm tm;
             localtime_s(&tm, &now_time);
@@ -47,7 +49,25 @@ namespace calendar
             auto const month_title{std::format("{} {}", months[current_month], current_year)};
             ImGui::TextUnformatted(month_title.c_str());
             ImGui::PopFont();
-
+            // determine how many days are in the month
+            tm.tm_mday = 32;
+            std::mktime(&tm);
+            auto const days_in_month = 32 - tm.tm_mday;
+            using label_and_fn_t = std::pair<std::string_view, std::function<void()>>;
+            for (auto const &[text, callback] : std::array<label_and_fn_t, 5>{
+                     label_and_fn_t{ICON_MD_SKIP_PREVIOUS, [this, days_in_month] { selected_day_ -= std::chrono::days(week_view_ ? 7 : days_in_month); }},
+                     label_and_fn_t{ICON_MD_SKIP_NEXT, [this, days_in_month] { selected_day_ += std::chrono::days(week_view_ ? 7 : days_in_month); }},
+                     label_and_fn_t{ICON_MD_TODAY, [this] { selected_day_ = today_; }},
+                     label_and_fn_t{ICON_MD_CALENDAR_VIEW_MONTH, [this] { week_view_ = false; }},
+                     label_and_fn_t{ICON_MD_CALENDAR_VIEW_WEEK, [this] { week_view_ = true; }}
+                })
+            {
+                ImGui::SameLine();
+                if (ImGui::SmallButton(text.data()))
+                {
+                    callback();
+                }
+            }
             if (ImGui::BeginTable("Month-View", 7, ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchSame))
             {
                 for (auto const day : days)
@@ -55,56 +75,105 @@ namespace calendar
                     ImGui::TableSetupColumn(day.data());
                 }
                 ImGui::TableHeadersRow();
-                for (int i = 0; i < first_day_of_month; ++i)
-                {
-                    ImGui::TableNextColumn();
-                }
-                // determine how many days are in the month
-                tm.tm_mday = 32;
-                std::mktime(&tm);
-                auto const days_in_month = 32 - tm.tm_mday;
-                auto this_day {start_of_month};
-                for (int i = 1; i <= days_in_month; ++i)
-                {
-                    ImGui::TableNextColumn();
-                    ImGui::Text("%d", i);
-                    if (i == current_day_of_month)
+                if (week_view_) {
+                    auto this_day {selected_day_ - std::chrono::days((first_day_of_month + 2) % 7)};
+                    const auto day_height {ImGui::GetWindowHeight() / 1.3f};
+                    for (int i = 0; i < 7; ++i)
                     {
-                        ImGui::SameLine();
-                        ImGui::TextUnformatted("Today");
-                    }
-                    ImGui::Separator();
-                    auto const next_day {this_day + std::chrono::hours(24)};
-                    auto events_this_day = events.in_range(this_day, next_day);
-                    if (!events_this_day.empty())
-                    {
-                        // get all different locations
-                        std::set<std::string> locations;
-                        for (auto const &it : events_this_day)
+                        ImGui::TableNextColumn();
+                        ImGui::BeginChild(ImGui::GetID(reinterpret_cast<void*>(static_cast<long long>(i))), {0, day_height}, ImGuiChildFlags_FrameStyle);
+                        ImGui::TextUnformatted(std::format("{:%d}", this_day).c_str());
+                        if (this_day == today_)
                         {
-                            if (!it.location.empty()) {
-                                locations.emplace(it.location);
-                            }
-                        }
-                        if (!locations.empty())
-                        {
-                            ImGui::TextUnformatted("@ ");
-                            for (auto const &location : locations)
-                            {
-                                ImGui::SameLine();
-                                ImGui::Text(" %s", location.c_str());
-                            }
-                        }
-                        for (auto const &it : events_this_day)
-                        {
-                            std::string const time_range{
-                                (it.end - it.start) > std::chrono::hours(23) ? "" : std::format("{:%H:%M} - {:%H:%M} ", it.start, it.end)}; 
-                            ImGui::TextUnformatted(time_range.c_str());
                             ImGui::SameLine();
-                            ImGui::TextUnformatted(it.summary.c_str());
+                            ImGui::TextUnformatted("Today");
                         }
+                        ImGui::Separator();
+                        auto const next_day = this_day + std::chrono::hours(24);
+                        auto events_this_day = events.in_range(this_day, next_day);
+                        if (!events_this_day.empty())
+                        {
+                            // get all different locations
+                            std::set<std::string> locations;
+                            for (auto const &it : events_this_day)
+                            {
+                                if (!it.location.empty()) {
+                                    locations.emplace(it.location);
+                                }
+                            }
+                            if (!locations.empty())
+                            {
+                                for (auto const &location : locations)
+                                {
+                                    ImGui::TextUnformatted("@ ");
+                                    ImGui::SameLine();
+                                    ImGui::TextWrapped(" %s", location.c_str());
+                                }
+                            }
+                            for (auto const &it : events_this_day)
+                            {
+                                std::string const time_range{
+                                    (it.end - it.start) > std::chrono::hours(23) ? "" : std::format("{:%H:%M} - {:%H:%M} ", it.start, it.end)}; 
+                                ImGui::TextUnformatted(time_range.c_str());
+                                ImGui::SameLine();
+                                ImGui::TextWrapped("%s", it.summary.c_str());
+                            }
+                        }
+                        ImGui::EndChild();
+                        this_day = next_day;
                     }
-                    this_day = next_day;
+                }
+                else {
+                    for (int i = 0; i < first_day_of_month; ++i)
+                    {
+                        ImGui::TableNextColumn();
+                    }
+                    auto this_day {start_of_month};
+                    const auto day_height {ImGui::GetWindowHeight() / 7.0f};
+                    for (int i = 1; i <= days_in_month; ++i)
+                    {
+                        ImGui::TableNextColumn();
+                        ImGui::BeginChild(i, {0, day_height}, ImGuiChildFlags_FrameStyle);
+                        ImGui::Text("%d", i);
+                        if (i == current_day_of_month)
+                        {
+                            ImGui::SameLine();
+                            ImGui::TextUnformatted("Today");
+                        }
+                        ImGui::Separator();
+                        auto const next_day {this_day + std::chrono::hours(24)};
+                        auto events_this_day = events.in_range(this_day, next_day);
+                        if (!events_this_day.empty())
+                        {
+                            // get all different locations
+                            std::set<std::string> locations;
+                            for (auto const &it : events_this_day)
+                            {
+                                if (!it.location.empty()) {
+                                    locations.emplace(it.location);
+                                }
+                            }
+                            if (!locations.empty())
+                            {
+                                ImGui::TextUnformatted("@ ");
+                                for (auto const &location : locations)
+                                {
+                                    ImGui::SameLine();
+                                    ImGui::Text(" %s", location.c_str());
+                                }
+                            }
+                            for (auto const &it : events_this_day)
+                            {
+                                std::string const time_range{
+                                    (it.end - it.start) > std::chrono::hours(23) ? "" : std::format("{:%H:%M} - {:%H:%M} ", it.start, it.end)}; 
+                                ImGui::TextUnformatted(time_range.c_str());
+                                ImGui::SameLine();
+                                ImGui::TextUnformatted(it.summary.c_str());
+                            }
+                        }
+                        ImGui::EndChild();
+                        this_day = next_day;
+                    }
                 }
                 ImGui::EndTable();
             }
@@ -112,5 +181,7 @@ namespace calendar
 
     private:
         host &host_;
+        std::chrono::system_clock::time_point selected_day_, today_;
+        bool week_view_ {false};
     };
 }
