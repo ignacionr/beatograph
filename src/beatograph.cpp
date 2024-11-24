@@ -41,7 +41,6 @@
 #include "clocks/weather.hpp"
 #include "notify/host.hpp"
 #include "notify/screen.hpp"
-#include "panel/screen.hpp"
 #include "panel/config.hpp"
 #include "cppgpt/screen.hpp"
 #include "gtts/host.hpp"
@@ -187,11 +186,11 @@ int main()
                 {
                     if (ImGui::MenuItem(jira_tab_name, "Ctrl+J"))
                     {
-                        tabs->select_tab(jira_tab_name);
+                        tabs->select(jira_tab_name);
                     }
                     if (ImGui::MenuItem(radio_tab_name, "Ctrl+R"))
                     {
-                        tabs->select_tab(radio_tab_name);
+                        tabs->select(radio_tab_name);
                     }
                     ImGui::EndMenu();
                 }
@@ -252,7 +251,6 @@ int main()
 
         main_screen screen{tabs};
 
-        panel::screen panel_screen{};
         // enumerate the ./panels directory
         std::filesystem::path panel_dir{"panels"};
         if (std::filesystem::exists(panel_dir) && std::filesystem::is_directory(panel_dir))
@@ -266,9 +264,9 @@ int main()
                     file >> panel;
                     auto config = std::make_shared<panel::config>(
                         panel.at("contents").get<nlohmann::json::array_t>(), localhost);
-                    tabs->add_tab({panel.at("title").get<std::string>(),
-                                   [&panel_screen, config] { 
-                                    panel_screen.render(*config); },
+                    tabs->add({panel.at("title").get<std::string>(),
+                                   [config] { 
+                                    config->render(); },
                                    menu_tabs});
                 }
             }
@@ -303,10 +301,10 @@ int main()
                    {
             if (ImGui::IsKeyDown(ImGuiMod_Ctrl)) {
                 if (ImGui::IsKeyPressed(ImGuiKey_J)) {
-                    tabs->select_tab("Jira");
+                    tabs->select(jira_tab_name);
                 }
                 else if (ImGui::IsKeyPressed(ImGuiKey_R)) {
-                    tabs->select_tab("Radio");
+                    tabs->select(radio_tab_name);
                 }
             } });
 

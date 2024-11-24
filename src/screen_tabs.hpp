@@ -50,12 +50,13 @@ struct screen_tabs {
         }
     }
 
-    void select_tab(std::string_view name) {
+    void select(std::string_view name) {
         select_tab_ = name;
     }
 
-    void add_tab(tab_t tab) {
+    size_t add(tab_t tab) {
         tabs.push_back(tab);
+        return tabs.size() - 1;
     }
     
 private:
