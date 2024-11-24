@@ -17,9 +17,12 @@ namespace views
     {
         using selector_t = std::function<nlohmann::json(nlohmann::json const &)>;
 
+        struct additional_action {
+            std::string label;
+            std::function<void(nlohmann::json const &)> action;
+        };
 
-
-        void render(nlohmann::json const &json, selector_t selector = {})
+        void render(nlohmann::json const &json, std::vector<additional_action> const &actions = {}, selector_t selector = {})
         {
             render_internal(json);
             if (ImGui::SmallButton(ICON_MD_CONTENT_COPY " Copy"))
@@ -27,6 +30,14 @@ namespace views
                 ImGui::LogToClipboard();
                 ImGui::LogText(json.dump(4).c_str());
                 ImGui::LogFinish();
+            }
+            for (auto const &action : actions)
+            {
+                ImGui::SameLine();
+                if (ImGui::SmallButton(action.label.c_str()))
+                {
+                    action.action(json);
+                }
             }
             ImGui::SameLine();
         }
