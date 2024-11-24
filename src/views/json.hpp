@@ -28,7 +28,7 @@ namespace views
                 ImGui::LogText(json.dump(4).c_str());
                 ImGui::LogFinish();
             }
-            // ImGui::SameLine();
+            ImGui::SameLine();
         }
 
         void render_internal(nlohmann::json const &src, selector_t selector = {})
