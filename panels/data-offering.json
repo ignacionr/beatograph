@@ -269,6 +269,18 @@
                     "title": "Get Item",
                     "command": "curl -s -H \"Authorization: Bearer ${DATAOFFERING_TOKEN}\" http://57.129.39.115:5000/items/${item_id}",
                     "view": "json"
+                },
+                {
+                    "type": "command-output",
+                    "title": "Mark for Retention",
+                    "command": "curl -s -H \"Authorization: Bearer ${DATAOFFERING_TOKEN}\" http://57.129.39.115:5000/retain/${item_id} -X PUT -d true",
+                    "view": "json"
+                },
+                {
+                    "type": "command-output",
+                    "title": "Check if Retained",
+                    "command": "curl -s -H \"Authorization: Bearer ${DATAOFFERING_TOKEN}\" http://57.129.39.115:5000/retain/${item_id}",
+                    "view": "json"
                 }
             ]
         },

@@ -1,9 +1,11 @@
 #pragma once
+#include <algorithm>
 #include <functional>
 #include <string>
-#include <imgui.h>
-#include <vector>
 #include <tuple>
+#include <vector>
+
+#include <imgui.h>
 
 struct screen_tabs {
 
@@ -57,6 +59,12 @@ struct screen_tabs {
     size_t add(tab_t tab) {
         tabs.push_back(tab);
         return tabs.size() - 1;
+    }
+
+    void remove(std::string_view name) {
+        tabs.erase(std::remove_if(tabs.begin(), tabs.end(), [name](const tab_t &tab) {
+            return tab.name == name;
+        }), tabs.end());
     }
     
 private:
