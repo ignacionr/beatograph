@@ -41,7 +41,10 @@ namespace hosting::ssh
         }
 
     private:
-        host(std::string_view name) : name_{name} {}
+        host(std::string_view name) : name_{name} {
+            hosting::local::host localhost{};
+            resolve_from_ssh_conf(localhost);
+        }
 
     public:
         void resolve_from_ssh_conf(local::host &localhost)

@@ -75,8 +75,10 @@ namespace gtts {
             size_t slice_size;
             for (std::string_view slice = text; !slice.empty(); slice = slice.substr(slice_size)) {
                 slice_size = std::min(slice.size(), 200ull);
-                while (std::isalpha(slice[slice_size - 1])|| std::isdigit(slice[slice_size - 1])) {
-                    --slice_size;
+                if (slice_size == 200ull) {
+                    while (std::isalpha(slice[slice_size - 1])|| std::isdigit(slice[slice_size - 1])) {
+                        --slice_size;
+                    }
                 }
                 auto slice_text = slice.substr(0, slice_size);
                 auto file_name = tts_to_cache(slice_text, lang);
