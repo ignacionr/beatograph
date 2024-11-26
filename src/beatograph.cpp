@@ -321,8 +321,9 @@ int main()
 
         radio_screen = std::make_unique<radio::screen>(radio_host, cache);
         js = std::make_unique<jira::screen>(cache);
-        screen.run([&tabs]
-                   {
+        screen.run(
+            [&notify_host](std::string_view text) { notify_host(text, "Main"); },
+            [&tabs] {
             if (ImGui::IsKeyDown(ImGuiMod_Ctrl)) {
                 if (ImGui::IsKeyPressed(ImGuiKey_J)) {
                     tabs->select(jira_tab_name);

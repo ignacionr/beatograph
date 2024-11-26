@@ -94,7 +94,7 @@ struct main_screen
         SDL_Quit();
     }
 
-    void run(std::function<void()> pre_frame = []{})
+    void run(std::function<void(std::string_view)> notifier, std::function<void()> pre_frame = []{})
     {
         // run the main loop
         SDL_Event event;
@@ -109,8 +109,16 @@ struct main_screen
                 }
                 ImGui_ImplSDL2_ProcessEvent(&event);
             }
-            pre_frame();
-            do_frame();
+            try {
+                pre_frame();
+                do_frame();
+            }
+            catch (std::exception const &e) {
+                notifier(e.what());
+            }
+            catch (...) {
+                notifier("Unknown exception");
+            }
         }
     }
 
