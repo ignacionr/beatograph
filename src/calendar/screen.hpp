@@ -85,7 +85,9 @@ namespace calendar
                 ImGui::TableHeadersRow();
                 auto const default_bg_color = ImGui::GetStyleColorVec4(ImGuiCol_FrameBg);
                 if (week_view_) {
-                    auto this_day {selected_day_ - std::chrono::days((first_day_of_month + 2) % 7)};
+                    auto this_day {selected_day_ - std::chrono::days((
+                        std::chrono::floor<std::chrono::days>(selected_day_).time_since_epoch().count() - 3)
+                        % 7)};
                     const auto day_height {ImGui::GetWindowHeight() / 1.3f};
                     for (int i = 0; i < 7; ++i)
                     {

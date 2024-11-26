@@ -93,16 +93,16 @@ namespace jira
             if (issue_lanes_) {
                 if (ImGui::BeginChild("by_lane")) {
                     // group by status name
-                    std::unordered_map<std::string, std::vector<nlohmann::json::object_t const*>> by_status;
+                    std::unordered_map<nlohmann::json::object_t const *, std::vector<nlohmann::json::object_t const*>> by_status;
                     for (nlohmann::json::object_t const &issue : selected_issues_) {
-                        auto const status = issue.at("fields").at("status").at("name").get<std::string>();
+                        auto const *status = &issue.at("fields").at("status").get_ref<const nlohmann::json::object_t&>();
                         by_status[status].push_back(&issue);
                     }
                     // show the lanes
                     ImGui::Columns(static_cast<int>(by_status.size()));
                     for (auto const &[status, issues] : by_status) {
                         ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[1]);
-                        ImGui::TextUnformatted(status.c_str());
+                        ImGui::TextUnformatted(status->at("name").get_ref<std::string const &>().c_str());
                         ImGui::PopFont();
                         for (auto const &issue : issues) {
                             if (issue_screen_.render(*issue, h, false, actions, show_json_details_, show_assignee_)) {
