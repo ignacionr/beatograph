@@ -138,16 +138,14 @@ namespace jira
                     if (!comments.contains("comments")) {
                         return;
                     }
-                    if (ImGui::BeginTable("comments", 2, ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_Resizable))
+                    if (ImGui::BeginTable("comments", 2, ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersH))
                     {
-                        ImGui::TableSetupColumn("Author");
-                        ImGui::TableSetupColumn("Comment");
+                        ImGui::TableSetupColumn("Author", ImGuiTableColumnFlags_WidthFixed, 64);
+                        ImGui::TableSetupColumn("Comment", ImGuiTableColumnFlags_WidthStretch);
                         ImGui::TableHeadersRow();
                         for (nlohmann::json const &comment : comments.at("comments").get_ref<const nlohmann::json::array_t&>())
                         {
-                            ImGui::TableNextRow();
-                            ImGui::TableSetColumnIndex(0);
-                            ImGui::BeginChild("author");
+                            ImGui::TableNextColumn();
                             ImGui::Text("At: %s", comment.at("created").get_ref<const std::string &>().c_str());
                             if (comment.contains("author")) {
                                 user_screen_.render(comment.at("author"));
@@ -155,11 +153,8 @@ namespace jira
                             else {
                                 ImGui::Text("Unknown author");
                             }
-                            ImGui::EndChild();
-                            ImGui::TableSetColumnIndex(1);
-                            ImGui::BeginChild("body");
+                            ImGui::TableNextColumn();
                             jira::content::render(comment.at("body"));
-                            ImGui::EndChild();
                             if (show_json_details) {
                                 ImGui::TextWrapped("%s", comment.at("body").dump().c_str());
                             }

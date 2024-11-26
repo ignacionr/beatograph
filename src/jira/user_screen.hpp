@@ -3,6 +3,8 @@
 #include <string>
 
 #include <nlohmann/json.hpp>
+#include <imgui.h>
+
 #include "../imgcache.hpp"
 
 namespace jira
@@ -20,14 +22,12 @@ namespace jira
                     avatar_url = avatar_urls.at("48x48").get<std::string>();
                 }
             }
-            ImGui::Columns(2);
-            ImGui::SetColumnWidth(0, 57);
             ImGui::Image(reinterpret_cast<void *>(static_cast<uintptr_t>(
                     cache_.load_texture_from_url(avatar_url))),
                 ImVec2{48,48});
-            ImGui::NextColumn();
+            ImGui::SameLine();
 
-            ImGui::Text("%s", json_user.at("displayName").get<std::string>().c_str());
+            ImGui::TextUnformatted(json_user.at("displayName").get<std::string>().c_str());
             if (json_user.contains("emailAddress")) {
                 ImGui::SameLine();
                 ImGui::TextUnformatted(json_user.at("emailAddress").get<std::string>().c_str());
@@ -36,10 +36,6 @@ namespace jira
                 ImGui::SameLine();
                 ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "(Inactive)");
             }
-            if (json_user.contains("timeZone")) {
-                ImGui::Text("%s", json_user.at("timeZone").get<std::string>().c_str());
-            }
-            ImGui::Columns();
         }
     private:
         img_cache &cache_;

@@ -155,15 +155,6 @@
                     "title": "staging",
                     "contents": [
                         {
-                            "type": "assertion",
-                            "title": "staging deployment is running",
-                            "test": {
-                                "type": "docker-container-running",
-                                "container": "foxbetbackend",
-                                "host": "dev-locked"
-                            }
-                        },
-                        {
                             "type": "shell-open",
                             "command": "http://57.129.70.83:3333/api/lastbets",
                             "title": "open in browser..."
@@ -181,6 +172,36 @@
                     "title": "Open VSCode in dev-locked",
                     "command": "cmd.exe",
                     "args": "/c code --remote ssh-remote+dev-locked /home/ubuntu/arangodb-infra/dev-locked"
+                },
+                {
+                    "type": "shell-execute",
+                    "title": "RDP for dev1",
+                    "command": "mstsc.exe",
+                    "args": "/v:57.129.70.83:13389"
+                },
+                {
+                    "type": "shell-execute",
+                    "title": "RDP for dev2",
+                    "command": "mstsc.exe",
+                    "args": "/v:57.129.70.83:23389"
+                },
+                {
+                    "type": "shell-execute",
+                    "title": "RDP for dev3",
+                    "command": "mstsc.exe",
+                    "args": "/v:57.129.70.83:33389"
+                },
+                {
+                    "type": "ssh-command-output",
+                    "title": "Open dev3 add access to Internet",
+                    "host": "dev-locked",
+                    "command": "docker network connect dev-locked_irrestricted_network dev3_container"
+                },
+                {
+                    "type": "ssh-command-output",
+                    "title": "Open dev3 remove access to Internet",
+                    "host": "dev-locked",
+                    "command": "docker network disconnect dev-locked_irrestricted_network dev3_container"
                 }
             ]
         }
