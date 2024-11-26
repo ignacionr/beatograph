@@ -40,7 +40,7 @@ namespace jira
         bool render(nlohmann::json const &json, host& h, bool expanded = false, context_actions_t const &actions = {}, bool show_json_details = false, bool show_assignee = false)
         {
             bool request_requery = false;
-            auto const key{json.at("key").get<std::string>()};
+            auto const &key{json.at("key").get_ref<const std::string&>()};
             ImGui::PushID(key.c_str());
             std::string color_name {"unknown"};
             static const nlohmann::json::json_pointer status_color_ptr {"/fields/status/statusCategory/colorName"};
@@ -49,15 +49,15 @@ namespace jira
             }
             ImGui::PushStyleColor(ImGuiCol_Header, color(color_name));
             static const nlohmann::json::json_pointer issue_type_name_ptr {"/fields/issuetype/name"};
-            if (ImGui::CollapsingHeader(std::format("{} - {}", key, json.at(issue_type_name_ptr).get<std::string>()).c_str(),
+            if (ImGui::CollapsingHeader(std::format("{} - {}", key, json.at(issue_type_name_ptr).get_ref<const std::string&>()).c_str(),
                 expanded ? ImGuiTreeNodeFlags_DefaultOpen : 0)) 
             {
-                nlohmann::json::object_t const &fields {json.at("fields").get<nlohmann::json::object_t>()};
+                nlohmann::json::object_t const &fields {json.at("fields").get_ref<const nlohmann::json::object_t &>()};
                 ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, {20, 20});
                 ImGui::PushStyleColor(ImGuiCol_FrameBg, IM_COL32(0, 0, 0, 255));
                 ImGui::BeginChild(std::format("summary-{}", key).c_str(), {ImGui::GetColumnWidth(), 0}, ImGuiChildFlags_FrameStyle | ImGuiChildFlags_AutoResizeY);
                 ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[1]);
-                ImGui::TextWrapped("%s\n \n", fields.at("summary").get<std::string>().c_str());
+                ImGui::TextWrapped("%s\n \n", fields.at("summary").get_ref<const std::string&>().c_str());
                 ImGui::PopFont();
                 if (show_assignee) {
                     ImGui::SeparatorText("Asignee");
@@ -124,7 +124,7 @@ namespace jira
                 if (fields.find("subtasks") != fields.end())
                 {
                     ImGui::Indent();
-                    nlohmann::json::array_t const &subtasks {fields.at("subtasks").get<nlohmann::json::array_t>()};
+                    nlohmann::json::array_t const &subtasks {fields.at("subtasks").get_ref<const nlohmann::json::array_t&>()};
                     for (nlohmann::json const &subtask : subtasks)
                     {
                         request_requery |= render(subtask, h, false, actions, show_json_details, show_assignee);
@@ -138,23 +138,35 @@ namespace jira
                     if (!comments.contains("comments")) {
                         return;
                     }
-                    for (nlohmann::json const &comment : comments.at("comments").get<nlohmann::json::array_t>())
+                    if (ImGui::BeginTable("comments", 2, ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_Resizable))
                     {
-                        auto id = comment.at("id").get<std::string>();
-                        if (ImGui::BeginChild(id.c_str()))
+                        ImGui::TableSetupColumn("Author");
+                        ImGui::TableSetupColumn("Comment");
+                        ImGui::TableHeadersRow();
+                        for (nlohmann::json const &comment : comments.at("comments").get_ref<const nlohmann::json::array_t&>())
                         {
+                            ImGui::TableNextRow();
+                            ImGui::TableSetColumnIndex(0);
+                            ImGui::BeginChild("author");
+                            ImGui::Text("At: %s", comment.at("created").get_ref<const std::string &>().c_str());
                             if (comment.contains("author")) {
-                                ImGui::Text("At: %s", comment.at("created").get<std::string>().c_str());
                                 user_screen_.render(comment.at("author"));
                             }
-                            ImGui::Separator();
+                            else {
+                                ImGui::Text("Unknown author");
+                            }
+                            ImGui::EndChild();
+                            ImGui::TableSetColumnIndex(1);
+                            ImGui::BeginChild("body");
                             jira::content::render(comment.at("body"));
+                            ImGui::EndChild();
                             if (show_json_details) {
                                 ImGui::TextWrapped("%s", comment.at("body").dump().c_str());
                             }
                         }
-                        ImGui::EndChild();
+                        ImGui::EndTable();
                     }
+
                     std::string comment_body;
                     if (comment_body.reserve(256); ImGui::InputText("Comment", comment_body.data(), comment_body.capacity(), ImGuiInputTextFlags_EnterReturnsTrue)) {
                         comment_body = comment_body.data();

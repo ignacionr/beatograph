@@ -11,7 +11,7 @@ namespace jira{
     struct content {
         static void render(nlohmann::json::object_t const &element) {
             static auto render_subcontent = [](nlohmann::json::object_t const &container) {
-                for (auto const &subcontent : container.at("content").get<nlohmann::json::array_t>()) {
+                for (auto const &subcontent : container.at("content").get_ref<const nlohmann::json::array_t&>()) {
                     render(subcontent);
                 }
             };
@@ -19,16 +19,16 @@ namespace jira{
                 {"doc", render_subcontent },
                 {"text", [](nlohmann::json::object_t const &el){ 
                     ImGui::SameLine();
-                    ImGui::TextUnformatted(el.at("text").get<std::string>().data()); }},
+                    ImGui::TextUnformatted(el.at("text").get_ref<const std::string&>().c_str()); }},
                 {"paragraph", [](nlohmann::json::object_t const &el) {
-                    ImGui::Text("");
+                    ImGui::NewLine();
                     render_subcontent(el);
                 }},
                 {"inlineCard", [](nlohmann::json::object_t const &el) {
                     ImGui::SameLine();
-                    std::string const url {el.at("attrs").at("url").get<std::string>()};
+                    std::string const &url {el.at("attrs").at("url").get_ref<const std::string&>()};
                     if (ImGui::Selectable(url.c_str())) {
-                        ShellExecuteA(nullptr, "open", url.c_str(), nullptr, nullptr, SW_SHOW);
+                        ::ShellExecuteA(nullptr, "open", url.c_str(), nullptr, nullptr, SW_SHOW);
                     }
                 }},
                 {"bulletList", render_subcontent},
@@ -37,8 +37,8 @@ namespace jira{
                 {"orderedList", render_subcontent},
                 {"codeBlock", [](nlohmann::json::object_t const &el) {
                     // auto const language = el.at("attrs").at("language").get<std::string>();
-                    auto const text = el.at("content").at(0).at("text").get<std::string>();
-                    ImGui::Text("%s", text.data());
+                    auto const &text = el.at("content").at(0).at("text").get_ref<const std::string&>();
+                    ImGui::TextUnformatted(text.c_str());
                 }},
                 {"panel", render_subcontent},
                 {"table", render_subcontent},
@@ -50,17 +50,17 @@ namespace jira{
                 {"mediaCard", render_subcontent},
                 {"mediaInline", render_subcontent},
                 {"mention", [](nlohmann::json::object_t const &el) {
-                    auto const text = el.at("attrs").at("text").get<std::string>();
+                    auto const &text = el.at("attrs").at("text").get_ref<const std::string&>();
                     ImGui::SameLine();
                     ImGui::TextUnformatted(text.data());
                 }},
                 {"emoji", [](nlohmann::json::object_t const &el) {
-                    auto const text = el.at("attrs").at("text").get<std::string>();
+                    auto const &text = el.at("attrs").at("text").get_ref<const std::string&>();
                     ImGui::SameLine();
                     ImGui::TextUnformatted(text.data());
                 }}
             };
-            auto const type = element.at("type").get<std::string>();
+            auto const &type = element.at("type").get_ref<const std::string &>();
             if (auto const pos = renderers.find(type); pos != renderers.end()) {
                 pos->second(element);
             }
