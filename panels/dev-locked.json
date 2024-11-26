@@ -41,6 +41,20 @@
                             "command": "su - dev1 -c 'ssh -T git@gitservice'",
                             "should-contain": "Welcome to git-server-docker!"
                         }
+                    },
+                    {
+                        "type": "container-command-output",
+                        "title": "curl google",
+                        "command": "curl http://google.com 2>&1",
+                        "container": "dev1_container",
+                        "host": "dev-locked"
+                    },
+                    {
+                        "type": "container-command-output",
+                        "title": "curl desktime",
+                        "command": "curl -v -L http://www.desktime.com 2>&1",
+                        "container": "dev1_container",
+                        "host": "dev-locked"
                     }]
                 },
                 {
