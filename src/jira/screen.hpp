@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <map>
 #include <mutex>
 #include <sstream>
 #include <unordered_map>
@@ -92,17 +93,22 @@ namespace jira
 
             if (issue_lanes_) {
                 if (ImGui::BeginChild("by_lane")) {
-                    // group by status name
-                    std::unordered_map<nlohmann::json::object_t const *, std::vector<nlohmann::json::object_t const*>> by_status;
+                    std::unordered_map<int, nlohmann::json::object_t const *> status_by_id;
+                    // group by status id
+                    std::map<int, std::vector<nlohmann::json::object_t const*>> by_status;
                     for (nlohmann::json::object_t const &issue : selected_issues_) {
                         auto const *status = &issue.at("fields").at("status").get_ref<const nlohmann::json::object_t&>();
-                        by_status[status].push_back(&issue);
+                        int const status_id {std::stoi(status->at("id").get_ref<std::string const &>())};
+                        if (status_by_id.find(status_id) == status_by_id.end()) {
+                            status_by_id[status_id] = status;
+                        }
+                        by_status[status_id].push_back(&issue);
                     }
                     // show the lanes
                     ImGui::Columns(static_cast<int>(by_status.size()));
-                    for (auto const &[status, issues] : by_status) {
+                    for (auto const &[status_id, issues] : by_status) {
                         ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[1]);
-                        ImGui::TextUnformatted(status->at("name").get_ref<std::string const &>().c_str());
+                        ImGui::TextUnformatted(status_by_id.at(status_id)->at("name").get_ref<std::string const &>().c_str());
                         ImGui::PopFont();
                         for (auto const &issue : issues) {
                             if (issue_screen_.render(*issue, h, false, actions, show_json_details_, show_assignee_)) {
