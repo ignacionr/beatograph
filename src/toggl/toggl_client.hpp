@@ -66,21 +66,18 @@ namespace toggl
 
         std::string startTimeEntry(long long workspace_id, const std::string_view description_text)
         {
-            auto const json{std::format(R"({{
-            "created_with": "Beat-o-graph",
-            "description":"{}",
-            "duration": -1,
-            "start": "{:%FT%T}Z",
-            "tags": ["adhoc"],
-            "workspace_id": {}
-        }})",
-                                        description_text,
-                                        std::chrono::system_clock::now(),
-                                        workspace_id)};
-            return performRequest(
+        nlohmann::json json = {
+            {"created_with", "Beat-o-graph"},
+            {"description", description_text},
+            {"duration", -1},
+            {"start", std::format("{:%FT%T}Z", std::chrono::system_clock::now())},
+            {"tags", {"adhoc"}},
+            {"workspace_id", workspace_id}
+        };
+        return performRequest(
                 std::format("{}workspaces/{}/time_entries", baseUrl, workspace_id),
                 "POST",
-                json);
+                json.dump());
         }
 
         std::string stopTimeEntry(auto &entry)
