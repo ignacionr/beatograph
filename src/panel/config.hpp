@@ -167,7 +167,7 @@ namespace panel {
                         it->second();
                     }
                     return [title = element.at("title").get<std::string>(), test]{
-                        views::Assertion(title, test);
+                        views::assertion(title, test);
                     };
                 }},
                 {"shell-open", [](nlohmann::json const &element) {

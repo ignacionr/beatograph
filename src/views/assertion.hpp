@@ -49,7 +49,7 @@ namespace views
         quitting() = value;
     }
     
-    void Assertion(std::string_view title, std::function<bool()> assertion) 
+    void assertion(std::string_view title, std::function<bool()> assertion) 
     {
         static std::unordered_map<int, state_t> states;
         static std::queue<std::function<void()>> updates;
