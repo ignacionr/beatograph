@@ -40,10 +40,25 @@ namespace hosting::local
             _putenv_s(key.c_str(), value.c_str());
         }
 
+        auto resolve_environment(std::string source) -> std::string {
+            // perform environment variable substitutions with ${VAR} syntax
+            for (size_t pos = 0; (pos = source.find("${", pos)) != std::string::npos;)
+            {
+                size_t end = source.find('}', pos);
+                if (end == std::string::npos)
+                {
+                    throw std::runtime_error("Invalid environment variable substitution syntax.");
+                }
+                std::string_view var_name {source.data() + pos + 2, end - pos - 2};
+                source.replace(pos, end - pos + 1, get_env_variable(std::string{var_name}));
+            }
+            return source;
+        }
+
         auto run(std::string_view command)
         {
             return std::make_unique<running_process>(command, [this](std::string_view key)
-                                                      { return get_env_variable(std::string{key}); });
+                                                      { return resolve_environment(std::string{key}); });
         }
 
         void execute_command(std::string_view command, auto sink)
@@ -154,7 +169,7 @@ namespace hosting::local
             return size * nmemb;
         };
 
-        nlohmann::json::object_t get_my_ip_and_geolocation() 
+        nlohmann::json::object_t get_my_ip_and_geolocation() const
         {
             std::string location;
             CURL *curl;

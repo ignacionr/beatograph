@@ -15,14 +15,15 @@ namespace calendar
 {
     struct screen
     {
-        screen(host &h) : host_(h) {
+        screen(std::shared_ptr<host> h) : host_(h) {
             today_ = std::chrono::floor<std::chrono::days>(std::chrono::system_clock::now());
             selected_day_ = today_;
         }
 
-        void render() {
+        void render()
+        {
             views::cached_view<event_set>("calendar", 
-                [this] { return host_.get_events(); }, 
+                [this] { return host_->get_events(); }, 
                 [this](auto const &events) { render_calendar(events); }, true);
         }
 
@@ -195,8 +196,9 @@ namespace calendar
         };
 
     private:
-        host &host_;
-        std::chrono::system_clock::time_point selected_day_, today_;
+        std::shared_ptr<host> host_;
+        std::chrono::system_clock::time_point selected_day_;
+        std::chrono::system_clock::time_point today_;
         bool week_view_ {true};
     };
 }

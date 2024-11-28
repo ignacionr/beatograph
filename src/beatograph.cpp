@@ -175,11 +175,6 @@ int main()
         jira::host jh{localhost.get_env_variable("JIRA_USER"), localhost.get_env_variable("JIRA_TOKEN")};
         std::unique_ptr<jira::screen> js;
 
-        calendar::host calendar_host{localhost.get_env_variable("CALENDAR_DELEGATE_URL")};
-        calendar::screen cs{calendar_host};
-
-        hosting::local::screen local_screen{localhost};
-
         git_host git{localhost};
 
         ssh_screen ssh_screen;
@@ -248,8 +243,7 @@ int main()
             };
         };
 
-        tabs = std::make_shared<screen_tabs>(std::vector<screen_tabs::tab_t> {
-            {ICON_MD_COMPUTER, [&local_screen] { local_screen.render(); }, menu_tabs},
+        std::vector<screen_tabs::tab_t> all_tabs {
             {ICON_MD_TASK " Toggl", [&ts] { ts.render(); }, menu_tabs},
             {jira_tab_name, [&js, &jh, &ts] { js->render(jh, {
                 {ICON_MD_PUNCH_CLOCK " Start Toggl", [&ts](nlohmann::json const &entry) {
@@ -262,7 +256,6 @@ int main()
              menu_tabs_and([&js](std::string_view item)
                            { js->render_menu(item); }),
              ImVec4(0.5f, 0.5f, 1.0f, 1.0f)},
-            {ICON_MD_CALENDAR_MONTH " Calendar", [&cs] { cs.render(); }, menu_tabs},
             {ICON_MD_SETTINGS_REMOTE " SSH Hosts", [&ssh_screen, &localhost] { ssh_screen.render(localhost); }, menu_tabs},
             {ICON_MD_CODE " Git Repositories", [&git]
              {
@@ -289,7 +282,37 @@ int main()
             {ICON_MD_CHAT_BUBBLE " AI", [&gpt_screen, &gpt]
              { gpt_screen.render(gpt); }, menu_tabs, ImVec4(0.75f, 0.75f, 0.75f, 1.0f)},
             {"Notifications", [&notify_screen] { notify_screen.render(); }, menu_tabs}
-        });
+        };
+
+        nlohmann::json all_tabs_json;
+        // load from "beatograph.json"
+        if (std::filesystem::exists("beatograph.json"))
+        {
+            std::ifstream file{"beatograph.json"};
+            file >> all_tabs_json;
+        }
+        std::map<std::string, std::function<screen_tabs::tab_t(nlohmann::json::object_t const&)>> factories = {
+            {"local",
+                [&menu_tabs, ls = hosting::local::screen{localhost}](nlohmann::json::object_t const&){return screen_tabs::tab_t{ICON_MD_COMPUTER, [&]{ ls.render(); }, menu_tabs};} },
+            {"calendar",
+                [&menu_tabs, &localhost] (nlohmann::json::object_t const& cal) {
+                    return screen_tabs::tab_t{cal.at("title"), 
+                        [cs = calendar::screen{std::make_shared<calendar::host>(localhost.resolve_environment(cal.at("endpoint")))}]() mutable { cs.render(); }, menu_tabs};}}
+        };
+
+        for (nlohmann::json::object_t const &tab : all_tabs_json.at("tabs"))
+        {
+            auto const &name = tab.at("type").get_ref<std::string const &>();
+            if (!factories.contains(name))
+            {
+                std::cerr << "Unknown tab: " << name << std::endl;
+                continue;
+            }
+            auto const &factory = factories.at(name);
+            all_tabs.push_back(factory(tab));
+        }
+
+        tabs = std::make_shared<screen_tabs>(all_tabs);
 
         main_screen screen{tabs};
 

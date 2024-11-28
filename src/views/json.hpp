@@ -22,7 +22,7 @@ namespace views
             std::function<void(nlohmann::json const &)> action;
         };
 
-        void render(nlohmann::json const &json, std::vector<additional_action> const &actions = {}, selector_t selector = {})
+        void render(nlohmann::json const &json, std::vector<additional_action> const &actions = {}, selector_t selector = {}) const
         {
             render_internal(json);
             if (ImGui::SmallButton(ICON_MD_CONTENT_COPY " Copy"))
@@ -42,7 +42,7 @@ namespace views
             ImGui::SameLine();
         }
 
-        void render_internal(nlohmann::json const &src, selector_t selector = {})
+        void render_internal(nlohmann::json const &src, selector_t selector = {}) const
         {
             auto const &json = selector ? selector(src) : src;
             // use as an array
@@ -109,7 +109,7 @@ namespace views
             }
         }
 
-        void render(std::string const &json_src, selector_t selector = {})
+        void render(std::string const &json_src, selector_t selector = {}) const
         {
             if (last_source_ != json_src)
             {
@@ -134,7 +134,7 @@ namespace views
         }
 
     private:
-        std::expected<nlohmann::json, std::string> json_;
-        std::string last_source_;
+        std::expected<nlohmann::json, std::string> mutable json_;
+        std::string mutable last_source_;
     };
 } // namespace views

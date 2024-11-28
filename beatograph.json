@@ -1,0 +1,69 @@
+{
+    "tabs": [
+        {
+            "type": "local"
+        },
+        {
+            "type": "toggl",
+            "token": "${TOGGL_API_TOKEN}"
+        },
+        {
+            "type": "jira",
+            "endpoint": "${JIRA_API_URL}",
+            "username": "${JIRA_USER}",
+            "token": "${JIRA_TOKEN}"
+        },
+        {
+            "type": "calendar",
+            "title": "\uebcc Personal",
+            "endpoint": "${CALENDAR_DELEGATE_URL}"
+        },
+        {
+            "type": "ssh-hosts"
+        },
+        {
+            "type": "git-repositories"
+        },
+        {
+            "type": "radio"
+        },
+        {
+            "type": "conversions"
+        },
+        {
+            "type": "world-clocks",
+            "clocks": [
+                "Los Angeles",
+                "Mexico City",
+                "New York",
+                "Sao Paulo",
+                "Buenos Aires",
+                "Cordoba, AR",
+                "Santa Fe, AR",
+                "Parana, AR",
+                "Rosario, AR",
+                "London",
+                "Rome, IT",
+                "Tel Aviv",
+                "Saint Petersburg, RU",
+                "Antalya, TR",
+                "Dubai, AE",
+                "Bangkok",
+                "Pattaya, TH",
+                "Irkutsk, RU"
+            ]
+        },
+        {
+            "type": "ai",
+            "endpoint": "https://api.groq.com/openai/v1",
+            "token": "${GROQ_API_KEY}"
+        },
+        {
+            "type": "notifications"
+        },
+        {
+            "type": "project-panels",
+            "path": "panels"
+        }
+    ]
+}

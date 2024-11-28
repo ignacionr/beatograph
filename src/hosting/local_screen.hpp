@@ -9,7 +9,7 @@ namespace hosting::local
     struct screen
     {
         screen(hosting::local::host &host) : host(host) {}
-        void render()
+        void render() const
         {
             ImGui::Text("Hostname: %s", host.HostName().c_str());
             views::cached_view<nlohmann::json::object_t>("IP and Location", 
