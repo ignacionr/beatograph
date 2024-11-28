@@ -165,15 +165,14 @@
                     }
                 },
                 {
-                    "type": "group",
-                    "title": "staging",
-                    "contents": [
-                        {
-                            "type": "shell-open",
-                            "command": "http://57.129.70.83:3333/api/lastbets",
-                            "title": "open in browser..."
-                        }
-                    ]
+                    "type": "command-output",
+                    "command": "curl -s http://57.129.70.83:3333/api/lastbets",
+                    "title": "staging endpoint"
+                },
+                {
+                    "type": "command-output",
+                    "title": "pipeline report",
+                    "command": "curl -s http://57.129.70.83:8000/pipeline"
                 }
             ]
         },
@@ -204,6 +203,30 @@
                     "title": "RDP for dev3",
                     "command": "mstsc.exe",
                     "args": "/v:57.129.70.83:33389"
+                },
+                {
+                    "type": "ssh-command-output",
+                    "title": "Open dev1 add access to Internet",
+                    "host": "dev-locked",
+                    "command": "docker network connect dev-locked_irrestricted_network dev1_container"
+                },
+                {
+                    "type": "ssh-command-output",
+                    "title": "Open dev1 remove access to Internet",
+                    "host": "dev-locked",
+                    "command": "docker network disconnect dev-locked_irrestricted_network dev1_container"
+                },
+                {
+                    "type": "ssh-command-output",
+                    "title": "Open dev2 add access to Internet",
+                    "host": "dev-locked",
+                    "command": "docker network connect dev-locked_irrestricted_network dev2_container"
+                },
+                {
+                    "type": "ssh-command-output",
+                    "title": "Open dev2 remove access to Internet",
+                    "host": "dev-locked",
+                    "command": "docker network disconnect dev-locked_irrestricted_network dev2_container"
                 },
                 {
                     "type": "ssh-command-output",
