@@ -109,8 +109,11 @@ struct main_screen
                 }
                 ImGui_ImplSDL2_ProcessEvent(&event);
             }
+            pre_frame();
+            ImGui_ImplOpenGL3_NewFrame();
+            ImGui_ImplSDL2_NewFrame();
+            ImGui::NewFrame();
             try {
-                pre_frame();
                 do_frame();
             }
             catch (std::exception const &e) {
@@ -119,6 +122,15 @@ struct main_screen
             catch (...) {
                 notifier("Unknown exception");
             }
+            ImGui::Render();
+
+            auto const ds {ImGui::GetIO().DisplaySize};
+            glViewport(0, 0, (int)ds.x, (int)ds.y);
+            glClearColor(0.45f, 0.55f, 0.60f, 1.00f);
+            glClear(GL_COLOR_BUFFER_BIT);
+            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+            SDL_GL_SwapWindow(window);
         }
     }
 
@@ -130,9 +142,6 @@ struct main_screen
 private:
     void do_frame()
     {
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplSDL2_NewFrame();
-        ImGui::NewFrame();
 
         ImGuiIO &io{ImGui::GetIO()};
         auto const &display_size = io.DisplaySize;
@@ -204,14 +213,6 @@ private:
             ImGui::End();
         }
 
-        ImGui::Render();
-
-        glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
-        glClearColor(0.45f, 0.55f, 0.60f, 1.00f);
-        glClear(GL_COLOR_BUFFER_BIT);
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-        SDL_GL_SwapWindow(window);
     }
 
     SDL_Window *window;
