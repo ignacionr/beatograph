@@ -45,8 +45,12 @@ namespace gtts {
                 if (fopen_s(&file, file_name.c_str(), "wb") == 0 && file) {
                     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
                     curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
-                    curl_easy_perform(curl);
+                    auto res = curl_easy_perform(curl);
                     fclose(file);
+                    if (res != CURLE_OK) {
+                        curl_easy_cleanup(curl);
+                        throw std::runtime_error(std::format("Failed to download audio: {}", curl_easy_strerror(res)));
+                    }
                 }
                 else {
                     throw std::runtime_error("Failed to open file for writing");
