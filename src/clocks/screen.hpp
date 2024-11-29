@@ -59,6 +59,42 @@ namespace clocks
         {
         }
 
+        static ImTextureID clock_background()
+        {
+            static ImTextureID texture_id = nullptr;
+            if (texture_id == nullptr)
+            {
+                constexpr int width = 500;
+                constexpr int height = 500;
+                std::array<unsigned char, width * height * 4> pixels;
+
+                constexpr auto sqr_radius = (width / 2) * (width / 2);
+                constexpr auto sqr_radius_low = (width * 9 / 20) * (width * 9 / 20);
+                auto p = &pixels.front();
+                for (int y{}; y < height; ++y) {
+                    for (int x{}; x < width; ++x) {
+                        auto const d{(x - width / 2) * (x - width / 2) + (y - height / 2) * (y - height / 2)};
+                        bool const in_circle_border = (d < sqr_radius) && (d > sqr_radius_low);
+                        *p++ = 255 * in_circle_border;
+                        *p++ = 128 * in_circle_border;
+                        *p++ = 0;
+                        *p++ = 70 * in_circle_border;
+                    }
+                }
+
+                GLuint texture;
+                glGenTextures(1, &texture);
+                glBindTexture(GL_TEXTURE_2D, texture);
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                glBindTexture(GL_TEXTURE_2D, 0);
+
+                texture_id = (ImTextureID)(intptr_t)texture;
+            }
+            return texture_id;
+        }
+
         void render_clock(std::string_view label,
                           std::chrono::system_clock::time_point time, bool show_seconds)
         {
@@ -83,9 +119,9 @@ namespace clocks
                 center.x + static_cast<float>(radius * 0.7 * std::cos(minute_angle)),
                 center.y + static_cast<float>(radius * 0.7 * std::sin(minute_angle))};
             ImGui::TextUnformatted(label.data());
-            dl->AddCircleFilled(center, radius,
-                                IM_COL32(0, 0, 0, 100),
-                                60);
+            dl->AddImage(clock_background(), 
+                ImVec2{center.x - radius, center.y - radius}, 
+                ImVec2{center.x + radius, center.y + radius});
             dl->AddLine(center, hour_hand,
                         IM_COL32(255, 255, 255, 255),
                         5);
