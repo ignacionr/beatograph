@@ -40,7 +40,7 @@ namespace hosting::local
             _putenv_s(key.c_str(), value.c_str());
         }
 
-        auto resolve_environment(std::string source) -> std::string {
+        std::string resolve_environment(std::string source) {
             // perform environment variable substitutions with ${VAR} syntax
             for (size_t pos = 0; (pos = source.find("${", pos)) != std::string::npos;)
             {

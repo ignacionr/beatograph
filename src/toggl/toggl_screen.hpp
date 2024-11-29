@@ -4,6 +4,7 @@
 #include <ctime>
 #include <format>
 #include <iomanip>
+#include <memory>
 #include <sstream>
 #include <string>
 #include <thread>
@@ -17,10 +18,9 @@
 
 namespace toggl
 {
-    template <typename client_t>
     struct screen
     {
-        screen(client_t &client) : client{client} {}
+        screen(std::shared_ptr<client> client_ptr) : client_{client_ptr} {}
 
         void render_entry(auto const &entry, auto &current_day, auto &current_day_seconds)
         {
@@ -99,7 +99,7 @@ namespace toggl
                 {
                     try
                     {
-                        client.stopTimeEntry(entry);
+                        client_->stopTimeEntry(entry);
                     }
                     catch (std::exception const &e)
                     {
@@ -112,7 +112,7 @@ namespace toggl
             {
                 try
                 {
-                    client.deleteTimeEntry(entry);
+                    client_->deleteTimeEntry(entry);
                     query();
                 }
                 catch (std::exception const &e)
@@ -128,7 +128,7 @@ namespace toggl
         {
             try
             {
-                time_entries = std::make_shared<nlohmann::json>(client.getTimeEntries());
+                time_entries = std::make_shared<nlohmann::json>(client_->getTimeEntries());
             }
             catch (const std::exception &e)
             {
@@ -137,7 +137,7 @@ namespace toggl
         }
 
         void start_time_entry(std::string_view description) {
-            client.startTimeEntry(current_workspace_id(), description);
+            client_->startTimeEntry(current_workspace_id(), description);
             query();
         }
 
@@ -229,7 +229,7 @@ namespace toggl
         }
 
     private:
-        client_t &client;
+        std::shared_ptr<client> client_;
         std::chrono::system_clock::time_point last_update;
         std::atomic<std::shared_ptr<nlohmann::json>> time_entries;
         time_t utc_offset_seconds{};

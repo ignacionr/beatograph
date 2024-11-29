@@ -49,6 +49,12 @@
                     "command": "rabbitmqctl list_queues",
                     "container": "storm-rabbitmq-1",
                     "host": "storm1"
+                },
+                {
+                    "type": "shell-execute",
+                    "title": "Open RabbitMQ Control",
+                    "command": "cmd.exe",
+                    "args": "/c ssh -t storm1 docker exec -it storm-rabbitmq-1 rabbitmqctl"
                 }
             ]
         },

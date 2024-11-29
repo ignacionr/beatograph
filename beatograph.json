@@ -5,7 +5,13 @@
         },
         {
             "type": "toggl",
+            "title": "\uf075 Toggl Betmavrik",
             "token": "${TOGGL_API_TOKEN}"
+        },
+        {
+            "type": "toggl",
+            "title":"\uf075 Toggl EyeCU",
+            "token": "${EYECU_TOGGL_API_TOKEN}"
         },
         {
             "type": "jira",

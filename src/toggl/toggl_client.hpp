@@ -11,10 +11,11 @@
 
 namespace toggl
 {
-    template <typename notifier_t>
     class client
     {
     public:
+        using notifier_t = std::function<void(std::string_view)>;
+
         client(const std::string &apiToken, notifier_t notifier)
             : baseUrl("https://api.track.toggl.com/api/v9/"), notifier_{notifier}
         {

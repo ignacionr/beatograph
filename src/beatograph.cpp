@@ -169,15 +169,10 @@ int main()
 
         notify::screen notify_screen{notify_host};
 
-        toggl::client tc(localhost.get_env_variable("TOGGL_API_TOKEN"), [&notify_host](std::string_view text) { notify_host(text, "Toggl"); });
-        toggl::screen ts(tc);
-
         jira::host jh{localhost.get_env_variable("JIRA_USER"), localhost.get_env_variable("JIRA_TOKEN")};
         std::unique_ptr<jira::screen> js;
 
         git_host git{localhost};
-
-        ssh_screen ssh_screen;
 
         radio::host radio_host;
         if (auto last_played = load_last_played(); last_played)
@@ -244,19 +239,17 @@ int main()
         };
 
         std::vector<screen_tabs::tab_t> all_tabs {
-            {ICON_MD_TASK " Toggl", [&ts] { ts.render(); }, menu_tabs},
-            {jira_tab_name, [&js, &jh, &ts] { js->render(jh, {
-                {ICON_MD_PUNCH_CLOCK " Start Toggl", [&ts](nlohmann::json const &entry) {
-                    auto const activity_description {std::format("{} - {}", 
-                        entry.at("fields").at("summary").get<std::string>(), 
-                        entry.at("key").get<std::string>())};
-                    ts.start_time_entry(activity_description);
-                } }
+            {jira_tab_name, [&js, &jh] { js->render(jh, {
+                // {ICON_MD_PUNCH_CLOCK " Start Toggl", [&ts](nlohmann::json const &entry) {
+                //     auto const activity_description {std::format("{} - {}", 
+                //         entry.at("fields").at("summary").get<std::string>(), 
+                //         entry.at("key").get<std::string>())};
+                //     ts.start_time_entry(activity_description);
+                // } }
             }); },
              menu_tabs_and([&js](std::string_view item)
                            { js->render_menu(item); }),
              ImVec4(0.5f, 0.5f, 1.0f, 1.0f)},
-            {ICON_MD_SETTINGS_REMOTE " SSH Hosts", [&ssh_screen, &localhost] { ssh_screen.render(localhost); }, menu_tabs},
             {ICON_MD_CODE " Git Repositories", [&git]
              {
                  ImGui::Text("Git Repositories");
@@ -297,8 +290,25 @@ int main()
             {"calendar",
                 [&menu_tabs, &localhost] (nlohmann::json::object_t const& cal) {
                     return screen_tabs::tab_t{cal.at("title"), 
-                        [cs = calendar::screen{std::make_shared<calendar::host>(localhost.resolve_environment(cal.at("endpoint")))}]() mutable { cs.render(); }, menu_tabs};}}
-        };
+                        [cs = calendar::screen{std::make_shared<calendar::host>(localhost.resolve_environment(cal.at("endpoint")))}]() mutable { cs.render(); }, 
+                        menu_tabs};}},
+            {"ssh-hosts",
+                [&menu_tabs, &localhost] (nlohmann::json::object_t const&) {
+                    return screen_tabs::tab_t{ICON_MD_SETTINGS_REMOTE, 
+                        [&localhost] { ssh::screen_all{}.render(localhost); },
+                    menu_tabs};}},
+            {"toggl",
+                [&menu_tabs, &localhost, &notify_host](nlohmann::json::object_t const& node) {
+                    return screen_tabs::tab_t{
+                        node.at("title"),
+                        [ts = std::make_shared<toggl::screen>(std::make_shared<toggl::client>(
+                            localhost.resolve_environment(node.at("token")), 
+                            [&notify_host](std::string_view text) { notify_host(text, "Toggl"); }))
+                        ]() mutable {
+                            ts->render();
+                        },
+                        menu_tabs};}}
+                };
 
         for (nlohmann::json::object_t const &tab : all_tabs_json.at("tabs"))
         {
