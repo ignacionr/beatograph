@@ -61,9 +61,9 @@ namespace hosting::ssh
                     }
                 }
                 ImGui::NextColumn();
-                if (ImGui::CollapsingHeader("OS Release")) {
-                    ImGui::TextUnformatted(host->get_os_release(localhost).c_str());
-                }
+                views::cached_view<std::string>("OS Release",
+                    [host, &localhost] {return host->get_os_release(localhost).c_str(); },
+                    [](std::string const &data) { ImGui::TextUnformatted(data.c_str()); });
                 ImGui::NextColumn();
                 if (ImGui::CollapsingHeader("Performance Metrics"))
                 {
