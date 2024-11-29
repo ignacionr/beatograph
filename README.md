@@ -8,6 +8,15 @@ It also features a screen with information about the local host. One with curren
 
 At the time being, it will only build and run on Windows (sorry for that), but there are plans to soon build on GNU/Linux and MacOS.
 
+## What does it look like?
+
+![Screenshot 1](sample/1.png)
+![Screenshot 2](sample/2.png)
+![Screenshot 3](sample/3.png)
+![Screenshot 4](sample/4.png)
+![Screenshot 5](sample/5.png)
+![Screenshot 6](sample/6.png)
+
 ## Features
 
 - Define dashboards with host definitions.
