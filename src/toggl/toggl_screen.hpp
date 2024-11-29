@@ -20,7 +20,8 @@ namespace toggl
 {
     struct screen
     {
-        screen(std::shared_ptr<client> client_ptr) : client_{client_ptr} {}
+        screen(std::shared_ptr<client> client_ptr, int daily_second_target) 
+        : client_{client_ptr}, seconds_daily_target_{daily_second_target} {}
 
         void render_entry(auto const &entry, auto &current_day, auto &current_day_seconds)
         {
@@ -39,7 +40,7 @@ namespace toggl
                 {
                     auto duration = std::chrono::seconds(current_day_seconds);
                     auto duration_formatted = std::format("{:%H:%M:%S}", duration);
-                    float percentage = 100 * current_day_seconds / (3600.0f * 9.0f);
+                    float percentage = 100.0f * current_day_seconds / (seconds_daily_target_);
                     // paint the percentage in red if it's less than 100%
                     if (percentage < 100.0)
                     {
@@ -234,5 +235,6 @@ namespace toggl
         std::atomic<std::shared_ptr<nlohmann::json>> time_entries;
         time_t utc_offset_seconds{};
         std::string new_description;
+        int seconds_daily_target_;
     };
 }

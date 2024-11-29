@@ -6,12 +6,14 @@
         {
             "type": "toggl",
             "title": "\uf075 Toggl Betmavrik",
-            "token": "${TOGGL_API_TOKEN}"
+            "token": "${TOGGL_API_TOKEN}",
+            "daily_goal": 9
         },
         {
             "type": "toggl",
             "title":"\uf075 Toggl EyeCU",
-            "token": "${EYECU_TOGGL_API_TOKEN}"
+            "token": "${EYECU_TOGGL_API_TOKEN}",
+            "daily_goal": 3
         },
         {
             "type": "jira",

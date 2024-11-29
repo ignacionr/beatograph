@@ -303,7 +303,7 @@ int main()
                         node.at("title"),
                         [ts = std::make_shared<toggl::screen>(std::make_shared<toggl::client>(
                             localhost.resolve_environment(node.at("token")), 
-                            [&notify_host](std::string_view text) { notify_host(text, "Toggl"); }))
+                            [&notify_host](std::string_view text) { notify_host(text, "Toggl"); }), static_cast<int>(node.at("daily_goal").get<float>() * 3600))
                         ]() mutable {
                             ts->render();
                         },
