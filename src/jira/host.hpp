@@ -10,8 +10,9 @@
 
 namespace jira {
     struct host {
-        std::string const base_url = "https://betmavrik.atlassian.net/rest/api/3/";
-        host(std::string_view username, std::string_view token) : username_{username}, token_{token} {}
+        std::string const base_url;
+        host(std::string_view username, std::string_view token, std::string_view url = "https://betmavrik.atlassian.net/rest/api/3/")
+        : username_{username}, token_{token}, base_url{url} {}
 
         std::string auth_header() {
             std::string auth = "Authorization: Basic " + 

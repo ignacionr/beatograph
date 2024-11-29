@@ -4,6 +4,7 @@
             "type": "local"
         },
         {
+            "id": "toggl-betmavrik",
             "type": "toggl",
             "title": "\uf075 Toggl Betmavrik",
             "token": "${TOGGL_API_TOKEN}",
@@ -17,9 +18,13 @@
         },
         {
             "type": "jira",
+            "title": "\ue2e6 Jira Betmavrik",
             "endpoint": "${JIRA_API_URL}",
             "username": "${JIRA_USER}",
-            "token": "${JIRA_TOKEN}"
+            "token": "${JIRA_TOKEN}",
+            "integrate": [
+                "toggl-betmavrik"
+            ]
         },
         {
             "type": "calendar",

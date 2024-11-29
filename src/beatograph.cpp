@@ -137,7 +137,6 @@ int main()
     {
         // auto constexpr happy_bell_sound = "assets/mixkit-happy-bell-alert-601.wav";
         // auto constexpr impact_sound = "assets/mixkit-underground-explosion-impact-echo-1686.wav";
-        auto static constexpr jira_tab_name {ICON_MD_TASK " Jira"};
         auto static constexpr radio_tab_name {ICON_MD_AUDIOTRACK " Radio"};
 
         hosting::local::host localhost;
@@ -168,9 +167,6 @@ int main()
         });
 
         notify::screen notify_screen{notify_host};
-
-        jira::host jh{localhost.get_env_variable("JIRA_USER"), localhost.get_env_variable("JIRA_TOKEN")};
-        std::unique_ptr<jira::screen> js;
 
         git_host git{localhost};
 
@@ -205,20 +201,21 @@ int main()
         std::shared_ptr<screen_tabs> tabs;
 
         std::vector<std::string> loaded_panels;
+
+        std::vector<screen_tabs::tab_t> all_tabs;
         std::function<void(std::string_view)> menu_tabs;
-        menu_tabs = [&tabs, &loaded_panels, &localhost, &menu_tabs](std::string_view key)
+        menu_tabs = [&tabs, &all_tabs, &loaded_panels, &localhost, &menu_tabs](std::string_view key)
         {
             if (key == "Main")
             {
                 if (ImGui::BeginMenu("Tabs"))
                 {
-                    if (ImGui::MenuItem(jira_tab_name, "Ctrl+J"))
+                    for(auto const &tab : all_tabs)
                     {
-                        tabs->select(jira_tab_name);
-                    }
-                    if (ImGui::MenuItem(radio_tab_name, "Ctrl+R"))
-                    {
-                        tabs->select(radio_tab_name);
+                        if (ImGui::MenuItem(tab.name.c_str()))
+                        {
+                            tabs->select(tab.name);
+                        }
                     }
                     ImGui::Separator();
                     if (ImGui::MenuItem("Reload Panels")) {
@@ -238,18 +235,7 @@ int main()
             };
         };
 
-        std::vector<screen_tabs::tab_t> all_tabs {
-            {jira_tab_name, [&js, &jh] { js->render(jh, {
-                // {ICON_MD_PUNCH_CLOCK " Start Toggl", [&ts](nlohmann::json const &entry) {
-                //     auto const activity_description {std::format("{} - {}", 
-                //         entry.at("fields").at("summary").get<std::string>(), 
-                //         entry.at("key").get<std::string>())};
-                //     ts.start_time_entry(activity_description);
-                // } }
-            }); },
-             menu_tabs_and([&js](std::string_view item)
-                           { js->render_menu(item); }),
-             ImVec4(0.5f, 0.5f, 1.0f, 1.0f)},
+        all_tabs = {
             {ICON_MD_CODE " Git Repositories", [&git]
              {
                  ImGui::Text("Git Repositories");
@@ -307,7 +293,27 @@ int main()
                         ]() mutable {
                             ts->render();
                         },
-                        menu_tabs};}}
+                        menu_tabs};}},
+            {"jira",
+                [&cache, &localhost, &menu_tabs_and, js = std::make_shared<jira::screen>(cache)] (nlohmann::json::object_t const& node) mutable {
+                    return screen_tabs::tab_t{
+                        node.at("title"), 
+                        [js, jh = std::make_shared<jira::host>(
+                            localhost.resolve_environment(node.at("username")),
+                            localhost.resolve_environment(node.at("token")),
+                            localhost.resolve_environment(node.at("endpoint"))
+                         )]() mutable { js->render(*jh, {
+                // {ICON_MD_PUNCH_CLOCK " Start Toggl", [&ts](nlohmann::json const &entry) {
+                //     auto const activity_description {std::format("{} - {}", 
+                //         entry.at("fields").at("summary").get<std::string>(), 
+                //         entry.at("key").get<std::string>())};
+                //     ts.start_time_entry(activity_description);
+                // } }
+            }); },
+                menu_tabs_and([&js](std::string_view item)
+                           { js->render_menu(item); }),
+             ImVec4(0.5f, 0.5f, 1.0f, 1.0f)
+             };}}
                 };
 
         for (nlohmann::json::object_t const &tab : all_tabs_json.at("tabs"))
@@ -353,15 +359,14 @@ int main()
         setup_fonts();
 
         radio_screen = std::make_unique<radio::screen>(radio_host, cache);
-        js = std::make_unique<jira::screen>(cache);
         screen.run(
             [&notify_host](std::string_view text) { notify_host(text, "Main"); },
             [&tabs] {
             if (ImGui::IsKeyDown(ImGuiMod_Ctrl)) {
-                if (ImGui::IsKeyPressed(ImGuiKey_J)) {
-                    tabs->select(jira_tab_name);
-                }
-                else if (ImGui::IsKeyPressed(ImGuiKey_R)) {
+                // if (ImGui::IsKeyPressed(ImGuiKey_J)) {
+                //     tabs->select(jira_tab_name);
+                // }
+                if (ImGui::IsKeyPressed(ImGuiKey_R)) {
                     tabs->select(radio_tab_name);
                 }
             } });
