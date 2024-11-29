@@ -17,7 +17,7 @@ namespace rss
     struct screen
     {
         using player_t = std::function<void(std::string_view)>;
-        screen(host &host, player_t player, img_cache &cache) : host_{host}, player_{player}, cache_{cache} {}
+        screen(std::shared_ptr<host> host, player_t player, img_cache &cache) : host_{host}, player_{player}, cache_{cache} {}
 
         void render_flag()
         {
@@ -102,7 +102,7 @@ namespace rss
                 else if (ImGui::SameLine(); ImGui::Button(ICON_MD_REFRESH))
                 {
                     // we will re-add the selected feed into the host
-                    host_.add_feeds({current_feed_->feed_link}, [](std::string_view) {});
+                    host_->add_feeds({current_feed_->feed_link}, [](std::string_view) {});
                 }
                 else 
                 {
@@ -126,7 +126,7 @@ namespace rss
                     const unsigned col_count{static_cast<unsigned>(ImGui::GetWindowWidth() / (side_length + 10))};
                     const ImVec2 button_size(side_length, side_length);
                     int i{0};
-                    for (auto feed : host_.feeds())
+                    for (auto feed : host_->feeds())
                     {
                         if (!feed->feed_image_url.empty())
                         {
@@ -176,7 +176,7 @@ namespace rss
         }
 
     private:
-        host &host_;
+        std::shared_ptr<host> host_;
         player_t player_;
         img_cache &cache_;
         std::shared_ptr<rss::feed> current_feed_;

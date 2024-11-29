@@ -69,7 +69,7 @@ void setup_fonts()
     io.Fonts->AddFontFromFileTTF("assets/fonts/Montserrat-Bold.ttf", 23.0f, nullptr, io.Fonts->GetGlyphRangesCyrillic());
 }
 
-void load_podcasts(auto &host, auto sink) {
+void load_podcasts(auto host, auto sink) {
     std::ifstream file("podcasts.txt");
     // get all urls into a vector
     std::vector<std::string> urls;
@@ -80,7 +80,7 @@ void load_podcasts(auto &host, auto sink) {
             urls.push_back(line);
         }
     }
-    host.add_feeds(urls, sink, []{ return !views::quitting(); });
+    host->add_feeds(urls, sink, []{ return !views::quitting(); });
 }
 
 std::optional<std::string> load_last_played() {
@@ -174,17 +174,6 @@ int main()
             radio_host.play(*last_played);
         }
 
-        std::unique_ptr<radio::screen> radio_screen;
-
-        rss::host podcast_host;
-        load_podcasts(podcast_host, [&notify_host](auto text){ notify_host(text, "RSS"); });
-        rss::screen rss_screen{podcast_host,
-                               [&radio_host](std::string_view url)
-                               {
-                                   radio_host.play(std::string{url});
-                               },
-                               cache};
-
         conversions::screen conv_screen{};
 
         cppgpt::screen gpt_screen;
@@ -234,12 +223,6 @@ int main()
         };
 
         all_tabs = {
-            {radio_tab_name, [&radio_screen, &rss_screen]
-             {
-                 radio_screen->render();
-                 rss_screen.render();
-             },
-             menu_tabs, ImVec4(0.05f, 0.5f, 0.05f, 1.0f)},
             {ICON_MD_CURRENCY_EXCHANGE " Conversions", [&conv_screen]
              { conv_screen.render(); }, menu_tabs},
             {ICON_MD_WATCH " Clocks", [&clocks_screen] { clocks_screen.render(); }, 
@@ -314,7 +297,26 @@ int main()
                             }
                         }
                     },
-                    menu_tabs};}}
+                    menu_tabs};}},
+            {"radio",
+                [&menu_tabs, &notify_host, &radio_host, &cache] (nlohmann::json::object_t const& ) {
+                    auto podcast_host = std::make_shared<rss::host>();
+                    load_podcasts(podcast_host, [&notify_host](auto text){ notify_host(text, "RSS"); });
+                    return screen_tabs::tab_t {radio_tab_name, [
+                        rss_screen = std::make_shared<rss::screen>(podcast_host,
+                                        [&radio_host](std::string_view url)
+                                        {
+                                            radio_host.play(std::string{url});
+                                        },
+                                        cache),
+                        radio_screen = std::make_shared<radio::screen>(radio_host, cache)
+                        ]() mutable
+                        {
+                            radio_screen->render();
+                            rss_screen->render();
+                        },
+                        menu_tabs, ImVec4(0.05f, 0.5f, 0.05f, 1.0f)};
+                }}
         };
 
         for (nlohmann::json::object_t const &tab : all_tabs_json.at("tabs"))
@@ -359,7 +361,6 @@ int main()
 
         setup_fonts();
 
-        radio_screen = std::make_unique<radio::screen>(radio_host, cache);
         screen.run(
             [&notify_host](std::string_view text) { notify_host(text, "Main"); },
             [&tabs] {

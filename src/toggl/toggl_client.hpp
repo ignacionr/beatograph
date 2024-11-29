@@ -2,8 +2,10 @@
 
 #include <format>
 #include <functional>
-#include <string>
 #include <stdexcept>
+#include <string>
+#include <thread>
+
 #include <curl/curl.h>
 #include <nlohmann/json.hpp>
 #include "../conversions/base64.hpp"
@@ -22,7 +24,9 @@ namespace toggl
             std::string base_auth = apiToken + ":api_token";
             std::string base64_auth_string = conversions::text_to_base64(base_auth);
             auth_header = std::format("Authorization: Basic {}", base64_auth_string);
-            check_today();
+            std::thread([this]{
+                check_today();
+            }).detach();
         }
 
         void check_today(int seconds_target = 9 * 3600)
