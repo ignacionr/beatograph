@@ -1,5 +1,7 @@
 # Beatograph
 
+![Screen Shots](sample/output.gif)
+
 Beatograph is meant to offer every tool of interest for DevOps professionals. It allows you to define dashboards that may include host definitions (those will automatically offer readings of node-exporter metrics, show and access docker containers available, and systemctl units), assertions (simple tests that allow us to quickly verify that things are "Go"), arbitrary command execution results from the local host, a remote host, or a container in a remote host; you may even parameterize commands with on-screen inputs.
 
 For those who need to yield time and objective tracking data, it has convenient clients for Toggl and Jira.
@@ -7,10 +9,6 @@ For those who need to yield time and objective tracking data, it has convenient 
 It also features a screen with information about the local host. One with current time and weather in different locations. And an internet radio and podcast player.
 
 At the time being, it will only build and run on Windows (sorry for that), but there are plans to soon build on GNU/Linux and MacOS.
-
-## What does it look like?
-
-![Screen Shots](sample/output.gif)
 
 ## Features
 
