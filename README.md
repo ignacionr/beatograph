@@ -10,12 +10,7 @@ At the time being, it will only build and run on Windows (sorry for that), but t
 
 ## What does it look like?
 
-![Screenshot 1](sample/1.png)
-![Screenshot 2](sample/2.png)
-![Screenshot 3](sample/3.png)
-![Screenshot 4](sample/4.png)
-![Screenshot 5](sample/5.png)
-![Screenshot 6](sample/6.png)
+![Screen Shots](sample/output.gif)
 
 ## Features
 
