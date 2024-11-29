@@ -168,8 +168,6 @@ int main()
 
         notify::screen notify_screen{notify_host};
 
-        git_host git{localhost};
-
         radio::host radio_host;
         if (auto last_played = load_last_played(); last_played)
         {
@@ -236,18 +234,6 @@ int main()
         };
 
         all_tabs = {
-            {ICON_MD_CODE " Git Repositories", [&git]
-             {
-                 ImGui::Text("Git Repositories");
-                 if (auto repos = git.repos(); repos)
-                 {
-                     for (auto const &repo : *repos)
-                     {
-                         ImGui::TextUnformatted(repo.c_str());
-                     }
-                 }
-             },
-             menu_tabs},
             {radio_tab_name, [&radio_screen, &rss_screen]
              {
                  radio_screen->render();
@@ -313,8 +299,23 @@ int main()
                 menu_tabs_and([&js](std::string_view item)
                            { js->render_menu(item); }),
              ImVec4(0.5f, 0.5f, 1.0f, 1.0f)
-             };}}
-                };
+             };}},
+             {"git-repositories",
+                [&cache, &localhost, &menu_tabs] (nlohmann::json::object_t const& node) mutable {
+                    return screen_tabs::tab_t {
+                        ICON_MD_CODE " Git Repositories", 
+                    [git = std::make_shared<git_host>(localhost, node.at("root"))]
+                    {
+                        if (auto repos = git->repos(); repos)
+                        {
+                            for (auto const &repo : *repos)
+                            {
+                                ImGui::TextUnformatted(repo.c_str());
+                            }
+                        }
+                    },
+                    menu_tabs};}}
+        };
 
         for (nlohmann::json::object_t const &tab : all_tabs_json.at("tabs"))
         {

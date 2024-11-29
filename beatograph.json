@@ -35,7 +35,8 @@
             "type": "ssh-hosts"
         },
         {
-            "type": "git-repositories"
+            "type": "git-repositories",
+            "root": "C:\\src"
         },
         {
             "type": "radio"

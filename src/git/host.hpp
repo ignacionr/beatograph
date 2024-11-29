@@ -13,28 +13,9 @@
 
 struct git_host
 {
-    git_host(hosting::local::host &localhost) : localhost_{localhost}
+    git_host(hosting::local::host &localhost, std::string_view root) : localhost_{localhost}
     {
-        async_harvest();
-    }
-
-    static void enumerate_drives(auto sink)
-    {
-        char buffer[256];
-        DWORD result = GetLogicalDriveStringsA(sizeof(buffer), buffer);
-
-        if (result == 0)
-        {
-            throw std::runtime_error("Error: Could not retrieve logical drive strings.");
-        }
-
-        char *drive = buffer;
-        while (*drive)
-        {
-            std::string_view drive_letter{drive};
-            sink(drive_letter);
-            drive += drive_letter.size() + 1; // Move to the next drive string
-        }
+        async_harvest(root);
     }
 
     static void enumerate_repos(std::filesystem::path path, auto sink)
@@ -63,24 +44,19 @@ struct git_host
         }
     }
 
-    static void enumerate_all_repos(auto sink)
-    {
-        enumerate_drives([&sink](std::string_view drive_letter)
-                         { enumerate_repos(drive_letter, sink); });
-    }
-
-    void harvest()
+    void harvest(std::string const &root)
     {
         std::shared_ptr<std::vector<std::string>> repos = std::make_shared<std::vector<std::string>>();
-        enumerate_all_repos([repos](std::filesystem::path repo)
+        enumerate_repos(root,
+            [repos](std::filesystem::path repo)
                             { repos->push_back(repo.string()); });
         m_repos.store(repos);
     }
 
-    void async_harvest()
+    void async_harvest(std::string_view root)
     {
-        std::thread([this]()
-                    { harvest(); })
+        std::thread([this, root_str = std::string{root}]()
+                    { harvest(root_str); })
             .detach();
     }
 
