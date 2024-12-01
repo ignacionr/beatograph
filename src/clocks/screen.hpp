@@ -82,6 +82,23 @@ namespace clocks
                     }
                 }
 
+                for (float a = 0.0f; a < 2 * M_PIf; a += M_PIf / 6.0f)
+                {
+                    auto const x = static_cast<int>(width / 2 + width * 9  * std::cos(a) / 20);
+                    auto const y = static_cast<int>(height / 2 + height * 9 * std::sin(a) / 20);
+                    for (int i = -5; i <= 5; ++i)
+                    {
+                        for (int j = -5; j <= 5; ++j)
+                        {
+                            auto const idx = 4 * (y * width + x + i + j * width);
+                            pixels[idx] = 255;
+                            pixels[idx + 1] = 255;
+                            pixels[idx + 2] = 128;
+                            pixels[idx + 3] = 128;
+                        }
+                    }
+                }
+
                 GLuint texture;
                 glGenTextures(1, &texture);
                 glBindTexture(GL_TEXTURE_2D, texture);

@@ -239,6 +239,9 @@ int main()
             std::ifstream file{"beatograph.json"};
             file >> all_tabs_json;
         }
+
+        std::unordered_map<std::string, std::shared_ptr<toggl::screen>> toggl_screens_by_id;
+
         std::map<std::string, std::function<screen_tabs::tab_t(nlohmann::json::object_t const&)>> factories = {
             {"local",
                 [&menu_tabs, ls = hosting::local::screen{localhost}](nlohmann::json::object_t const&){return screen_tabs::tab_t{ICON_MD_COMPUTER, [&]{ ls.render(); }, menu_tabs};} },
@@ -253,36 +256,43 @@ int main()
                         [&localhost] { ssh::screen_all{}.render(localhost); },
                     menu_tabs};}},
             {"toggl",
-                [&menu_tabs, &localhost, &notify_host](nlohmann::json::object_t const& node) {
-                    return screen_tabs::tab_t{
+                [&menu_tabs, &localhost, &notify_host, &toggl_screens_by_id](nlohmann::json::object_t const& node) {
+                    auto ts {std::make_shared<toggl::screen>(std::make_shared<toggl::client>(
+                            localhost.resolve_environment(node.at("token")),
+                            [&notify_host](std::string_view text) { notify_host(text, "Toggl"); }), 
+                            static_cast<int>(node.at("daily_goal").get<float>() * 3600))};
+                    if (node.contains("id")) {
+                        toggl_screens_by_id[node.at("id")] = ts;
+                    }
+                    return screen_tabs::tab_t {
                         node.at("title"),
-                        [ts = std::make_shared<toggl::screen>(std::make_shared<toggl::client>(
-                            localhost.resolve_environment(node.at("token")), 
-                            [&notify_host](std::string_view text) { notify_host(text, "Toggl"); }), static_cast<int>(node.at("daily_goal").get<float>() * 3600))
-                        ]() mutable {
+                        [ts]() mutable {
                             ts->render();
                         },
                         menu_tabs};}},
             {"jira",
-                [&cache, &localhost, &menu_tabs_and, js = std::make_shared<jira::screen>(cache)] (nlohmann::json::object_t const& node) mutable {
+                [&cache, &localhost, &menu_tabs_and, js = std::make_shared<jira::screen>(cache), &toggl_screens_by_id] (nlohmann::json::object_t const& node) mutable {
+                    jira::issue_screen::context_actions_t actions;
+                    if (node.contains("integrate")) {
+                        for (std::string const &action : node.at("integrate")) {
+                            actions[ICON_MD_PUNCH_CLOCK " Start Toggl"] = [&js, ts = toggl_screens_by_id.at(action)](nlohmann::json const &entry) {
+                                auto const activity_description {std::format("{} - {}", 
+                                    entry.at("fields").at("summary").get<std::string>(), 
+                                    entry.at("key").get<std::string>())};
+                                ts->start_time_entry(activity_description);
+                            };
+                        }
+                    }
                     return screen_tabs::tab_t{
                         node.at("title"), 
-                        [js, jh = std::make_shared<jira::host>(
+                        [actions, js, jh = std::make_shared<jira::host>(
                             localhost.resolve_environment(node.at("username")),
                             localhost.resolve_environment(node.at("token")),
                             localhost.resolve_environment(node.at("endpoint"))
-                         )]() mutable { js->render(*jh, {
-                // {ICON_MD_PUNCH_CLOCK " Start Toggl", [&ts](nlohmann::json const &entry) {
-                //     auto const activity_description {std::format("{} - {}", 
-                //         entry.at("fields").at("summary").get<std::string>(), 
-                //         entry.at("key").get<std::string>())};
-                //     ts.start_time_entry(activity_description);
-                // } }
-            }); },
-                menu_tabs_and([&js](std::string_view item)
+                         )]() mutable { js->render(*jh, actions); },
+                        menu_tabs_and([&js](std::string_view item)
                            { js->render_menu(item); }),
-             ImVec4(0.5f, 0.5f, 1.0f, 1.0f)
-             };}},
+                         ImVec4(0.5f, 0.5f, 1.0f, 1.0f)};}},
              {"git-repositories",
                 [&cache, &localhost, &menu_tabs] (nlohmann::json::object_t const& node) mutable {
                     return screen_tabs::tab_t {
