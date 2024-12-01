@@ -25,7 +25,7 @@ namespace clocks
 {
     struct screen
     {
-        screen(weather::openweather_client &weather_client, img_cache &cache, std::function<bool()> quitting, ignacionr::cppgpt &&gpt, std::function<void(std::string_view)> notify)
+        screen(std::shared_ptr<weather::openweather_client> weather_client, img_cache &cache, std::function<bool()> quitting, ignacionr::cppgpt &&gpt, std::function<void(std::string_view)> notify)
             : weather_client_{weather_client}, cache_{cache}, gpt_{gpt}, notify_{notify}
         {
             refresh_ = std::jthread([this, quitting]
@@ -34,7 +34,7 @@ namespace clocks
                                             for (auto &city : all_cities) {
                                                 try
                                                 {
-                                                    nlohmann::json result = weather_client_.get_weather(city.label);
+                                                    nlohmann::json result = weather_client_->get_weather(city.label);
                                                     {
                                                         std::lock_guard lock{city_mutex_};
                                                         city.weather_info = result;
@@ -157,7 +157,7 @@ namespace clocks
 
         struct city_info
         {
-            std::string_view label;
+            std::string label;
             nlohmann::json weather_info;
         };
 
@@ -184,7 +184,7 @@ namespace clocks
                             auto const start_y{ImGui::GetCursorPosY()};
                             ImGui::TextUnformatted("\n\n\n\n");
                             auto const &weather = city.weather_info["weather"][0];
-                            auto const local_icon = weather_client_.icon_local_file(weather["icon"]);
+                            auto const local_icon = weather_client_->icon_local_file(weather["icon"]);
                             auto const texture{cache_.load_texture_from_file(local_icon)};
                             auto const name = std::format("{}, {}",
                                                           city.weather_info["name"].get<std::string>(),
@@ -259,31 +259,18 @@ namespace clocks
             }
         }
 
+        void add_city(std::string const &city)
+        {
+            std::lock_guard lock{city_mutex_};
+            all_cities.push_back({city});
+        }
+
     private:
-        weather::openweather_client &weather_client_;
+        std::shared_ptr<weather::openweather_client> weather_client_;
         img_cache &cache_;
         views::json json_view_;
         bool show_details_{false};
-        std::vector<city_info> all_cities{{
-            {"Los Angeles"},
-            {"Mexico City"},
-            {"New York"},
-            {"Sao Paulo"},
-            {"Buenos Aires"},
-            {"Cordoba, AR"},
-            {"Santa Fe, AR"},
-            {"Parana, AR"},
-            {"Rosario, AR"},
-            {"London"},
-            {"Rome, IT"},
-            {"Tel Aviv"},
-            {"Saint Petersburg, RU"},
-            {"Antalya, TR"},
-            {"Dubai, AE"},
-            {"Bangkok"},
-            {"Pattaya, TH"},
-            {"Irkutsk, RU"},
-        }};
+        std::vector<city_info> all_cities;
         std::jthread refresh_;
         std::mutex city_mutex_;
         ignacionr::cppgpt gpt_;

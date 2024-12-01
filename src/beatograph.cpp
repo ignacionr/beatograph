@@ -143,8 +143,6 @@ int main()
 
         img_cache cache{"imgcache"};
 
-        weather::openweather_client weather_host{localhost.get_env_variable("OPENWEATHER_KEY")};
-
         // get the Groq API key from GROQ_API_KEY
         auto groq_api_key = localhost.get_env_variable("GROQ_API_KEY");
         ignacionr::cppgpt gpt{groq_api_key, ignacionr::cppgpt::groq_base};
@@ -177,13 +175,6 @@ int main()
         conversions::screen conv_screen{};
 
         cppgpt::screen gpt_screen;
-
-        clocks::screen clocks_screen{
-            weather_host, 
-            cache, 
-            []{ return views::quitting(); }, 
-            std::move(gpt.new_conversation()), 
-            [&notify_host](std::string_view text) { notify_host(text, "Clocks"); }};
 
         std::shared_ptr<screen_tabs> tabs;
 
@@ -225,11 +216,9 @@ int main()
         all_tabs = {
             {ICON_MD_CURRENCY_EXCHANGE " Conversions", [&conv_screen]
              { conv_screen.render(); }, menu_tabs},
-            {ICON_MD_WATCH " Clocks", [&clocks_screen] { clocks_screen.render(); }, 
-             menu_tabs_and([&clocks_screen](auto i) {  clocks_screen.render_menu(i); })},
             {ICON_MD_CHAT_BUBBLE " AI", [&gpt_screen, &gpt]
              { gpt_screen.render(gpt); }, menu_tabs, ImVec4(0.75f, 0.75f, 0.75f, 1.0f)},
-            {"Notifications", [&notify_screen] { notify_screen.render(); }, menu_tabs}
+            {ICON_MD_NOTIFICATIONS " Notifications", [&notify_screen] { notify_screen.render(); }, menu_tabs}
         };
 
         nlohmann::json all_tabs_json;
@@ -244,7 +233,8 @@ int main()
 
         std::map<std::string, std::function<screen_tabs::tab_t(nlohmann::json::object_t const&)>> factories = {
             {"local",
-                [&menu_tabs, ls = hosting::local::screen{localhost}](nlohmann::json::object_t const&){return screen_tabs::tab_t{ICON_MD_COMPUTER, [&]{ ls.render(); }, menu_tabs};} },
+                [&menu_tabs, ls = hosting::local::screen{localhost}](nlohmann::json::object_t const&){return screen_tabs::tab_t{
+                    ICON_MD_COMPUTER " Local Host", [&]{ ls.render(); }, menu_tabs};} },
             {"calendar",
                 [&menu_tabs, &localhost] (nlohmann::json::object_t const& cal) {
                     return screen_tabs::tab_t{cal.at("title"), 
@@ -252,7 +242,7 @@ int main()
                         menu_tabs};}},
             {"ssh-hosts",
                 [&menu_tabs, &localhost] (nlohmann::json::object_t const&) {
-                    return screen_tabs::tab_t{ICON_MD_SETTINGS_REMOTE, 
+                    return screen_tabs::tab_t{ICON_MD_SETTINGS_REMOTE " SSH Hosts", 
                         [&localhost] { ssh::screen_all{}.render(localhost); },
                     menu_tabs};}},
             {"toggl",
@@ -326,6 +316,22 @@ int main()
                             rss_screen->render();
                         },
                         menu_tabs, ImVec4(0.05f, 0.5f, 0.05f, 1.0f)};
+                }},
+            {"world-clocks",
+                [&cache, &menu_tabs_and, &localhost, &notify_host, &gpt](nlohmann::json::object_t const &node) {
+                    auto weather_host = std::make_shared<weather::openweather_client>(localhost.resolve_environment(node.at("openweather_key")));
+                    auto clocks_screen = std::make_shared<clocks::screen>(
+                        weather_host,
+                        cache, 
+                        []{ return views::quitting(); }, 
+                        std::move(gpt.new_conversation()), 
+                        [&notify_host](std::string_view text) { notify_host(text, "Clocks"); });
+                    for (std::string const &city : node.at("cities")) {
+                        clocks_screen->add_city(city);
+                    }
+
+                    return screen_tabs::tab_t{ICON_MD_WATCH " Clocks", [clocks_screen, &menu_tabs_and] { clocks_screen->render(); }, 
+             menu_tabs_and([clocks_screen](auto i) {  clocks_screen->render_menu(i); })};
                 }}
         };
 

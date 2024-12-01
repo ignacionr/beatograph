@@ -46,7 +46,8 @@
         },
         {
             "type": "world-clocks",
-            "clocks": [
+            "openweather_key": "${OPENWEATHER_KEY}",
+            "cities": [
                 "Los Angeles",
                 "Mexico City",
                 "New York",
