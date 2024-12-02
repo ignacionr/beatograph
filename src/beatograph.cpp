@@ -46,6 +46,8 @@
 #include "gtts/host.hpp"
 #include "report/host.hpp"
 #include "group_t.hpp"
+#include "split_screen.hpp"
+#include "tool_screen.hpp"
 
 void setup_fonts()
 {
@@ -215,10 +217,6 @@ int main()
         };
 
         all_tabs = {
-            {ICON_MD_CURRENCY_EXCHANGE " Conversions", [&conv_screen]
-             { conv_screen.render(); }, menu_tabs},
-            {ICON_MD_CHAT_BUBBLE " AI", [&gpt_screen, &gpt]
-             { gpt_screen.render(gpt); }, menu_tabs, ImVec4(0.75f, 0.75f, 0.75f, 1.0f)},
             {ICON_MD_NOTIFICATIONS " Notifications", [&notify_screen] { notify_screen.render(); }, menu_tabs}
         };
 
@@ -233,9 +231,6 @@ int main()
         std::unordered_map<std::string, std::shared_ptr<toggl::screen>> toggl_screens_by_id;
 
         std::map<std::string, std::function<group_t(nlohmann::json::object_t const&)>> factories = {
-            {"local",
-                [&menu_tabs, ls = hosting::local::screen{localhost}](nlohmann::json::object_t const&){return group_t{
-                    ICON_MD_COMPUTER " Local Host", [&]{ ls.render(); }, menu_tabs};} },
             {"calendar",
                 [&menu_tabs, &localhost] (nlohmann::json::object_t const& cal) {
                     return group_t{cal.at("title"), 
@@ -352,7 +347,18 @@ int main()
 
         tabs = std::make_shared<screen_tabs>(all_tabs);
 
-        main_screen screen{tabs};
+        auto tools = std::make_shared<tool_screen>(std::vector<group_t> {
+            {ICON_MD_CURRENCY_EXCHANGE " Conversions", [&conv_screen]
+             { conv_screen.render(); }, menu_tabs},
+            {ICON_MD_CHAT_BUBBLE " AI", [&gpt_screen, &gpt]
+             { gpt_screen.render(gpt); }, menu_tabs, ImVec4(0.75f, 0.75f, 0.75f, 1.0f)},
+            {ICON_MD_COMPUTER " Local Host", [&menu_tabs, ls = hosting::local::screen{localhost}]
+             { ls.render(); }, menu_tabs}
+        });
+        
+        auto split = std::make_shared<split_screen>([&tabs]{ tabs->render(); }, [tools]{ tools->render(); });
+
+        main_screen screen{split};
 
         // enumerate the ./panels directory
         load_panels(tabs, loaded_panels, localhost, menu_tabs);
