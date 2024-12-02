@@ -11,7 +11,7 @@
 namespace jira {
     struct host {
         std::string const base_url;
-        host(std::string_view username, std::string_view token, std::string_view url = "https://betmavrik.atlassian.net/rest/api/3/")
+        host(std::string_view username, std::string_view token, std::string_view url)
         : username_{username}, token_{token}, base_url{url} {}
 
         std::string auth_header() {
@@ -35,14 +35,16 @@ namespace jira {
             return account_id_.value();
         }
 
-        // Add the following method to the jira::host struct
-
         std::string get_assigned_issues(bool include_done = false) {
             std::string jql = "assignee=currentUser()";
             if (!include_done) {
                 jql += " AND statusCategory != \"Done\"";
             }
             return get_jql(jql);
+        }
+
+        std::string get_browse_url(std::string_view issue_key) {
+            return std::format("{}/browse/{}", base_url.substr(0, base_url.find("/rest")), issue_key);
         }
 
         std::string get_project(int project_id) {
@@ -102,12 +104,17 @@ namespace jira {
             }
         }
 
-        nlohmann::json::object_t create_issue(std::string_view issue_summary, std::string_view project_key) {
+        nlohmann::json get_issue_types() {
+            nlohmann::json const result = nlohmann::json::parse(get("issuetype"));
+            return result;
+        }
+
+        nlohmann::json::object_t create_issue(std::string_view issue_summary, std::string_view project_key, std::string_view issuetype_id) {
             nlohmann::json::object_t contents = {
                 {"fields", {
                     {"project", {{"key", project_key}}},
                     {"summary", issue_summary},
-                    {"issuetype", {{"id", "10053"}}}
+                    {"issuetype", {{"id", issuetype_id}}}
                 }}
             };
             nlohmann::json::object_t const result = nlohmann::json::parse(post("issue", contents));

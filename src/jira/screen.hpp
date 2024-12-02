@@ -164,6 +164,20 @@ namespace jira
             if (summary_text_.reserve(256); ImGui::InputText("Summary", summary_text_.data(), summary_text_.capacity())) {
                 summary_text_ = summary_text_.data();
             }
+            views::cached_view<nlohmann::json::array_t>("Issue Type",
+                [&h]() {
+                    return h.get_issue_types();
+                },
+                [this](nlohmann::json::array_t const &json_issue_types) {
+                    for (auto const &issue_type : json_issue_types)
+                    {
+                        auto const &name {issue_type.at("name").get_ref<std::string const &>()};
+                        auto const &id {issue_type.at("id").get_ref<std::string const &>()};
+                        if (ImGui::Selectable(name.c_str(), issuetype_id_ == id)) {
+                            issuetype_id_ = issue_type.at("id").get<std::string>();
+                        }
+                    }
+                }, true);
             if (ImGui::CollapsingHeader("Sub-Tasks", ImGuiTreeNodeFlags_DefaultOpen)) {
                 int i{0};
                 for (auto &subtask : subtasks_) {
@@ -183,7 +197,7 @@ namespace jira
                 }
             }
             if (ImGui::Button("Create and Assign to Me")) {
-                auto issue {h.create_issue(summary_text_, selected_project_key_)};
+                auto issue {h.create_issue(summary_text_, selected_project_key_, issuetype_id_)};
                 h.assign_issue_to_me(issue.at("key").get<std::string>());
                 summary_text_.clear();
                 editing_new_ = false;
@@ -251,5 +265,6 @@ namespace jira
         int selected_project_{-1};
         std::string selected_project_key_;
         std::vector<std::string> subtasks_;
+        std::string issuetype_id_;
     };
 }

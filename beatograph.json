@@ -11,6 +11,7 @@
             "daily_goal": 9
         },
         {
+            "id": "toggl-eyecu",
             "type": "toggl",
             "title":"\uf075 Toggl EyeCU",
             "token": "${EYECU_TOGGL_API_TOKEN}",
@@ -24,6 +25,16 @@
             "token": "${JIRA_TOKEN}",
             "integrate": [
                 "toggl-betmavrik"
+            ]
+        },
+        {
+            "type": "jira",
+            "title": "\ue2e6 Jira EyeCU",
+            "endpoint": "${EYECU_JIRA_URL}",
+            "username": "${EYECU_JIRA_USER}",
+            "token": "${EYECU_JIRA_TOKEN}",
+            "integrate": [
+                "toggl-eyecu"
             ]
         },
         {
@@ -71,7 +82,8 @@
         {
             "type": "ai",
             "endpoint": "https://api.groq.com/openai/v1",
-            "token": "${GROQ_API_KEY}"
+            "token": "${GROQ_API_KEY}",
+            "model": "llama3-groq-70b-8192-tool-use-preview"
         },
         {
             "type": "notifications"

@@ -261,11 +261,12 @@ int main()
                         },
                         menu_tabs};}},
             {"jira",
-                [&cache, &localhost, &menu_tabs_and, js = std::make_shared<jira::screen>(cache), &toggl_screens_by_id] (nlohmann::json::object_t const& node) mutable {
+                [&cache, &localhost, &menu_tabs_and, &toggl_screens_by_id] (nlohmann::json::object_t const& node) mutable {
+                    auto js = std::make_shared<jira::screen>(cache);
                     jira::issue_screen::context_actions_t actions;
                     if (node.contains("integrate")) {
                         for (std::string const &action : node.at("integrate")) {
-                            actions[ICON_MD_PUNCH_CLOCK " Start Toggl"] = [&js, ts = toggl_screens_by_id.at(action)](nlohmann::json const &entry) {
+                            actions[ICON_MD_PUNCH_CLOCK " Start Toggl"] = [js, ts = toggl_screens_by_id.at(action)](nlohmann::json const &entry) {
                                 auto const activity_description {std::format("{} - {}", 
                                     entry.at("fields").at("summary").get<std::string>(), 
                                     entry.at("key").get<std::string>())};
@@ -273,13 +274,14 @@ int main()
                             };
                         }
                     }
-                    return screen_tabs::tab_t{
-                        node.at("title"), 
-                        [actions, js, jh = std::make_shared<jira::host>(
+                    auto jh = std::make_shared<jira::host>(
                             localhost.resolve_environment(node.at("username")),
                             localhost.resolve_environment(node.at("token")),
                             localhost.resolve_environment(node.at("endpoint"))
-                         )]() mutable { js->render(*jh, actions); },
+                         );
+                    return screen_tabs::tab_t{
+                        node.at("title"), 
+                        [actions, js, jh]() mutable { js->render(*jh, actions); },
                         menu_tabs_and([&js](std::string_view item)
                            { js->render_menu(item); }),
                          ImVec4(0.5f, 0.5f, 1.0f, 1.0f)};}},

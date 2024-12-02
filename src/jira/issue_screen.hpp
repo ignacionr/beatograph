@@ -97,14 +97,15 @@ namespace jira
                     ImGui::SetTooltip("Start Progress");
                 }
                 if (ImGui::SmallButton(ICON_MD_WEB)) {
-                    auto const url = std::format("https://betmavrik.atlassian.net/browse/{}", key);
+                    auto const url = h.get_browse_url(key);
                     ShellExecuteA(nullptr, "open", url.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
                 }
                 if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip)) {
                     ImGui::SetTooltip("Open in browser");
                 }
                 if (ImGui::SameLine(); ImGui::SmallButton(ICON_MD_CONTENT_COPY)) {
-                    ImGui::SetClipboardText(std::format("https://betmavrik.atlassian.net/browse/{}", key).c_str());
+                    auto const url = h.get_browse_url(key);
+                    ImGui::SetClipboardText(url.c_str());
                 }
                 if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip)) {
                     ImGui::SetTooltip("Copy URL to clipboard");

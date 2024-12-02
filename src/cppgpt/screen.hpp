@@ -12,7 +12,7 @@ namespace cppgpt {
             }
             if (ImGui::SmallButton("Run")) {
                 try {
-                    result = gpt.sendMessage(prompt, "user", "llama-3.2-90b-text-preview")["choices"][0]["message"]["content"];
+                    result = gpt.sendMessage(prompt, "user", "llama3-groq-70b-8192-tool-use-preview")["choices"][0]["message"]["content"];
                 }
                 catch(std::exception &e) {
                     result = e.what();
