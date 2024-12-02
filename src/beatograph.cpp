@@ -45,6 +45,7 @@
 #include "cppgpt/screen.hpp"
 #include "gtts/host.hpp"
 #include "report/host.hpp"
+#include "group_t.hpp"
 
 void setup_fonts()
 {
@@ -180,7 +181,7 @@ int main()
 
         std::vector<std::string> loaded_panels;
 
-        std::vector<screen_tabs::tab_t> all_tabs;
+        std::vector<group_t> all_tabs;
         std::function<void(std::string_view)> menu_tabs;
         menu_tabs = [&tabs, &all_tabs, &loaded_panels, &localhost, &menu_tabs](std::string_view key)
         {
@@ -231,18 +232,18 @@ int main()
 
         std::unordered_map<std::string, std::shared_ptr<toggl::screen>> toggl_screens_by_id;
 
-        std::map<std::string, std::function<screen_tabs::tab_t(nlohmann::json::object_t const&)>> factories = {
+        std::map<std::string, std::function<group_t(nlohmann::json::object_t const&)>> factories = {
             {"local",
-                [&menu_tabs, ls = hosting::local::screen{localhost}](nlohmann::json::object_t const&){return screen_tabs::tab_t{
+                [&menu_tabs, ls = hosting::local::screen{localhost}](nlohmann::json::object_t const&){return group_t{
                     ICON_MD_COMPUTER " Local Host", [&]{ ls.render(); }, menu_tabs};} },
             {"calendar",
                 [&menu_tabs, &localhost] (nlohmann::json::object_t const& cal) {
-                    return screen_tabs::tab_t{cal.at("title"), 
+                    return group_t{cal.at("title"), 
                         [cs = calendar::screen{std::make_shared<calendar::host>(localhost.resolve_environment(cal.at("endpoint")))}]() mutable { cs.render(); }, 
                         menu_tabs};}},
             {"ssh-hosts",
                 [&menu_tabs, &localhost] (nlohmann::json::object_t const&) {
-                    return screen_tabs::tab_t{ICON_MD_SETTINGS_REMOTE " SSH Hosts", 
+                    return group_t{ICON_MD_SETTINGS_REMOTE " SSH Hosts", 
                         [&localhost] { ssh::screen_all{}.render(localhost); },
                     menu_tabs};}},
             {"toggl",
@@ -254,7 +255,7 @@ int main()
                     if (node.contains("id")) {
                         toggl_screens_by_id[node.at("id")] = ts;
                     }
-                    return screen_tabs::tab_t {
+                    return group_t {
                         node.at("title"),
                         [ts]() mutable {
                             ts->render();
@@ -279,7 +280,7 @@ int main()
                             localhost.resolve_environment(node.at("token")),
                             localhost.resolve_environment(node.at("endpoint"))
                          );
-                    return screen_tabs::tab_t{
+                    return group_t{
                         node.at("title"), 
                         [actions, js, jh]() mutable { js->render(*jh, actions); },
                         menu_tabs_and([&js](std::string_view item)
@@ -287,7 +288,7 @@ int main()
                          ImVec4(0.5f, 0.5f, 1.0f, 1.0f)};}},
              {"git-repositories",
                 [&cache, &localhost, &menu_tabs] (nlohmann::json::object_t const& node) mutable {
-                    return screen_tabs::tab_t {
+                    return group_t {
                         ICON_MD_CODE " Git Repositories", 
                     [git = std::make_shared<git_host>(localhost, node.at("root"))]
                     {
@@ -304,7 +305,7 @@ int main()
                 [&menu_tabs, &notify_host, &radio_host, &cache] (nlohmann::json::object_t const& ) {
                     auto podcast_host = std::make_shared<rss::host>();
                     load_podcasts(podcast_host, [&notify_host](auto text){ notify_host(text, "RSS"); });
-                    return screen_tabs::tab_t {radio_tab_name, [
+                    return group_t {radio_tab_name, [
                         rss_screen = std::make_shared<rss::screen>(podcast_host,
                                         [&radio_host](std::string_view url)
                                         {
@@ -332,7 +333,7 @@ int main()
                         clocks_screen->add_city(city);
                     }
 
-                    return screen_tabs::tab_t{ICON_MD_WATCH " Clocks", [clocks_screen, &menu_tabs_and] { clocks_screen->render(); }, 
+                    return group_t{ICON_MD_WATCH " Clocks", [clocks_screen, &menu_tabs_and] { clocks_screen->render(); }, 
              menu_tabs_and([clocks_screen](auto i) {  clocks_screen->render_menu(i); })};
                 }}
         };

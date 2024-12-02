@@ -7,16 +7,11 @@
 
 #include <imgui.h>
 
+#include "group_t.hpp"
+
 struct screen_tabs {
 
-    struct tab_t {
-        std::string name;
-        std::function<void()> render;
-        std::function<void(std::string_view)> render_menu = {};
-        ImVec4 color = ImVec4(0.1f, 0.1f, 0.5f, 1.0f);
-    };
-
-    screen_tabs(std::vector<tab_t> tabs) : tabs{std::move(tabs)} {}
+    screen_tabs(std::vector<group_t> tabs) : tabs{std::move(tabs)} {}
 
     void render()
     {
@@ -56,19 +51,19 @@ struct screen_tabs {
         select_tab_ = name;
     }
 
-    size_t add(tab_t tab) {
+    size_t add(group_t tab) {
         tabs.push_back(tab);
         return tabs.size() - 1;
     }
 
     void remove(std::string_view name) {
-        tabs.erase(std::remove_if(tabs.begin(), tabs.end(), [name](const tab_t &tab) {
+        tabs.erase(std::remove_if(tabs.begin(), tabs.end(), [name](const group_t &tab) {
             return tab.name == name;
         }), tabs.end());
     }
     
 private:
-    std::vector<tab_t> tabs;
+    std::vector<group_t> tabs;
     std::function<void(std::string_view)> current_menu{};
     std::string select_tab_;
 };
