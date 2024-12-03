@@ -173,7 +173,7 @@ namespace jira
                     {
                         auto const &name {issue_type.at("name").get_ref<std::string const &>()};
                         auto const &id {issue_type.at("id").get_ref<std::string const &>()};
-                        if (ImGui::Selectable(name.c_str(), issuetype_id_ == id)) {
+                        if (ImGui::Selectable(std::format("{}-{}", name, id).c_str(), issuetype_id_ == id)) {
                             issuetype_id_ = issue_type.at("id").get<std::string>();
                         }
                     }
