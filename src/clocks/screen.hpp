@@ -31,12 +31,12 @@ namespace clocks
             refresh_ = std::jthread([this, quitting]
                                     {
                                         while (!quitting()) {
-                                            for (auto &city : all_cities) {
+                                            auto all_cities_vector = all_cities.load();
+                                            for (auto &city : *all_cities_vector) {
                                                 try
                                                 {
                                                     nlohmann::json result = weather_client_->get_weather(city.label);
                                                     {
-                                                        std::lock_guard lock{city_mutex_};
                                                         city.weather_info = result;
                                                     }
                                                 }
@@ -174,8 +174,8 @@ namespace clocks
                 render_clock("UTC", std::chrono::system_clock::now(), true);
                 ImGui::EndChild();
                 {
-                    std::lock_guard lock{city_mutex_};
-                    for (auto const &city : all_cities)
+                    auto all_cities_vector = all_cities.load();
+                    for (auto const &city : *all_cities_vector)
                     {
                         ImGui::TableNextColumn();
                         ImGui::BeginChild(city.label.data(), ImVec2{side_width, cell_height});
@@ -261,8 +261,9 @@ namespace clocks
 
         void add_city(std::string const &city)
         {
-            std::lock_guard lock{city_mutex_};
-            all_cities.push_back({city});
+            auto all_cities_vector = std::make_shared<std::vector<city_info>>(*all_cities.load());
+            all_cities_vector->push_back({city});
+            all_cities.store(all_cities_vector);
         }
 
     private:
@@ -270,9 +271,8 @@ namespace clocks
         img_cache &cache_;
         views::json json_view_;
         bool show_details_{false};
-        std::vector<city_info> all_cities;
+        std::atomic<std::shared_ptr<std::vector<city_info>>> all_cities {std::make_shared<std::vector<city_info>>()};
         std::jthread refresh_;
-        std::mutex city_mutex_;
         ignacionr::cppgpt gpt_;
         std::function<void(std::string_view)> notify_;
     };

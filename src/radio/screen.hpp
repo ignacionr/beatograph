@@ -53,7 +53,26 @@ namespace radio
 
                 auto const green{host_.is_playing() ? green_on : green_off};
 
+                // let's do the on/off button
+                if (ImGui::Button(host_.is_playing() ? ICON_MD_VOLUME_OFF : ICON_MD_VOLUME_MUTE))
+                {
+                    if (host_.is_playing())
+                    {
+                        host_.stop();
+                        currently_playing.reset();
+                    }
+                    else
+                    {
+                        if (currently_playing.has_value())
+                        {
+                            host_.play(presets[currently_playing.value()]);
+                        }
+                    }
+                }
+
+                ImGui::Indent();
                 ImGui::TextUnformatted(host_.stream_name().c_str());
+                ImGui::Unindent();
 
                 int current_row{1};
                 auto const x_unit = dial_width / (presets.size() + 2);
