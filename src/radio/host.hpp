@@ -77,6 +77,7 @@ namespace radio
                 SDL_PauseAudioDevice(dev, 1);
                 SDL_ClearQueuedAudio(dev);
             }
+            stream_metadata_.clear();
             keep_playing = false;
         }
 
@@ -214,6 +215,16 @@ namespace radio
                 throw std::runtime_error(std::format("Failed to find stream information: {}", url));
             }
 
+            // Retrieve the name of the stream
+            stream_metadata_.clear();
+            if (fmt_ctx->metadata)
+            {
+                const AVDictionaryEntry *e = nullptr;
+                while ((e = av_dict_iterate(fmt_ctx->metadata, e))) {
+                    stream_metadata_[e->key] = e->value;
+                }
+            }
+
             // Get the audio stream
             AVStream *audio_stream = nullptr;
             for (unsigned int i = 0; i < fmt_ctx->nb_streams; i++)
@@ -343,6 +354,20 @@ namespace radio
             return last_played_;
         }
 
+        std::string const &stream_name() const {
+            if (stream_metadata_.find("title") != stream_metadata_.end()) {
+                return stream_metadata_.at("title");
+            }
+            else if (stream_metadata_.find("icy-name") != stream_metadata_.end()) {
+                return stream_metadata_.at("icy-name");
+            }
+            else if (!stream_metadata_.empty()) {
+                return stream_metadata_.begin()->second;
+            }
+            static std::string empty{};
+            return empty;
+        }
+
     private:
 
         std::map<std::string, std::string> presets_;
@@ -355,5 +380,6 @@ namespace radio
         std::atomic<bool> has_error_{false};
         std::string last_error_;
         std::string last_played_;
+        std::unordered_map<std::string, std::string> stream_metadata_;
     };
 }

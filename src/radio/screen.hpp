@@ -53,6 +53,8 @@ namespace radio
 
                 auto const green{host_.is_playing() ? green_on : green_off};
 
+                ImGui::TextUnformatted(host_.stream_name().c_str());
+
                 int current_row{1};
                 auto const x_unit = dial_width / (presets.size() + 2);
                 ImGui::PushStyleColor(ImGuiCol_Text, green);
