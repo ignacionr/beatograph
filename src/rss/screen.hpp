@@ -59,32 +59,20 @@ namespace rss
                         continue;
                     }
                     ImGui::TableNextRow();
-                    ImGui::PushID(&item);
                     ImGui::TableNextColumn();
-                    auto starting_pos = ImGui::GetCursorScreenPos();
+                    std::string item_text;
                     if (!item.enclosure.empty())
                     {
-                        ImGui::TextUnformatted(ICON_MD_PLAY_CIRCLE);
-                        ImGui::SameLine();
+                        item_text = ICON_MD_PLAY_CIRCLE " ";
                     }
-                    ImGui::TextUnformatted(item.title.c_str());
-                    auto const mouse_pos = ImGui::GetMousePos();
-                    ImVec2 const row_max{
-                        starting_pos.x + ImGui::GetColumnWidth(),
-                        tablestart_y + ImGui::GetCursorPosY() - ImGui::GetScrollY()};
-                    // hovering at any part of the row?
-                    if (mouse_pos.x >= starting_pos.x && mouse_pos.x <= row_max.x &&
-                        mouse_pos.y >= (starting_pos.y) && mouse_pos.y <= row_max.y)
+                    item_text += item.title;
+                    if (ImGui::Selectable(item_text.c_str()))
                     {
-                        ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
-                        auto data = ImGui::GetWindowDrawList();
-                        data->AddRect(starting_pos, row_max, IM_COL32(255, 255, 0, 255));
-                        if (ImGui::IsMouseClicked(0) && !item.enclosure.empty())
+                        if (!item.enclosure.empty())
                         {
                             player_(item.enclosure);
                         }
                     }
-                    ImGui::PopID();
                 }
                 ImGui::EndTable();
             }
