@@ -1,0 +1,11 @@
+{
+    "title": " Eleven Project",
+    "contents" : [
+        {
+            "type": "shell-execute",
+            "title": "Open VSCode to Eleven Project",
+            "command": "code",
+            "args": "C:\\src\\eleven"
+        }
+    ]
+}

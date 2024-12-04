@@ -31,6 +31,7 @@
 #include <cppgpt/cppgpt.hpp>
 #include "views/assertion.hpp"
 #include "git/host.hpp"
+#include "git/screen.hpp"
 #include "radio/host.hpp"
 #include "radio/screen.hpp"
 #include "rss/host.hpp"
@@ -285,15 +286,9 @@ int main()
                 [&cache, &localhost, &menu_tabs] (nlohmann::json::object_t const& node) mutable {
                     return group_t {
                         ICON_MD_CODE " Git Repositories", 
-                    [git = std::make_shared<git_host>(localhost, node.at("root"))]
+                    [git_screen = std::make_shared<git::screen>(std::make_shared<git::host>(localhost, node.at("root")))]
                     {
-                        if (auto repos = git->repos(); repos)
-                        {
-                            for (auto const &repo : *repos)
-                            {
-                                ImGui::TextUnformatted(repo.c_str());
-                            }
-                        }
+                        git_screen->render();
                     },
                     menu_tabs};}},
             {"radio",

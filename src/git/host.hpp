@@ -11,11 +11,12 @@
 
 #include "../hosting/host_local.hpp"
 
-struct git_host
+namespace git{
+struct host
 {
-    git_host(hosting::local::host &localhost, std::string_view root) : localhost_{localhost}
+    host(hosting::local::host &localhost, std::string_view root) : localhost_{localhost}, root_{root}
     {
-        async_harvest(root);
+        async_harvest();
     }
 
     static void enumerate_repos(std::filesystem::path path, auto sink)
@@ -44,19 +45,19 @@ struct git_host
         }
     }
 
-    void harvest(std::string const &root)
+    void harvest()
     {
         std::shared_ptr<std::vector<std::string>> repos = std::make_shared<std::vector<std::string>>();
-        enumerate_repos(root,
+        enumerate_repos(root_,
             [repos](std::filesystem::path repo)
                             { repos->push_back(repo.string()); });
         m_repos.store(repos);
     }
 
-    void async_harvest(std::string_view root)
+    void async_harvest()
     {
-        std::thread([this, root_str = std::string{root}]()
-                    { harvest(root_str); })
+        std::thread([this]()
+                    { harvest(); })
             .detach();
     }
 
@@ -71,7 +72,59 @@ struct git_host
         return localhost_.execute_command(command.c_str());
     }
 
+    std::string clone(std::string_view repo, std::string_view target_path)
+    {
+        std::string const command {std::format("git clone \"{}\" \"{}\"", repo, target_path)};
+        auto const result = localhost_.execute_command(command.c_str());
+        if (result.find("fatal") != std::string::npos)
+        {
+            throw std::runtime_error(result);
+        }
+        auto repos = std::make_shared<std::vector<std::string>>(*m_repos.load());
+        repos->push_back(std::string{target_path});
+        m_repos.store(repos);
+        return result;
+    }
+
+    std::string checkout(std::string_view repo, std::string_view commit = "HEAD")
+    {
+        std::string const command {std::format("git --git-dir=\"{}/.git\" --work-tree=\"{}\" checkout {}", repo, repo, commit)};
+        return localhost_.execute_command(command.c_str());
+    }
+
+    std::string shallow_partial_download(std::string_view repo, std::string_view partial_path, std::string_view target_path) {
+        std::string const command {std::format("git clone --depth 1 --filter=blob:none --no-checkout \"{}\" \"{}\"", repo, target_path)};
+        auto const result = localhost_.execute_command(command.c_str());
+        if (result.find("fatal") != std::string::npos)
+        {
+            throw std::runtime_error(result);
+        }
+        std::string const command2 {std::format("git --git-dir=\"{}/.git\" --work-tree=\"{}\" sparse-checkout init --cone", target_path, target_path)};
+        auto const result2 = localhost_.execute_command(command2.c_str());
+        if (result2.find("fatal") != std::string::npos)
+        {
+            throw std::runtime_error(result2);
+        }
+        std::string const command3 {std::format("git --git-dir=\"{}/.git\" --work-tree=\"{}\" sparse-checkout set \"{}\"", target_path, target_path, partial_path)};
+        auto const result3 = localhost_.execute_command(command3.c_str());
+        if (result3.find("fatal") != std::string::npos)
+        {
+            throw std::runtime_error(result3);
+        }
+        // Manually checkout files after setting sparse paths
+        std::string const command4 {std::format(
+            "git --git-dir=\"{}/.git\" --work-tree=\"{}\" checkout",
+            target_path, target_path)};
+        auto const result4 = localhost_.execute_command(command4.c_str());
+        if (result4.find("fatal") != std::string::npos) {
+            throw std::runtime_error(result4);
+        }
+        return result4;
+    }
+
 private:
     hosting::local::host &localhost_;
     std::atomic<std::shared_ptr<std::vector<std::string>>> m_repos;
+    std::string root_;
 };
+}
