@@ -70,10 +70,7 @@ namespace radio
                     }
                 }
 
-                ImGui::Indent();
-                ImGui::TextUnformatted(host_.stream_name().c_str());
-                ImGui::Unindent();
-
+                auto const cursor_pos {ImGui::GetCursorPos()};
                 int current_row{1};
                 auto const x_unit = dial_width / (presets.size() + 2);
                 ImGui::PushStyleColor(ImGuiCol_Text, green);
@@ -92,8 +89,8 @@ namespace radio
                         {start_x + 5, offset_y + y_center - 4 + 8 * (current_row > 1)}, green);
                     ImGui::SetCursorPosX(x);
                     ImGui::SetCursorPosY(row_y[current_row]);
-                    if (ImGui::Selectable(presets[ip].c_str(), ip == currently_playing, 0, 
-                        {3 * x_unit, selectable_height}))
+                    if (ImGui::Selectable(presets[ip].c_str(), ip == currently_playing, 0,
+                                          {3 * x_unit, selectable_height}))
                     {
                         if (currently_playing != ip)
                         {
@@ -141,6 +138,18 @@ namespace radio
                         {initial_pos.x, offset_y + 3},
                         {initial_pos.x + dial_width, offset_y + dial_height - 6},
                         traslucid_gray, traslucid_gray, traslucid_yellow, traslucid_yellow);
+                }
+
+                auto const &title{host_.stream_name()};
+                if (!title.empty())
+                {
+                    ImGui::SetCursorPos(cursor_pos);
+                    ImGui::Indent();
+                    unsigned long const start = static_cast<unsigned long>(ImGui::GetTime() * 2.0) % title.size();
+                    draw_list->AddRectFilled({cursor_pos.x + 20, cursor_pos.y + 50}, {cursor_pos.x + 110, cursor_pos.y + 62}, IM_COL32(0, 0, 0, 190));
+                    ImGui::TextUnformatted(title.data() + start,
+                                           title.data() + std::min(start + 10ul, static_cast<unsigned long>(title.size())));
+                    ImGui::Unindent();
                 }
 
                 ImGui::SetCursorPosX(initial_pos.x);
