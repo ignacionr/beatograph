@@ -349,8 +349,12 @@ int main()
         auto tools = std::make_shared<tool_screen>(std::vector<group_t> {
             {ICON_MD_CURRENCY_EXCHANGE " Conversions", [&conv_screen]
              { conv_screen.render(); }, menu_tabs},
-            {ICON_MD_CHAT_BUBBLE " AI", [&gpt_screen, &gpt]
-             { gpt_screen.render(gpt); }, menu_tabs, ImVec4(0.75f, 0.75f, 0.75f, 1.0f)},
+            {ICON_MD_CHAT_BUBBLE " AI", [&gpt_screen, &gpt, &notify_host]
+             {  gpt_screen.render(gpt, [&notify_host](std::string_view text) { 
+                    notify_host(text, "AI");
+              }); },
+                menu_tabs, 
+                ImVec4(0.75f, 0.75f, 0.75f, 1.0f)},
             {ICON_MD_COMPUTER " Local Host", [&menu_tabs, ls = hosting::local::screen{localhost}]
              { ls.render(); }, menu_tabs}
         });
