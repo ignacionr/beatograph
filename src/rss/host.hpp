@@ -14,7 +14,7 @@ namespace rss
 {
     struct host
     {
-        host()
+        host(std::function<std::string(std::string_view)> system_runner) : system_runner_(system_runner)
         {
         }
 
@@ -25,7 +25,7 @@ namespace rss
             return size * nmemb;
         }
 
-        static feed get_feed(std::string_view url)
+        static feed get_feed(std::string_view url, std::function<std::string(std::string_view)> system_runner)
         {
             // use curl to obtain the feed contents
             CURL *curl = curl_easy_init();
@@ -38,7 +38,7 @@ namespace rss
             curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
             curl_easy_setopt(curl, CURLOPT_URL, url.data());
             curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
-            feed parser;
+            feed parser{system_runner};
             curl_easy_setopt(curl, CURLOPT_WRITEDATA, &parser);
             CURLcode res;
             try
@@ -92,7 +92,7 @@ namespace rss
 
         auto add_feed_sync(std::string_view url)
         {
-            auto feed_ptr = std::make_shared<rss::feed>(get_feed(url));
+            auto feed_ptr = std::make_shared<rss::feed>(get_feed(url, system_runner_));
             {
                 static std::mutex mutex;
                 std::lock_guard<std::mutex> lock(mutex);
@@ -124,5 +124,6 @@ namespace rss
 
     private:
         std::atomic<std::shared_ptr<std::vector<std::shared_ptr<rss::feed>>>> feeds_ = std::make_shared<std::vector<std::shared_ptr<rss::feed>>>();
+        std::function<std::string(std::string_view)> system_runner_;
     };
 }

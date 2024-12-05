@@ -17,7 +17,9 @@ namespace rss
     struct screen
     {
         using player_t = std::function<void(std::string_view)>;
-        screen(std::shared_ptr<host> host, player_t player, img_cache &cache) : host_{host}, player_{player}, cache_{cache} {}
+        using system_runner_t = std::function<std::string(std::string_view)>;
+        screen(std::shared_ptr<host> host, player_t player, img_cache &cache, system_runner_t system_runner)
+         : host_{host}, player_{player}, cache_{cache}, system_runner_{system_runner} {}
 
         void render_flag()
         {
@@ -70,6 +72,10 @@ namespace rss
                     {
                         if (!item.enclosure.empty())
                         {
+                            if (item.enclosure.find("youtube.com") != std::string::npos)
+                            {
+                                item.enclosure = system_runner_(std::format("yt-dlp -f bestaudio -g {}", item.enclosure));
+                            }
                             player_(item.enclosure);
                         }
                     }
@@ -169,5 +175,6 @@ namespace rss
         img_cache &cache_;
         std::shared_ptr<rss::feed> current_feed_;
         std::string filter_;
+        std::function<std::string(std::string_view)> system_runner_;
     };
 }

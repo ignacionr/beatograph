@@ -88,6 +88,7 @@ struct img_cache {
             // craete one
             loader_threads_[url] = std::thread{&img_cache::load_into_cache, this, url};
         }
+        // still loading, return a placeholder
         return load_texture_from_file("assets/b6a9d081425dd6a.png");
     }
 

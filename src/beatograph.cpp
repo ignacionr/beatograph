@@ -293,8 +293,10 @@ int main()
                     },
                     menu_tabs};}},
             {"radio",
-                [&menu_tabs, &notify_host, &radio_host, &cache] (nlohmann::json::object_t const& ) {
-                    auto podcast_host = std::make_shared<rss::host>();
+                [&menu_tabs, &notify_host, &radio_host, &cache, &localhost] (nlohmann::json::object_t const& ) {
+                    auto podcast_host = std::make_shared<rss::host>([&localhost](std::string_view command) -> std::string {
+                        return localhost.execute_command(command);
+                    });
                     load_podcasts(podcast_host, [&notify_host](auto text){ notify_host(text, "RSS"); });
                     return group_t {radio_tab_name, [
                         rss_screen = std::make_shared<rss::screen>(podcast_host,
@@ -302,7 +304,8 @@ int main()
                                         {
                                             radio_host.play(std::string{url});
                                         },
-                                        cache),
+                                        cache,
+                                        [&localhost](std::string_view text) { return localhost.execute_command(text); }),
                         radio_screen = std::make_shared<radio::screen>(radio_host, cache)
                         ]() mutable
                         {

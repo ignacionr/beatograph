@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -14,6 +15,8 @@ namespace rss {
             std::string description;
             std::string enclosure;
         };
+
+        feed(std::function<std::string(std::string_view)> system_runner) : system_runner_(system_runner) {}
 
         void operator()(std::string_view partial_contents) {
             contents += partial_contents;
@@ -75,6 +78,10 @@ namespace rss {
                         if (enclosure) {
                             new_item.enclosure = enclosure->Attribute("url");
                         }
+                        // if there is no direct enclosure, we can try to get one if the link is to youtube
+                        else if (new_item.link.find("youtube.com") != std::string::npos) {
+                            new_item.enclosure = new_item.link;
+                        }
                         items.emplace_back(std::move(new_item));
                         xml_item = xml_item->NextSiblingElement("item");
                     }
@@ -88,5 +95,6 @@ namespace rss {
         std::string feed_description;
         std::string feed_image_url;
         std::vector<item> items;
+        std::function<std::string(std::string_view)> system_runner_;
     };
 }
