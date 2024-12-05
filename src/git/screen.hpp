@@ -51,6 +51,11 @@ namespace git{
                 if (repo_to_clone_.reserve(300); ImGui::InputTextWithHint("Repository URL", "https://github.com/ignacionr/beatograph", repo_to_clone_.data(), repo_to_clone_.capacity()))
                 {
                     repo_to_clone_ = repo_to_clone_.data();
+                    auto const last_slash = repo_to_clone_.find_last_of('/');
+                    if (last_slash != std::string::npos)
+                    {
+                        clone_target_ = std::format("C:\\src\\{}", repo_to_clone_.substr(last_slash + 1));
+                    }
                 }
                 if (clone_target_.reserve(300); ImGui::InputTextWithHint("Destination path",
                 "C:\\src\\project-name", clone_target_.data(), clone_target_.capacity())) {
@@ -80,7 +85,7 @@ namespace git{
     private:
         std::shared_ptr<host> host_;
         std::string repo_to_clone_;
-        std::string clone_target_{"C:\\src"};
+        std::string clone_target_;
         std::string shallow_path_;
     };
 }

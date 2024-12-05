@@ -10,8 +10,9 @@
 #include "group_t.hpp"
 
 struct screen_tabs {
-
-    screen_tabs(std::vector<group_t> tabs) : tabs{std::move(tabs)} {}
+    using tab_changed_sink_t = std::function<void(std::string_view)>;
+    screen_tabs(std::vector<group_t> tabs, tab_changed_sink_t tab_changed) 
+    : tabs{std::move(tabs)}, tab_changed_{tab_changed} {}
 
     void render()
     {
@@ -29,6 +30,10 @@ struct screen_tabs {
                 }
                 if (ImGui::BeginTabItem(tab.name.c_str(), nullptr, flags))
                 {
+                    if (tab.name != current_tab_) {
+                        current_tab_ = tab.name;
+                        tab_changed_(current_tab_);
+                    }
                     current_menu = tab.render_menu;
                     tab.render();
                     ImGui::EndTabItem();
@@ -49,6 +54,7 @@ struct screen_tabs {
 
     void select(std::string_view name) {
         select_tab_ = name;
+        tab_changed_(name);
     }
 
     size_t add(group_t tab) {
@@ -66,4 +72,6 @@ private:
     std::vector<group_t> tabs;
     std::function<void(std::string_view)> current_menu{};
     std::string select_tab_;
+    std::string current_tab_;
+    tab_changed_sink_t tab_changed_;
 };

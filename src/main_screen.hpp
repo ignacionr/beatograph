@@ -94,6 +94,11 @@ struct main_screen
         SDL_Quit();
     }
 
+    void set_title(std::string_view title)
+    {
+        SDL_SetWindowTitle(window, std::format("{} - Beatograph", title).c_str());
+    }
+
     void run(std::function<void(std::string_view)> notifier, std::function<void()> pre_frame = []{})
     {
         // run the main loop

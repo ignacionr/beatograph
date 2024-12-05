@@ -186,7 +186,8 @@ int main()
 
         std::vector<group_t> all_tabs;
         std::function<void(std::string_view)> menu_tabs;
-        menu_tabs = [&tabs, &all_tabs, &loaded_panels, &localhost, &menu_tabs](std::string_view key)
+        std::shared_ptr<main_screen<split_screen>> screen;
+        menu_tabs = [&tabs, &all_tabs, &loaded_panels, &localhost, &menu_tabs, &screen](std::string_view key)
         {
             if (key == "Main")
             {
@@ -340,7 +341,7 @@ int main()
             all_tabs.push_back(factory(tab));
         }
 
-        tabs = std::make_shared<screen_tabs>(all_tabs);
+        tabs = std::make_shared<screen_tabs>(all_tabs, [&screen](std::string_view tab_name) { screen->set_title(tab_name); });
 
         auto tools = std::make_shared<tool_screen>(std::vector<group_t> {
             {ICON_MD_CURRENCY_EXCHANGE " Conversions", [&conv_screen]
@@ -353,7 +354,7 @@ int main()
         
         auto split = std::make_shared<split_screen>([&tabs]{ tabs->render(); }, [tools]{ tools->render(); });
 
-        main_screen screen{split};
+        screen = std::make_shared<main_screen<split_screen>>(split);
 
         // enumerate the ./panels directory
         load_panels(tabs, loaded_panels, localhost, menu_tabs);
@@ -381,7 +382,7 @@ int main()
 
         setup_fonts();
 
-        screen.run(
+        screen->run(
             [&notify_host](std::string_view text) { notify_host(text, "Main"); },
             [&tabs] {
             if (ImGui::IsKeyDown(ImGuiMod_Ctrl)) {
