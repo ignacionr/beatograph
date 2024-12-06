@@ -14,6 +14,7 @@ namespace rss {
             std::string link;
             std::string description;
             std::string enclosure;
+            std::string image_url;
         };
 
         feed(std::function<std::string(std::string_view)> system_runner) : system_runner_(system_runner) {}
@@ -30,8 +31,7 @@ namespace rss {
             }
         }
         void operator()(tinyxml2::XMLDocument const &doc) {
-            auto root = doc.FirstChildElement("rss");
-            if (root) {
+            if (auto root = doc.FirstChildElement("rss"); root) {
                 auto channel = root->FirstChildElement("channel");
                 if (channel) {
                     auto title = channel->FirstChildElement("title");
@@ -59,8 +59,11 @@ namespace rss {
                             feed_image_url = itunes_image->Attribute("href");
                         }
                     }
-                    auto xml_item = channel->FirstChildElement("item");
-                    while (xml_item) {
+                    for (
+                        auto xml_item = channel->FirstChildElement("item");
+                        xml_item;
+                        xml_item = xml_item->NextSiblingElement("item")) 
+                    {
                         item new_item;
                         title = xml_item->FirstChildElement("title");
                         if (title) {
@@ -82,9 +85,69 @@ namespace rss {
                         else if (new_item.link.find("youtube.com") != std::string::npos) {
                             new_item.enclosure = new_item.link;
                         }
+                        // look for an itunes:image tag
+                        auto itunes_image = xml_item->FirstChildElement("itunes:image");
+                        if (itunes_image) {
+                            new_item.image_url = itunes_image->Attribute("href");
+                        }
                         items.emplace_back(std::move(new_item));
-                        xml_item = xml_item->NextSiblingElement("item");
                     }
+                }
+            }
+            else if (auto root_feed = doc.FirstChildElement("feed"); root_feed) {
+                auto title = root_feed->FirstChildElement("title");
+                if (title) {
+                    feed_title = title->GetText();
+                }
+                auto link = root_feed->FirstChildElement("link");
+                if (link) {
+                    feed_link = link->Attribute("href");
+                }
+                auto description = root_feed->FirstChildElement("description");
+                if (description) {
+                    feed_description = description->GetText();
+                }
+                auto image = root_feed->FirstChildElement("image");
+                if (image) {
+                    auto url = image->FirstChildElement("url");
+                    if (url) {
+                        feed_image_url = url->GetText();
+                    }
+                }
+                
+                for (
+                    auto xml_item = root_feed->FirstChildElement("entry"); 
+                    xml_item; 
+                    xml_item = xml_item->NextSiblingElement("entry")) 
+                {
+                    item new_item;
+                    title = xml_item->FirstChildElement("title");
+                    if (title) {
+                        new_item.title = title->GetText();
+                    }
+                    link = xml_item->FirstChildElement("link");
+                    if (link) {
+                        new_item.link = link->Attribute("href");
+                    }
+                    description = xml_item->FirstChildElement("summary");
+                    if (description) {
+                        new_item.description = description->GetText();
+                    }
+                    // look for a media:group tag
+                    if (auto media_group = xml_item->FirstChildElement("media:group"); media_group) {
+                        if (auto media_content = media_group->FirstChildElement("media:content"); media_content) {
+                            new_item.enclosure = media_content->Attribute("url");
+                        }
+                        // look for a media:thumbnail tag
+                        if (auto media_thumbnail = media_group->FirstChildElement("media:thumbnail"); media_thumbnail) {
+                            new_item.image_url = media_thumbnail->Attribute("url");
+                            // if the feed doesn't have an image, asign the first thumbnail found
+                            if (feed_image_url.empty()) {
+                                feed_image_url = new_item.image_url;
+                            }
+                        }
+                    }
+                    items.emplace_back(std::move(new_item));
                 }
             }
         }
