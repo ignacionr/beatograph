@@ -1,6 +1,9 @@
 #pragma once
 
+#include <chrono>
+#include <format>
 #include <functional>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -15,6 +18,7 @@ namespace rss {
             std::string description;
             std::string enclosure;
             std::string image_url;
+            std::chrono::system_clock::time_point updated;
         };
 
         feed(std::function<std::string(std::string_view)> system_runner) : system_runner_(system_runner) {}
@@ -90,6 +94,12 @@ namespace rss {
                         if (itunes_image) {
                             new_item.image_url = itunes_image->Attribute("href");
                         }
+                        // obtain the updated time from a tag similar to
+                        // <pubDate>Tue, 14 Apr 2020 18:16:11 +0000</pubDate>
+                        if (auto pub_date = xml_item->FirstChildElement("pubDate"); pub_date) {
+                            std::istringstream pub_date_istr{pub_date->GetText()};
+                            pub_date_istr >> std::chrono::parse("%a, %d %b %Y %T %z", new_item.updated);
+                        }
                         items.emplace_back(std::move(new_item));
                     }
                 }
@@ -113,6 +123,12 @@ namespace rss {
                     if (url) {
                         feed_image_url = url->GetText();
                     }
+                }
+                else if (auto itunes_image = root_feed->FirstChildElement("itunes:image"); itunes_image) {
+                    feed_image_url = itunes_image->Attribute("href");
+                }
+                else if (auto image_el = root_feed->FirstChildElement("media:thumbnail"); image_el) {
+                    feed_image_url = image_el->Attribute("url");
                 }
                 
                 for (
@@ -146,6 +162,12 @@ namespace rss {
                                 feed_image_url = new_item.image_url;
                             }
                         }
+                    }
+                    // get the updated time from an object similar to
+                    // <updated>2024-12-07T06:49:08+00:00</updated>
+                    if (auto updated = xml_item->FirstChildElement("updated"); updated) {
+                        std::istringstream updated_istr{updated->GetText()};
+                        updated_istr >> std::chrono::parse("%FT%T%Ez", new_item.updated);
                     }
                     items.emplace_back(std::move(new_item));
                 }

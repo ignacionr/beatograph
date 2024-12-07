@@ -1,5 +1,6 @@
 #pragma once
 
+#include <format>
 #include <functional>
 #include <set>
 #include <string>
@@ -50,9 +51,10 @@ namespace rss
                                   ImGui::GetWindowWidth() - ImGui::GetCursorPosX() - 20,
                                   ImGui::GetWindowHeight() - tablestart_y - 20});
 
-            if (ImGui::BeginTable("##items", 1, ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_RowBg))
+            if (ImGui::BeginTable("##items", 2, ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_RowBg))
             {
-                ImGui::TableSetupColumn("Title");
+                ImGui::TableSetupColumn("Title", ImGuiTableColumnFlags_WidthStretch);
+                ImGui::TableSetupColumn("Updated", ImGuiTableColumnFlags_WidthFixed, 112);
                 ImGui::TableHeadersRow();
                 for (auto &item : current_feed_->items)
                 {
@@ -79,6 +81,9 @@ namespace rss
                             player_(item.enclosure);
                         }
                     }
+                    ImGui::TableNextColumn();
+                    auto updated = std::format("{:%Y-%m-%d %H:%M}", item.updated);
+                    ImGui::TextUnformatted(updated.c_str());
                 }
                 ImGui::EndTable();
             }

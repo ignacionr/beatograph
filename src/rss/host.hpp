@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <atomic>
 #include <memory>
 #include <stdexcept>
@@ -112,6 +113,12 @@ namespace rss
                 {
                     feeds->emplace_back(feed_ptr);
                 }
+                // sort the feeds from the latest updated to the oldest
+                std::sort(feeds->begin(), feeds->end(),
+                          [](auto const &lhs, auto const &rhs)
+                          {
+                              return lhs->items.empty() ? false : (rhs->items.empty() ? true : lhs->items.front().updated > rhs->items.front().updated);
+                          });
                 feeds_.store(feeds);
             }
             return feed_ptr;
