@@ -1,6 +1,6 @@
 {
     "title": " ArangoDB Cluster",
-    "contents" : [
+    "contents": [
         {
             "type": "ssh-host",
             "name": "arangodb1"
@@ -12,6 +12,55 @@
         {
             "type": "ssh-host",
             "name": "arangodb3"
+        },
+        {
+            "type": "shell-execute",
+            "title": "Arango SH (on arangodb3)",
+            "command": "ssh.exe",
+            "args": "-t arangodb3 'arangosh'"
+        },
+        {
+            "type": "command-output",
+            "title": "List databases",
+            "command": "ssh arangodb3 arangosh --server.password '' --quiet --javascript.execute-string 'print(db._databases())'"
+        },
+        {
+            "type": "group",
+            "title": "Database Tools",
+            "contents": [
+                {
+                    "type": "input",
+                    "title": "Database Name",
+                    "variable": "databaseName"
+                },
+                {
+                    "type": "command-output",
+                    "title": "List collections on database",
+                    "command": "ssh arangodb3 arangosh --server.password '' --server.database ${databaseName} --quiet --javascript.execute-string 'print(db._collections());'"
+                },
+                {
+                    "type": "group",
+                    "title": "Collection Tools",
+                    "contents": [
+                        {
+                            "type": "input",
+                            "title": "Collection Name",
+                            "variable": "collectionName"
+                        },
+                        {
+                            "type": "command-output",
+                            "title": "List first few documents in collection",
+                            "command": "ssh arangodb3 arangosh --server.password '' --server.database ${databaseName} --quiet --javascript.execute-string 'print(db._query(`FOR doc IN ${collectionName} LIMIT 10 RETURN doc`).toArray())'",
+                            "view": "json"
+                        },
+                        {
+                            "type": "command-output",
+                            "title": "Count documents in collection",
+                            "command": "ssh arangodb3 arangosh --server.password '' --server.database ${databaseName} --quiet --javascript.execute-string 'print(db._query(`RETURN LENGTH(${collectionName})`).toArray())'"
+                        }
+                    ]
+                }
+            ]
         }
     ]
 }

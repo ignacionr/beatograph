@@ -29,6 +29,7 @@ namespace views {
             auto const item_id {ImGui::GetID(name.c_str())};
             envelope_t cached_copy{cache[item_id].load()};
             ptr_t item_ptr = cached_copy.load();
+            ImGui::PushID(item_id);
             if (item_ptr == nullptr) {
                 cache[item_id].store(std::make_shared<cached_item_t>(std::unexpected("Loading...")));
                 std::thread([name, factory, item_id] {
@@ -60,6 +61,7 @@ namespace views {
                     cache.erase(item_id);
                 }
             }
+            ImGui::PopID();
         }
     }
 }
