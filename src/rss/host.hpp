@@ -76,7 +76,7 @@ namespace rss
                 for (auto const &url_str : urls) {
                     try {
                         auto const ptr = add_feed_sync(url_str);
-                        if (ptr->feed_image_url.empty()) {
+                        if (ptr->image_url().empty()) {
                             error_sink(std::format("Feed {}: no image found\n", url_str));
                         }
                     } 

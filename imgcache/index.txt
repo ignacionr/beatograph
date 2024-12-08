@@ -46,6 +46,7 @@ https://d3wo5wojvuv7l.cloudfront.net/t_rss_itunes_square_1400/images.spreaker.co
 https://dcadata.github.io/this-american-life-archive/templates/tal_official_image.png imgcache\12776223972823480234.PNG
 https://elroy.twit.tv/sites/default/files/styles/twit_album_art_2048x2048/public/images/shows/all_twit.tv_shows/album_art/audio/all_albumart_centered_2400.jpg imgcache\12712966968813499890.JPG
 https://elroy.twit.tv/sites/default/files/styles/twit_album_art_2048x2048/public/images/shows/this_week_in_tech/album_art/audio/twit_2022albumart_standard_2048.jpg imgcache\3180612532166537051.JPG
+https://i1.ytimg.com/vi/L_l4R48NDqE/hqdefault.jpg imgcache\107760834377507163.JPG
 https://i1.ytimg.com/vi/PwIIpaAX6kQ/hqdefault.jpg imgcache\13861145340573780667.JPG
 https://i1.ytimg.com/vi/XBrUI3PRTeo/hqdefault.jpg imgcache\4496952342442657257.JPG
 https://i1.ytimg.com/vi/XLaq0lRzu4w/hqdefault.jpg imgcache\2719111883146042534.JPG
@@ -58,7 +59,10 @@ https://i2.ytimg.com/vi/IgR3Z9t1e3k/hqdefault.jpg imgcache\12785052594118714263.
 https://i2.ytimg.com/vi/QBNR4-25ptE/hqdefault.jpg imgcache\7810795145027132497.JPG
 https://i2.ytimg.com/vi/YOHmR5uQp0w/hqdefault.jpg imgcache\17811198342919492352.JPG
 https://i2.ytimg.com/vi/yf7qTqtFZ1o/hqdefault.jpg imgcache\17765328157369116781.JPG
+https://i3.ytimg.com/vi/JBiRRpQRQ_k/hqdefault.jpg imgcache\9990992848454321615.JPG
 https://i3.ytimg.com/vi/bY2FlayomlE/hqdefault.jpg imgcache\8679503440443140246.JPG
+https://i3.ytimg.com/vi/f8mWPEFyNLQ/hqdefault.jpg imgcache\864645662159489681.JPG
+https://i3.ytimg.com/vi/vbcfYbHh3Q4/hqdefault.jpg imgcache\8168495956613501882.JPG
 https://i3.ytimg.com/vi/zgXwahi-T_c/hqdefault.jpg imgcache\7800080738194916937.JPG
 https://i4.ytimg.com/vi/O3m16h8lUQw/hqdefault.jpg imgcache\16412526806012717790.JPG
 https://i4.ytimg.com/vi/Oq7S4AjcIU0/hqdefault.jpg imgcache\11721498830719156471.JPG
@@ -90,6 +94,7 @@ https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg imgca
 https://vdmedia.elpais.com/elpaistopaudio/20191/16/AUDIO1_1547646312_asset_still.png imgcache\1717659932452895022.PNG
 https://venganzasdelpasado.com.ar/assets/vdp--logo.png imgcache\12002202994284887.PNG
 https://www.omnycontent.com/d/programs/e73c998e-6e60-432f-8610-ae210140c5b1/a91018a4-ea4f-4130-bf55-ae270180c327/image.jpg?t=1684846432&size=Large imgcache\2147550859156381074.JPG
+https://www.osnews.com/wp-content/uploads/2020/10/cropped-apple-touch-icon-32x32.png imgcache\8970132896366923342.PNG
 https://yt3.googleusercontent.com/5L93CQxZo-_EhDIqIG6KdRMkJ2YBYpusQ8gL3awif3JmRLEJJYPM2bP7M-8TGcfnN2GyVlOWC2w=s900-c-k-c0x00ffffff-no-rj imgcache\12947563284911123015
 https://yt3.googleusercontent.com/73P0uPF_iQMjC1LY3UzLZvx6Km46XqHc5KvWijyuBLzYSao_MA7vF6JInRk5NeY3q9YaqptY=s900-c-k-c0x00ffffff-no-rj imgcache\8696122929929211015
 https://yt3.googleusercontent.com/CBU-E2-HNekN5eWoLRShQB0escLqbg4XD3l1f_xulA2SfHop5nzg2obMRmpDEOvT-OX1om3Bbw=s900-c-k-c0x00ffffff-no-rj imgcache\10955246172807413808

@@ -3,6 +3,7 @@
 #include <chrono>
 #include <format>
 #include <functional>
+#include <mutex>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -34,6 +35,22 @@ namespace rss {
                 (*this)(doc);
             }
         }
+
+        static std::mutex &image_mutex() {
+            static std::mutex mx;
+            return mx;
+        }
+
+        void set_image(std::string const &url) {
+            std::lock_guard<std::mutex> lock(image_mutex());
+            feed_image_url = url;
+        }
+
+        std::string const &image_url() const {
+            std::lock_guard<std::mutex> lock(image_mutex());
+            return feed_image_url;
+        }
+
         void operator()(tinyxml2::XMLDocument const &doc) {
             if (auto root = doc.FirstChildElement("rss"); root) {
                 auto channel = root->FirstChildElement("channel");
@@ -54,13 +71,13 @@ namespace rss {
                     if (image) {
                         auto url = image->FirstChildElement("url");
                         if (url) {
-                            feed_image_url = url->GetText();
+                            set_image(url->GetText());
                         }
                     }
                     else {
                         auto itunes_image = channel->FirstChildElement("itunes:image");
                         if (itunes_image) {
-                            feed_image_url = itunes_image->Attribute("href");
+                            set_image(itunes_image->Attribute("href"));
                         }
                     }
                     for (
@@ -121,14 +138,14 @@ namespace rss {
                 if (image) {
                     auto url = image->FirstChildElement("url");
                     if (url) {
-                        feed_image_url = url->GetText();
+                        set_image(url->GetText());
                     }
                 }
                 else if (auto itunes_image = root_feed->FirstChildElement("itunes:image"); itunes_image) {
-                    feed_image_url = itunes_image->Attribute("href");
+                    set_image(itunes_image->Attribute("href"));
                 }
                 else if (auto image_el = root_feed->FirstChildElement("media:thumbnail"); image_el) {
-                    feed_image_url = image_el->Attribute("url");
+                    set_image(image_el->Attribute("url"));
                 }
                 
                 for (
@@ -159,7 +176,7 @@ namespace rss {
                             new_item.image_url = media_thumbnail->Attribute("url");
                             // if the feed doesn't have an image, asign the first thumbnail found
                             if (feed_image_url.empty()) {
-                                feed_image_url = new_item.image_url;
+                                set_image(new_item.image_url);
                             }
                         }
                     }
@@ -178,8 +195,9 @@ namespace rss {
         std::string feed_title;
         std::string feed_link;
         std::string feed_description;
-        std::string feed_image_url;
         std::vector<item> items;
         std::function<std::string(std::string_view)> system_runner_;
+    private:
+        std::string feed_image_url;
     };
 }

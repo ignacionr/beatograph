@@ -26,12 +26,12 @@ namespace rss
         {
             // show flag
             ImGui::SetColumnWidth(0, ImGui::GetWindowWidth() / 3);
-            if (!current_feed_->feed_image_url.empty())
+            if (!current_feed_->image_url().empty())
             {
                 try
                 {
                     ImGui::Image(reinterpret_cast<void *>(static_cast<uintptr_t>(
-                                     cache_.load_texture_from_url(current_feed_->feed_image_url))),
+                                     cache_.load_texture_from_url(current_feed_->image_url()))),
                                  ImVec2{ImGui::GetColumnWidth(), ImGui::GetColumnWidth()});
                 }
                 catch (...)
@@ -127,12 +127,12 @@ namespace rss
                     int i{0};
                     for (auto feed : host_->feeds())
                     {
-                        if (!feed->feed_image_url.empty())
+                        if (!feed->image_url().empty())
                         {
                             ImGui::PushID(feed->feed_link.c_str());
                             unsigned int texture;
                             static std::set<std::string> failed_urls;
-                            if (failed_urls.find(feed->feed_image_url) != failed_urls.end())
+                            if (failed_urls.find(feed->image_url()) != failed_urls.end())
                             {
                                 texture = cache_.load_texture_from_url("https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg");
                             }
@@ -140,11 +140,11 @@ namespace rss
                             {
                                 try
                                 {
-                                    texture = cache_.load_texture_from_url(feed->feed_image_url);
+                                    texture = cache_.load_texture_from_url(feed->image_url());
                                 }
                                 catch (...)
                                 {
-                                    failed_urls.insert(feed->feed_image_url);
+                                    failed_urls.insert(feed->image_url());
                                     texture = cache_.load_texture_from_url("https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg");
                                 }
                             }
