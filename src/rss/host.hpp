@@ -35,7 +35,8 @@ namespace rss
                 throw std::runtime_error("Failed to initialize curl");
             }
             struct curl_slist *headers = nullptr;
-            headers = curl_slist_append(headers, "Accept: application/rss+xml");
+            headers = curl_slist_append(headers, "Accept: */*");
+            headers = curl_slist_append(headers, "User-Agent: beatograph/1.0");
             curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
             curl_easy_setopt(curl, CURLOPT_URL, url.data());
             curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
@@ -78,7 +79,7 @@ namespace rss
                         if (ptr->feed_image_url.empty()) {
                             error_sink(std::format("Feed {}: no image found\n", url_str));
                         }
-                    }
+                    } 
                     catch(std::exception const &e) {
                         error_sink(std::format("Failed to add feed {}: {}\n", url_str, e.what()));
                     }

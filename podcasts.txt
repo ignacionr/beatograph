@@ -1,3 +1,5 @@
+https://old.reddit.com/r/devsarg.rss
+https://www.osnews.com/feed/
 https://www.youtube.com/feeds/videos.xml?channel_id=UCC1kfsMJko54AqxtcFECt-A
 https://www.youtube.com/feeds/videos.xml?channel_id=UCjMGMWnToRcQRqmyVB4R2xQ
 https://www.youtube.com/feeds/videos.xml?channel_id=UCaesWTz3KTrvpSHIh3EaDRg
