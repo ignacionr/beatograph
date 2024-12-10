@@ -239,6 +239,93 @@
         },
         {
             "type": "group",
+            "title": "Storm to ArangoDB Data Transfer",
+            "contents": [
+                {
+                    "type": "assertion",
+                    "title": "Storm has access to arangodb1 ssh",
+                    "test": {
+                        "type": "ssh-command",
+                        "host": "storm1",
+                        "command": "ssh arangodb1 echo 'OK'",
+                        "should-contain": "OK"
+                    }
+                },
+                {
+                    "type": "assertion",
+                    "title": "Storm has access to arangodb2 ssh",
+                    "test": {
+                        "type": "ssh-command",
+                        "host": "storm1",
+                        "command": "ssh arangodb2 echo 'OK'",
+                        "should-contain": "OK"
+                    }
+                },
+                {
+                    "type": "assertion",
+                    "title": "Storm has access to arangodb3 ssh",
+                    "test": {
+                        "type": "ssh-command",
+                        "host": "storm1",
+                        "command": "ssh arangodb3 echo 'OK'",
+                        "should-contain": "OK"
+                    }
+                },
+                {
+                    "type": "ssh-command-output",
+                    "title": "Map host port 18529 to arangodb1:8529",
+                    "command": "(pkill -f 'autossh.*-L 18529:localhost:8529' || true) && autossh -M 0 -f -N -L 0.0.0.0:18529:localhost:8529 arangodb1 && echo 'OK mapped 18529 to arangodb1:8529'",
+                    "host": "storm1"
+                },
+                {
+                    "type": "ssh-command-output",
+                    "title": "Map host port 28529 to arangodb2:8529",
+                    "command": "pkill -f \"autossh.*-L 28529:localhost:8529\" && autossh -M 0 -f -N -L 0.0.0.0:28529:localhost:8529 arangodb2 && echo 'OK mapped 28529 to arangodb2:8529'",
+                    "host": "storm1"
+                },
+                {
+                    "type": "ssh-command-output",
+                    "title": "Map host port 38529 to arangodb3:8529",
+                    "command": "pkill -f \"autossh.*-L 38529:localhost:8529\" && autossh -M 0 -f -N -L 0.0.0.0:38529:localhost:8529 arangodb3 && echo 'OK mapped 38529 to arangodb3:8529'",
+                    "host": "storm1"
+                },
+                {
+                    "type": "assertion",
+                    "title": "Storm checker can reach ArangoDB Coordinator on arangodb1",
+                    "test": {
+                        "type": "container-command",
+                        "container": "storm-checker-1",
+                        "host": "storm1",
+                        "command": "curl http://host.docker.internal:18529/_api/version",
+                        "should-contain": "\"server\":\"arango\""
+                    }
+                },
+                {
+                    "type": "assertion",
+                    "title": "Storm checker can reach ArangoDB Coordinator on arangodb2",
+                    "test": {
+                        "type": "container-command",
+                        "container": "storm-checker-1",
+                        "host": "storm1",
+                        "command": "curl http://host.docker.internal:28529/_api/version",
+                        "should-contain": "\"server\":\"arango\""
+                    }
+                },
+                {
+                    "type": "assertion",
+                    "title": "Storm checker can reach ArangoDB Coordinator on arangodb3",
+                    "test": {
+                        "type": "container-command",
+                        "container": "storm-checker-1",
+                        "host": "storm1",
+                        "command": "curl http://host.docker.internal:38529/_api/version",
+                        "should-contain": "\"server\":\"arango\""
+                    }
+                }
+            ]
+        },
+        {
+            "type": "group",
             "title": "Tools",
             "contents": [
                 {

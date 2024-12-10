@@ -65,7 +65,7 @@ namespace panel {
                     auto const title = element.at("title").get<std::string>();
                     return [command, host_name, &localhost, title]{
                         views::cached_view<std::string>(title,
-                        [host_name, command, &localhost]{ return hosting::ssh::host::by_name(host_name)->execute_command(command, localhost);},
+                        [host_name, command, &localhost]{ return hosting::ssh::host::by_name(host_name)->execute_command(command, localhost, false);},
                         [](std::string const &output) {
                             ImGui::TextWrapped("%s", output.c_str());
                         });
@@ -160,6 +160,26 @@ namespace panel {
                             test = [command, host_name, container_name, &localhost, string_test]{
                                 return string_test(hosting::ssh::host::by_name(host_name)->docker()
                                 .execute_command(command, container_name, localhost, false));
+                            };
+                        }},
+                        {"ssh-command", [&test_element, &localhost, &test]{
+                            auto const host_name = test_element.at("host").get<std::string>();
+                            auto const command = test_element.at("command").get<std::string>();
+                            std::function<bool(std::string_view)> string_test = [](std::string_view result){ return !result.empty(); };
+                            if (test_element.contains("should-contain")) {
+                                auto content = test_element.at("should-contain").get<std::string>();
+                                string_test = [content](std::string_view actual) -> bool {
+                                    return actual.find(content) != std::string::npos;
+                                };
+                            }
+                            else if (test_element.contains("should-not-contain")) {
+                                auto content = test_element.at("should-not-contain").get<std::string>();
+                                string_test = [content](std::string_view actual) -> bool {
+                                    return actual.find(content) == std::string::npos;
+                                };
+                            }
+                            test = [command, host_name, &localhost, string_test]{
+                                return string_test(hosting::ssh::host::by_name(host_name)->execute_command(command, localhost, false));
                             };
                         }}
                     };

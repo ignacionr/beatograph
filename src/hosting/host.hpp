@@ -119,9 +119,9 @@ namespace hosting::ssh
             return *docker_host_;
         }
 
-        std::string execute_command(std::string const &command, local::host &localhost)
+        std::string execute_command(std::string const &command, local::host &localhost, bool use_sudo = true)
         {
-            return docker().execute_command(command, localhost);
+            return docker().execute_command(command, localhost, use_sudo);
         }
 
         std::string get_os_release(local::host &localhost)
