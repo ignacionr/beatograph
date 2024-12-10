@@ -13,7 +13,7 @@ namespace hosting::local
         using sink_t = std::function<void(std::string_view)>;
         using environment_getter_t = std::function<std::string(std::string_view)>;
 
-        running_process(std::string_view command, environment_getter_t env)
+        running_process(std::string_view command, environment_getter_t env, bool include_stderr = true)
         {
             ZeroMemory(&pi, sizeof(pi));
             pi.hProcess = INVALID_HANDLE_VALUE;
@@ -41,7 +41,7 @@ namespace hosting::local
             si.cb = sizeof(si);
             si.dwFlags = STARTF_USESTDHANDLES;
             si.hStdOutput = hWritePipe;
-            si.hStdError = hWritePipe;
+            if (include_stderr) si.hStdError = hWritePipe;
 
             // Construct the command line
             std::string command_str = std::string{command.data(), command.size()};

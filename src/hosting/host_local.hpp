@@ -55,15 +55,16 @@ namespace hosting::local
             return source;
         }
 
-        auto run(std::string_view command)
+        auto run(std::string_view command, bool include_stderr = true)
         {
             return std::make_unique<running_process>(command, [this](std::string_view key)
-                                                      { return resolve_environment(std::string{key}); });
+                                                      { return resolve_environment(std::string{key}); },
+                                                      include_stderr);
         }
 
-        void execute_command(std::string_view command, auto sink)
+        void execute_command(std::string_view command, auto sink, bool include_stderr = true)
         {
-            auto proc{run(command)};
+            auto proc{run(command, include_stderr)};
             proc->read_all(sink);
         }
 
@@ -89,11 +90,11 @@ namespace hosting::local
             return sessions.find(key) != sessions.end();
         }
 
-        std::string execute_command(std::string_view command)
+        std::string execute_command(std::string_view command, bool include_stderr = true)
         {
             std::string result;
             execute_command(command, [&result](std::string_view line)
-                            { result += line; });
+                            { result += line; }, include_stderr);
             return result;
         }
 

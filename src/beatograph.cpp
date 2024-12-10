@@ -305,7 +305,8 @@ int main()
                                             radio_host.play(std::string{url});
                                         },
                                         cache,
-                                        [&localhost](std::string_view text) { return localhost.execute_command(text); }),
+                                        [&localhost](std::string_view text) {
+                                            return localhost.execute_command(text, false); }),
                         radio_screen = std::make_shared<radio::screen>(radio_host, cache)
                         ]() mutable
                         {

@@ -76,7 +76,8 @@ namespace rss
                         {
                             if (item.enclosure.find("youtube.com") != std::string::npos)
                             {
-                                item.enclosure = system_runner_(std::format("yt-dlp -f bestaudio -g {}", item.enclosure));
+                                auto const cmd{std::format("yt-dlp -f bestaudio -g {}", item.enclosure)};
+                                item.enclosure = system_runner_(cmd);
                             }
                             player_(item.enclosure);
                         }
