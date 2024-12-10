@@ -165,6 +165,16 @@
                     }
                 },
                 {
+                    "type": "assertion",
+                    "title": "the pipeline status service is responding",
+                    "test": {
+                        "type": "ssh-command",
+                        "host": "dev-locked",
+                        "command": "curl -s http://localhost:8000/pipeline >/dev/null && echo --running OK--",
+                        "should-contain": "--running OK--"
+                    }
+                },
+                {
                     "type": "command-output",
                     "command": "curl -s http://57.129.70.83:3333/api/lastbets",
                     "title": "staging endpoint"
