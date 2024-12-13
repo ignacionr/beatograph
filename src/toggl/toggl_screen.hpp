@@ -15,6 +15,8 @@
 
 #include "toggl_client.hpp"
 #include "../external/IconsMaterialDesign.h"
+#include "../registrar.hpp"
+#include "login/screen.hpp"
 
 namespace toggl
 {
@@ -131,6 +133,9 @@ namespace toggl
             {
                 time_entries = std::make_shared<nlohmann::json>(client_->getTimeEntries());
             }
+            catch (const client::config_error &) {
+                config_mode_ = true;
+            }
             catch (const std::exception &e)
             {
                 time_entries = std::make_shared<nlohmann::json>(nlohmann::json::string_t(e.what()));
@@ -142,7 +147,49 @@ namespace toggl
             query();
         }
 
-        void render()
+        void render() {
+            if (config_mode_) {
+                if (new_login_) {
+                    if (login_name_.reserve(200); ImGui::InputText("New Login Name", login_name_.data(), login_name_.capacity())) {
+                        login_name_ = login_name_.data();
+                    }
+                    // show the login config UI
+                    login_screen_->render();
+                }
+                else {
+                    if (ImGui::BeginCombo("Login", login_name_.c_str())) {
+                        registrar::keys<login::host>([this](const std::string &option){
+                            if (ImGui::Selectable(option.c_str())) {
+                                login_name_ = option;
+                            }
+                        });
+                        if (ImGui::Selectable("-- create a new one")) {
+                            login_name_.clear();
+                            new_login_ = true;
+                            login_screen_ = std::make_unique<login::screen>(std::make_shared<login::host>());
+                        }
+                        ImGui::EndCombo();
+                    }
+                }
+                if (ImGui::SmallButton(ICON_MD_SAVE " Save")) {
+                    if (new_login_) {
+                        registrar::add<login::host>(login_name_, login_screen_->host());
+                        new_login_ = false;
+                    }
+                    config_mode_ = false;
+                    client_->set_login(registrar::get<login::host>(login_name_));
+                    query();
+                }
+            }
+            else {
+                render_contents();
+                if (ImGui::SmallButton(ICON_MD_SETTINGS)) {
+                    config_mode_ = true;
+                }
+            }
+        }
+
+        void render_contents()
         {
             if (std::chrono::system_clock::now() - last_update > std::chrono::minutes(1))
             {
@@ -236,5 +283,9 @@ namespace toggl
         time_t utc_offset_seconds{};
         std::string new_description;
         int seconds_daily_target_;
+        bool config_mode_{};
+        bool new_login_{};
+        std::string login_name_;
+        std::unique_ptr<login::screen> login_screen_;
     };
 }

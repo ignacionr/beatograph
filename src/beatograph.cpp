@@ -49,6 +49,9 @@
 #include "group_t.hpp"
 #include "split_screen.hpp"
 #include "tool_screen.hpp"
+#include "config/file_config.hpp"
+#include "registrar.hpp"
+#include "toggl/login/host.hpp"
 
 void setup_fonts()
 {
@@ -139,6 +142,16 @@ int main()
 {
 #endif
     {
+        auto fconfig {std::make_shared<config::file_config>("./beatograph.ini")};
+
+        // load toggl_logins
+        static std::string_view constexpr toggl_login_base {"toggl_login."};
+        fconfig->scan_level(toggl_login_base, [fconfig](auto const &subkey) {
+            auto login = std::make_shared<toggl::login::host>();
+            login->load_from([fconfig,subkey](std::string_view k){ return fconfig->get(std::format("{}{}.{}", toggl_login_base, subkey,k)); });
+            registrar::add(subkey, login);
+        });
+
         // auto constexpr happy_bell_sound = "assets/mixkit-happy-bell-alert-601.wav";
         // auto constexpr impact_sound = "assets/mixkit-underground-explosion-impact-echo-1686.wav";
         auto static constexpr radio_tab_name {ICON_MD_AUDIOTRACK " Radio"};
@@ -246,7 +259,6 @@ int main()
             {"toggl",
                 [&menu_tabs, &localhost, &notify_host, &toggl_screens_by_id](nlohmann::json::object_t const& node) {
                     auto ts {std::make_shared<toggl::screen>(std::make_shared<toggl::client>(
-                            localhost.resolve_environment(node.at("token")),
                             [&notify_host](std::string_view text) { notify_host(text, "Toggl"); }), 
                             static_cast<int>(node.at("daily_goal").get<float>() * 3600))};
                     if (node.contains("id")) {
@@ -401,6 +413,15 @@ int main()
                     tabs->select(radio_tab_name);
                 }
             } });
+
+        // save toggl_logins
+        registrar::all<toggl::login::host>([fconfig](std::string const &key, auto login){
+            login->save_to([fconfig, key](std::string_view k, std::string v) {
+                fconfig->set(std::format("{}{}.{}", toggl_login_base, key, k), v);
+            });
+        });
+
+        fconfig->save();
 
         if (auto last_played = radio_host.last_played(); last_played) {
             save_last_played(*last_played);

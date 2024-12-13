@@ -2,31 +2,43 @@
 
 #include <format>
 #include <functional>
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include <thread>
 
 #include <curl/curl.h>
 #include <nlohmann/json.hpp>
-#include "../conversions/base64.hpp"
 #include "../conversions/date_time.hpp"
+#include "login/host.hpp"
 
 namespace toggl
 {
     class client
     {
     public:
+
+        struct error: public std::runtime_error {
+            error(std::string const &what): std::runtime_error{what} {}
+        };
+
+        struct config_error: error {
+            config_error(std::string const &what): error{what} {}
+        };
+
+        struct no_login_set: config_error {
+            no_login_set(): config_error{"No login set."} {}
+        };
+
         using notifier_t = std::function<void(std::string_view)>;
 
-        client(const std::string &apiToken, notifier_t notifier)
+        client(notifier_t notifier)
             : baseUrl("https://api.track.toggl.com/api/v9/"), notifier_{notifier}
         {
-            std::string base_auth = apiToken + ":api_token";
-            std::string base64_auth_string = conversions::text_to_base64(base_auth);
-            auth_header = std::format("Authorization: Basic {}", base64_auth_string);
-            std::thread([this]{
-                check_today();
-            }).detach();
+        }
+
+        void set_login(std::shared_ptr<login::host> login) {
+            login_ = login;
         }
 
         void check_today(int seconds_target = 9 * 3600)
@@ -106,16 +118,18 @@ namespace toggl
         }
 
     private:
-        std::string auth_header;
         std::string baseUrl;
+        std::shared_ptr<login::host> login_;
 
         std::string performRequest(const std::string &url, const std::string &method, const std::string &data = "")
         {
+            if (!login_) throw no_login_set{};
+
             CURL *curl = curl_easy_init();
             if (curl)
             {
                 struct curl_slist *headers = nullptr;
-                headers = curl_slist_append(headers, auth_header.c_str());
+                headers = curl_slist_append(headers, login_->header().c_str());
                 headers = curl_slist_append(headers, "Accept: application/json");
                 if (!data.empty())
                 {
