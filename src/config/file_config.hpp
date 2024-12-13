@@ -31,12 +31,21 @@ namespace config
             }
         }
 
-        void set(std::string const &key, std::string const &value) {
-            properties_[key] = value;
+        void set(std::string const &key, std::optional<std::string> const &value) {
+            if (value) {
+                properties_[key] = *value;
+            }
+            else {
+                properties_.erase(key);
+            }
         }
 
-        std::string const &get(std::string const& key) const {
-            return properties_.at(key);
+        std::optional<std::string> get(std::string const& key) const {
+            auto const it {properties_.find(key)};
+            if (it != properties_.end()) {
+                return it->second;
+            }
+            return {};
         }
 
         void scan_level(std::string_view name_base, auto sink) {

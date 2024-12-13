@@ -90,21 +90,6 @@ void load_podcasts(auto host, auto sink) {
     host->add_feeds(urls, sink, []{ return !views::quitting(); });
 }
 
-std::optional<std::string> load_last_played() {
-    std::ifstream file("last_played.txt");
-    if (file.is_open()) {
-        std::string line;
-        std::getline(file, line);
-        return line;
-    }
-    return std::nullopt;
-}
-
-void save_last_played(std::string_view url) {
-    std::ofstream file("last_played.txt");
-    file << url;
-}
-
 void load_panels(auto tabs, auto &loaded_panels, auto &localhost, auto menu_tabs) {
     // remove previously loaded panels
     while (!loaded_panels.empty()) {
@@ -134,6 +119,25 @@ void load_panels(auto tabs, auto &loaded_panels, auto &localhost, auto menu_tabs
     }
 }
 
+template<typename T>
+void load_services(auto config, auto key_base) {
+    config->scan_level(key_base, [config, key_base](auto const &subkey) {
+        auto login = std::make_shared<T>();
+        login->load_from([config, key_base, subkey](std::string_view k){ return config->get(std::format("{}{}.{}", key_base, subkey,k)); });
+        registrar::add<T>(subkey, login);
+    });
+}
+
+template<typename T>
+void save_services(auto config, auto key_base) {
+    registrar::all<T>([config, key_base](std::string const &key, auto login) {
+        login->save_to([config, key, key_base](std::string_view k, std::string v) {
+            config->set(std::format("{}{}.{}", key_base, key, k), v);
+        });
+    });
+}
+
+
 #if defined(_WIN32)
 int WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {
@@ -146,11 +150,7 @@ int main()
 
         // load toggl_logins
         static std::string_view constexpr toggl_login_base {"toggl_login."};
-        fconfig->scan_level(toggl_login_base, [fconfig](auto const &subkey) {
-            auto login = std::make_shared<toggl::login::host>();
-            login->load_from([fconfig,subkey](std::string_view k){ return fconfig->get(std::format("{}{}.{}", toggl_login_base, subkey,k)); });
-            registrar::add(subkey, login);
-        });
+        load_services<toggl::login::host>(fconfig, toggl_login_base);
 
         // auto constexpr happy_bell_sound = "assets/mixkit-happy-bell-alert-601.wav";
         // auto constexpr impact_sound = "assets/mixkit-underground-explosion-impact-echo-1686.wav";
@@ -184,7 +184,8 @@ int main()
         notify::screen notify_screen{notify_host};
 
         radio::host radio_host;
-        if (auto last_played = load_last_played(); last_played)
+        constexpr std::string_view lastplayed_key {"radio.last_played"};
+        if (auto last_played = fconfig->get(std::string{lastplayed_key}); last_played)
         {
             radio_host.play(*last_played);
         }
@@ -415,21 +416,10 @@ int main()
             } });
 
         // save toggl_logins
-        registrar::all<toggl::login::host>([fconfig](std::string const &key, auto login){
-            login->save_to([fconfig, key](std::string_view k, std::string v) {
-                fconfig->set(std::format("{}{}.{}", toggl_login_base, key, k), v);
-            });
-        });
+        save_services<toggl::login::host>(fconfig, toggl_login_base);
 
+        fconfig->set(std::string{lastplayed_key}, radio_host.last_played());
         fconfig->save();
-
-        if (auto last_played = radio_host.last_played(); last_played) {
-            save_last_played(*last_played);
-        }
-        else {
-            // remove the last played file
-            std::filesystem::remove("last_played.txt");
-        }
 
         views::quitting(true);
     }

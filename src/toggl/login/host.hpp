@@ -11,7 +11,7 @@ namespace toggl::login
             saver("auth_header", auth_header);
         }
         void load_from(auto loader) {
-            auth_header = loader("auth_header");
+            auth_header = *loader("auth_header");
         }
         void set_token(std::string_view token) {
             std::string base_auth = std::format("{}:api_token", token);
