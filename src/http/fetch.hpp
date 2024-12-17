@@ -14,6 +14,9 @@ namespace http {
                 curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
                 curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
                 curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_string);
+                curl_easy_setopt(curl, CURLOPT_USERAGENT, "beat-o-graph/1.0");
+                curl_easy_setopt(curl, CURLOPT_TIMEOUT, 15L);
+                curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 15L);
                 char *pproxy_str = nullptr;
                 size_t len = 0;
                 if (!_dupenv_s(&pproxy_str, &len, "HTTP_PROXY") && pproxy_str != nullptr) {

@@ -4,10 +4,10 @@
 #include <string>
 #include <stdexcept>
 
-#include <curl/curl.h>
 #include <nlohmann/json.hpp>
 
 #include "../conversions/uri.hpp"
+#include "../http/fetch.hpp"
 
 namespace weather {
     struct openweather_client {
@@ -27,28 +27,9 @@ namespace weather {
                 conversions::uri::encode_component(city), 
                 api_key_);
             // query using curl
-            CURL *curl = curl_easy_init();
-            if (curl) {
-                std::string response;
-                curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-                curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-                curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
-                curl_easy_setopt(curl, CURLOPT_USERAGENT, "beat-o-graph/1.0");
-                curl_easy_setopt(curl, CURLOPT_TIMEOUT, 15L);
-                curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 15L);
-                curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
-                curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
-                auto res = curl_easy_perform(curl);
-                if (res != CURLE_OK) {
-                    curl_easy_cleanup(curl);
-                    throw std::runtime_error(curl_easy_strerror(res));
-                }
-                curl_easy_cleanup(curl);
-                return nlohmann::json::parse(response);
-            }
-            else {
-                throw std::runtime_error("Failed to initialize curl");
-            }
+            auto const contents{http::fetch()(url)};
+            auto result {nlohmann::json::parse(contents)};
+            return result;
         }
 
         std::string icon_url(std::string_view key) {
