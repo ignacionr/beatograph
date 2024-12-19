@@ -331,15 +331,26 @@ int main()
             {"world-clocks",
                 [&cache, &menu_tabs_and, &localhost, &notify_host, &gpt](nlohmann::json::object_t const &node) {
                     auto weather_host = std::make_shared<weather::openweather_client>(localhost.resolve_environment(node.at("openweather_key")));
+                    auto host = std::make_shared<clocks::host>();
+                    host->set_weather_client(weather_host);
+                    try {
+                        auto const local_data {localhost.get_my_ip_and_geolocation()};
+                        host->add_city(std::format("{}, {}", 
+                            local_data.at("city").get_ref<std::string const &>(),
+                            local_data.at("region").get_ref<std::string const &>()));
+                    }
+                    catch(const std::exception &e) {
+                        notify_host(e.what(), "Clocks");
+                    }
+                    for (std::string const &city : node.at("cities")) {
+                        host->add_city(city);
+                    }
                     auto clocks_screen = std::make_shared<clocks::screen>(
-                        weather_host,
+                        host,
                         cache, 
                         []{ return views::quitting(); }, 
                         std::move(gpt.new_conversation()), 
                         [&notify_host](std::string_view text) { notify_host(text, "Clocks"); });
-                    for (std::string const &city : node.at("cities")) {
-                        clocks_screen->add_city(city);
-                    }
 
                     return group_t{ICON_MD_WATCH " Clocks", [clocks_screen, &menu_tabs_and] { clocks_screen->render(); }, 
              menu_tabs_and([clocks_screen](auto i) {  clocks_screen->render_menu(i); })};

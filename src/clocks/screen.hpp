@@ -17,32 +17,32 @@
 
 #include "../views/cached_view.hpp"
 #include "../views/json.hpp"
-#include "weather.hpp"
 #include "../imgcache.hpp"
 #include "../external/cppgpt/cppgpt.hpp"
+#include "host.hpp"
 
 namespace clocks
 {
     struct screen
     {
-        screen(std::shared_ptr<weather::openweather_client> weather_client, img_cache &cache, std::function<bool()> quitting, ignacionr::cppgpt &&gpt, std::function<void(std::string_view)> notify)
-            : weather_client_{weather_client}, cache_{cache}, gpt_{gpt}, notify_{notify}
+        screen(std::shared_ptr<host> h, img_cache &cache, std::function<bool()> quitting, ignacionr::cppgpt &&gpt, std::function<void(std::string_view)> notify)
+            : host_{h}, cache_{cache}, gpt_{gpt}, notify_{notify}
         {
             refresh_ = std::jthread([this, quitting]
                                     {
                                         while (!quitting()) {
-                                            auto all_cities_vector = all_cities.load();
+                                            auto all_cities_vector = host_->get_cities();
                                             for (auto &city : *all_cities_vector) {
                                                 try
                                                 {
-                                                    nlohmann::json result = weather_client_->get_weather(city.label);
+                                                    nlohmann::json result = host_->get_weather(city.label);
                                                     {
                                                         city.weather_info = result;
                                                     }
                                                 }
                                                 catch (std::exception const &e)
                                                 {
-                                                    std::cerr << "Error fetching weather: " << e.what() << std::endl;
+                                                    notify_(e.what());
                                                 }
                                                 std::this_thread::sleep_for(std::chrono::seconds(3));
                                                 if (quitting()) {
@@ -54,9 +54,6 @@ namespace clocks
                                             }
                                         }
                                     });
-        }
-        ~screen()
-        {
         }
 
         static ImTextureID clock_background()
@@ -155,12 +152,6 @@ namespace clocks
             }
         }
 
-        struct city_info
-        {
-            std::string label;
-            nlohmann::json weather_info;
-        };
-
         void render()
         {
             constexpr auto side_width{210};
@@ -174,7 +165,7 @@ namespace clocks
                 render_clock("UTC", std::chrono::system_clock::now(), true);
                 ImGui::EndChild();
                 {
-                    auto all_cities_vector = all_cities.load();
+                    auto all_cities_vector = host_->get_cities();
                     for (auto const &city : *all_cities_vector)
                     {
                         ImGui::TableNextColumn();
@@ -184,7 +175,7 @@ namespace clocks
                             auto const start_y{ImGui::GetCursorPosY()};
                             ImGui::TextUnformatted("\n\n\n\n");
                             auto const &weather = city.weather_info["weather"][0];
-                            auto const local_icon = weather_client_->icon_local_file(weather["icon"]);
+                            auto const &local_icon = host_->icon_local_file(weather["icon"]);
                             auto const texture{cache_.load_texture_from_file(local_icon)};
                             auto const name = std::format("{}, {}",
                                                           city.weather_info["name"].get<std::string>(),
@@ -232,7 +223,7 @@ namespace clocks
                                     notify_(result);
                                 }
                                 catch(std::exception &e) {
-                                    std::cerr << "Error sending to GPT: " << e.what() << std::endl;
+                                    notify_(e.what());
                                 }
                             }
                         }
@@ -259,19 +250,11 @@ namespace clocks
             }
         }
 
-        void add_city(std::string const &city)
-        {
-            auto all_cities_vector = std::make_shared<std::vector<city_info>>(*all_cities.load());
-            all_cities_vector->push_back({city});
-            all_cities.store(all_cities_vector);
-        }
-
     private:
-        std::shared_ptr<weather::openweather_client> weather_client_;
+        std::shared_ptr<host> host_;
         img_cache &cache_;
         views::json json_view_;
         bool show_details_{false};
-        std::atomic<std::shared_ptr<std::vector<city_info>>> all_cities {std::make_shared<std::vector<city_info>>()};
         std::jthread refresh_;
         ignacionr::cppgpt gpt_;
         std::function<void(std::string_view)> notify_;
