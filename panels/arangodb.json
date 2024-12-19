@@ -49,14 +49,36 @@
                         },
                         {
                             "type": "command-output",
-                            "title": "List first few documents in collection",
-                            "command": "ssh arangodb3 arangosh --server.password '' --server.database ${databaseName} --quiet --javascript.execute-string 'print(db._query(`FOR doc IN ${collectionName} LIMIT 10 RETURN doc`).toArray())'",
+                            "title": "Count documents in collection",
+                            "command": "ssh arangodb3 arangosh --server.password '' --server.database ${databaseName} --quiet --javascript.execute-string 'print(db._query(`RETURN LENGTH(${collectionName})`).toArray())'",
                             "view": "json"
                         },
                         {
                             "type": "command-output",
-                            "title": "Count documents in collection",
-                            "command": "ssh arangodb3 arangosh --server.password '' --server.database ${databaseName} --quiet --javascript.execute-string 'print(db._query(`RETURN LENGTH(${collectionName})`).toArray())'"
+                            "title": "List first few documents in collection",
+                            "command": "ssh arangodb3 arangosh --server.password '' --server.database ${databaseName} --quiet --javascript.execute-string 'print(db._query(`FOR doc IN ${collectionName} LIMIT 12 RETURN doc`).toArray())'"
+                        },
+                        {
+                            "type": "group",
+                            "title": "Find",
+                            "contents": [
+                                {
+                                    "type": "input",
+                                    "title": "Search Field",
+                                    "variable": "searchField"
+                                },
+                                {
+                                    "type": "input",
+                                    "title": "Search Value",
+                                    "variable": "searchValue"
+                                },
+                                {
+                                    "type": "command-output",
+                                    "title": "Find documents in collection",
+                                    "command": "ssh arangodb3 arangosh --server.password '' --server.database ${databaseName} --quiet --javascript.execute-string 'print(db._query(`FOR doc IN ${collectionName} FILTER doc.${searchField} == \"${searchValue}\" LIMIT 100 RETURN doc`).toArray())'",
+                                    "view": "json"
+                                }
+                            ]
                         }
                     ]
                 }
