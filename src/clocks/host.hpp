@@ -1,6 +1,7 @@
 #pragma once
 
 #include <atomic>
+#include <format>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -14,7 +15,47 @@ namespace clocks {
     struct city_info
     {
         std::string label;
-        nlohmann::json weather_info;
+        int timezone;
+        std::string weather_icon;
+        double temperature;
+        double feels_like;
+        std::string temperature_text;
+        std::string humidity_text;
+        int sunrise_seconds;
+        int sunset_seconds;
+        std::string main_weather;
+
+        city_info(std::string const &city) : label{city} {}
+
+        void weather_info(nlohmann::json const &weather_info)
+        {
+            weather_info_ = weather_info;
+            label = std::format("{}, {}",
+                                                          weather_info["name"].get<std::string>(),
+                                                          weather_info["sys"]["country"].get<std::string>());
+            timezone = weather_info["timezone"].get<int>();
+            weather_icon = weather_info["weather"][0]["icon"].get<std::string>();
+            temperature = weather_info["main"]["temp"].get<double>() - 273.15;
+            feels_like = weather_info["main"]["feels_like"].get<double>() - 273.15;
+            temperature_text = std::format("{:.1f}C like {:.1f}C\n\n", temperature, feels_like);
+            humidity_text = std::format("Humidity: {}%\n", weather_info["main"]["humidity"].get<int>());
+            sunrise_seconds = weather_info["sys"]["sunrise"].get<int>() + timezone;
+            sunset_seconds = weather_info["sys"]["sunset"].get<int>() + timezone;
+            main_weather = weather_info["weather"][0]["main"].get<std::string>();
+        }
+
+        bool has_weather_info() const
+        {
+            return !weather_info_.empty();
+        }
+
+        auto const &weather_info() const
+        {
+            return weather_info_;
+        }
+
+    private:
+        nlohmann::json weather_info_;
     };
 
     struct host {

@@ -37,7 +37,7 @@ namespace clocks
                                                 {
                                                     nlohmann::json result = host_->get_weather(city.label);
                                                     {
-                                                        city.weather_info = result;
+                                                        city.weather_info(result);
                                                     }
                                                 }
                                                 catch (std::exception const &e)
@@ -112,14 +112,16 @@ namespace clocks
         void render_clock(std::string_view label,
                           std::chrono::system_clock::time_point time, bool show_seconds)
         {
+            auto const et = time.time_since_epoch();
             ImGui::TextUnformatted(std::format("\n{:02}:{:02}",
-                                               std::chrono::floor<std::chrono::hours>(time.time_since_epoch()).count() % 24,
-                                               std::chrono::floor<std::chrono::minutes>(time.time_since_epoch()).count() % 60)
+                                               std::chrono::floor<std::chrono::hours>(et).count() % 24,
+                                               std::chrono::floor<std::chrono::minutes>(et).count() % 60)
                                        .c_str());
             auto const startY = ImGui::GetCursorPosY() + ImGui::GetWindowPos().y;
             auto const current_milli = std::chrono::floor<std::chrono::milliseconds>(time);
-            auto const minute_angle = 2 * M_PI * ((current_milli.time_since_epoch().count() / 1000) % 3600) / 3600.0 - M_PI / 2.0;
-            auto const hour{(current_milli.time_since_epoch().count() / 1000) % 43200};
+            auto const met = current_milli.time_since_epoch();
+            auto const minute_angle = 2 * M_PI * ((met.count() / 1000) % 3600) / 3600.0 - M_PI / 2.0;
+            auto const hour{(met.count() / 1000) % 43200};
             auto const hour_angle = 2 * M_PI * (hour) / 43200.0 - M_PI / 2.0;
             auto dl = ImGui::GetWindowDrawList();
             auto const center = ImVec2{
@@ -166,43 +168,33 @@ namespace clocks
                 ImGui::EndChild();
                 {
                     auto all_cities_vector = host_->get_cities();
-                    for (auto const &city : *all_cities_vector)
+                    for (clocks::city_info const &city : *all_cities_vector)
                     {
                         ImGui::TableNextColumn();
                         ImGui::BeginChild(city.label.data(), ImVec2{side_width, cell_height});
-                        if (city.weather_info.is_object() && city.weather_info.contains("weather"))
+                        if (city.has_weather_info())
                         {
                             auto const start_y{ImGui::GetCursorPosY()};
                             ImGui::TextUnformatted("\n\n\n\n");
-                            auto const &weather = city.weather_info["weather"][0];
-                            auto const &local_icon = host_->icon_local_file(weather["icon"]);
+                            auto const &local_icon = host_->icon_local_file(city.weather_icon);
                             auto const texture{cache_.load_texture_from_file(local_icon)};
-                            auto const name = std::format("{}, {}",
-                                                          city.weather_info["name"].get<std::string>(),
-                                                          city.weather_info["sys"]["country"].get<std::string>());
-                            auto const tz = city.weather_info.at("timezone").get<int>();
-                            auto const feels_like{city.weather_info["main"]["feels_like"].get<double>() - 273.15};
-                            auto color = feels_like > 30.0f ? ImVec4{1.0f, 0.0f, 0.0f, 1.0f} : (feels_like < 16.0f ? ImVec4{0.5f, 0.5f, 1.0f, 1.0f} : ImVec4{1.0f, 1.0f, 1.0f, 1.0f});
+                            auto const name = city.label;
+                            auto const tz = city.timezone;
+                            auto color = city.feels_like > 30.0f ? ImVec4{1.0f, 0.0f, 0.0f, 1.0f} : (city.feels_like < 16.0f ? ImVec4{0.5f, 0.5f, 1.0f, 1.0f} : ImVec4{1.0f, 1.0f, 1.0f, 1.0f});
                             ImGui::PushStyleColor(ImGuiCol_Text, color);
-                            ImGui::TextUnformatted(std::format("{:.1f}C like {:.1f}C\n\n",
-                                                               city.weather_info["main"]["temp"].get<double>() - 273.15,
-                                                               feels_like)
-                                                       .c_str());
+                            ImGui::TextUnformatted(city.temperature_text.data(), city.temperature_text.data() + city.temperature_text.size());
                             ImGui::PopStyleColor();
-                            ImGui::TextUnformatted(std::format("{}% h", city.weather_info["main"]["humidity"].get<int>()).c_str());
-                            ImGui::TextUnformatted(std::format("{} m/s", city.weather_info["wind"]["speed"].get<double>()).c_str());
-                            auto const sunrise_seconds = city.weather_info["sys"]["sunrise"].get<int>() + tz;
-                            auto const sunset_seconds = city.weather_info["sys"]["sunset"].get<int>() + tz;
+                            ImGui::TextUnformatted(city.humidity_text.data(), city.humidity_text.data() + city.humidity_text.size());
                             auto sun_times = std::format(ICON_MD_ARROW_CIRCLE_UP " {}:{:02} " ICON_MD_ARROW_CIRCLE_DOWN " {}:{:02}",
-                                                         sunrise_seconds / 3600 % 24,
-                                                         sunrise_seconds / 60 % 60,
-                                                         sunset_seconds / 3600 % 24,
-                                                         sunset_seconds / 60 % 60);
-                            ImGui::TextUnformatted(sun_times.c_str());
-                            ImGui::TextUnformatted(city.weather_info.at("weather")[0].at("main").get<std::string>().c_str());
+                                                         city.sunrise_seconds / 3600 % 24,
+                                                         city.sunrise_seconds / 60 % 60,
+                                                         city.sunset_seconds / 3600 % 24,
+                                                         city.sunset_seconds / 60 % 60);
+                            ImGui::TextUnformatted(sun_times.data(), sun_times.data() + sun_times.size());
+                            ImGui::TextUnformatted(city.main_weather.data(), city.main_weather.data() + city.main_weather.size());
                             if (show_details_)
                             {
-                                json_view_.render(city.weather_info);
+                                json_view_.render(city.weather_info());
                             }
                             ImGui::Image(reinterpret_cast<void *>(static_cast<uintptr_t>(texture)), ImVec2{90, 90});
                             auto const restore_y{ImGui::GetCursorPosY()};
@@ -219,7 +211,7 @@ namespace clocks
                                         "If there are upcoming local holidays, mention it together with a short reference to what is celebrated. "
                                         "The local date and time is {:%Y-%m-%d %H:%M:%S}", local_time)
                                     );
-                                    std::string const result = gpt_.sendMessage(city.weather_info.dump(), "user", "llama3-groq-70b-8192-tool-use-preview").at("choices").at(0).at("message").at("content");
+                                    std::string const result = gpt_.sendMessage(city.weather_info().dump(), "user", "llama3-groq-70b-8192-tool-use-preview").at("choices").at(0).at("message").at("content");
                                     notify_(result);
                                 }
                                 catch(std::exception &e) {
