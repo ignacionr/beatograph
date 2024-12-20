@@ -25,6 +25,7 @@ namespace git{
                         ImGui::TableNextColumn();
                         ImGui::TextUnformatted(repo.c_str());
                         ImGui::TableNextColumn();
+                        ImGui::PushID(repo.c_str());
                         if (ImGui::SmallButton(ICON_MD_FOLDER_OPEN " Open"))
                         {
                             system(std::format("explorer \"{}\"", repo).c_str());
@@ -33,6 +34,11 @@ namespace git{
                         {
                             host_->checkout(repo);
                         }
+                        if (ImGui::SameLine(); ImGui::SmallButton(ICON_MD_CODE " Open in VS Code"))
+                        {
+                            system(std::format("code \"{}\"", repo).c_str());
+                        }
+                        ImGui::PopID();
                     }
                     ImGui::EndTable();
                 }
