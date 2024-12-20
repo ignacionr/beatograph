@@ -259,8 +259,10 @@ int main()
                     menu_tabs};}},
             {"toggl",
                 [&menu_tabs, &localhost, &notify_host, &toggl_screens_by_id](nlohmann::json::object_t const& node) {
-                    auto ts {std::make_shared<toggl::screen>(std::make_shared<toggl::client>(
-                            [&notify_host](std::string_view text) { notify_host(text, "Toggl"); }), 
+                    auto toggle_client {std::make_shared<toggl::client>(
+                            [&notify_host](std::string_view text) { notify_host(text, "Toggl"); })};
+                    toggle_client->set_login(registrar::get<toggl::login::host>(node.at("login_name")));
+                    auto ts {std::make_shared<toggl::screen>(toggle_client, 
                             static_cast<int>(node.at("daily_goal").get<float>() * 3600))};
                     if (node.contains("id")) {
                         toggl_screens_by_id[node.at("id")] = ts;

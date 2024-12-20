@@ -4,14 +4,14 @@
             "id": "toggl-betmavrik",
             "type": "toggl",
             "title": "\uf075 Toggl Betmavrik",
-            "token": "${TOGGL_API_TOKEN}",
+            "login_name": "Personal",
             "daily_goal": 9
         },
         {
             "id": "toggl-eyecu",
             "type": "toggl",
             "title":"\uf075 Toggl EyeCU",
-            "token": "${EYECU_TOGGL_API_TOKEN}",
+            "login_name": "EyeCU",
             "daily_goal": 3
         },
         {
