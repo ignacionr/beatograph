@@ -47,6 +47,9 @@
             "root": "C:\\src"
         },
         {
+            "type": "github"
+        },
+        {
             "type": "radio"
         },
         {

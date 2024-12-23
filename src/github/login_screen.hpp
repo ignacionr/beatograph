@@ -4,7 +4,7 @@
 
 namespace github::login {
     struct screen {
-        screen(host& host): host_{host}
+        screen(host& host): host_{host} {}
     private:
         host& host_;
     };
