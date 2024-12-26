@@ -86,7 +86,16 @@ struct img_cache {
         auto it_thread = loader_threads_.find(url);
         if (it_thread == loader_threads_.end()) {
             // craete one
-            loader_threads_[url] = std::jthread{&img_cache::load_into_cache, this, url};
+            loader_threads_[url] = std::jthread{
+                [this, url] {
+                    try {
+                        load_into_cache(url);
+                    }
+                    catch (std::exception const &e) {
+                        std::cerr << "Failed to load image: " << e.what() << '\n';
+                        // and ignore, we will just show a placeholder forever
+                    }
+                }};
         }
         // still loading, return a placeholder
         return load_texture_from_file("assets/b6a9d081425dd6a.png");
