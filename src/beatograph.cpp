@@ -52,6 +52,9 @@
 #include "config/file_config.hpp"
 #include "registrar.hpp"
 #include "toggl/login/host.hpp"
+#include "github/host.hpp"
+#include "github/screen.hpp"
+#include "github/login_host.hpp"
 
 void setup_fonts()
 {
@@ -150,7 +153,10 @@ int main()
 
         // load toggl_logins
         static std::string_view constexpr toggl_login_base {"toggl_login."};
+        static std::string_view constexpr github_login_base {"github_login."};
+
         load_services<toggl::login::host>(fconfig, toggl_login_base);
+        load_services<github::login::host>(fconfig, github_login_base);
 
         // auto constexpr happy_bell_sound = "assets/mixkit-happy-bell-alert-601.wav";
         // auto constexpr impact_sound = "assets/mixkit-underground-explosion-impact-echo-1686.wav";
@@ -247,6 +253,13 @@ int main()
         std::unordered_map<std::string, std::shared_ptr<toggl::screen>> toggl_screens_by_id;
 
         std::map<std::string, std::function<group_t(nlohmann::json::object_t const&)>> factories = {
+            {"github",
+                [&menu_tabs] (nlohmann::json::object_t const& node) {
+                    auto host = std::make_shared<github::host>();
+                    auto screen = std::make_shared<github::screen>(host, node.at("login_name").get_ref<const std::string&>());
+                    return group_t{ICON_MD_CODE " GitHub", 
+                        [screen] { screen->render(); },
+                        menu_tabs};}},
             {"calendar",
                 [&menu_tabs, &localhost] (nlohmann::json::object_t const& cal) {
                     return group_t{cal.at("title"), 
@@ -430,6 +443,7 @@ int main()
 
         // save toggl_logins
         save_services<toggl::login::host>(fconfig, toggl_login_base);
+        save_services<github::login::host>(fconfig, github_login_base);
 
         fconfig->set(std::string{lastplayed_key}, radio_host.last_played());
         fconfig->save();

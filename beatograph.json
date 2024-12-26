@@ -1,15 +1,20 @@
 {
     "tabs": [
         {
-            "id": "toggl-betmavrik",
+            "type": "github",
+            "title": "\uf09b GitHub",
+            "login_name": "Personal"
+        },
+        {
             "type": "toggl",
+            "id": "toggl-betmavrik",
             "title": "\uf075 Toggl Betmavrik",
             "login_name": "Personal",
             "daily_goal": 9
         },
         {
-            "id": "toggl-eyecu",
             "type": "toggl",
+            "id": "toggl-eyecu",
             "title":"\uf075 Toggl EyeCU",
             "login_name": "EyeCU",
             "daily_goal": 3
@@ -45,9 +50,6 @@
         {
             "type": "git-repositories",
             "root": "C:\\src"
-        },
-        {
-            "type": "github"
         },
         {
             "type": "radio"
