@@ -2,7 +2,6 @@ build
 imgui.ini
 vcpkg_installed
 last_played.txt
-imgcache
 gtts_cache/*.mp3
 gtts_cache/gtts.cache
 beatograph.ini
