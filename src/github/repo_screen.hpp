@@ -22,6 +22,9 @@ namespace github::repo {
                 [](nlohmann::json const &workflows) {
                     static views::json json_view;
                     json_view.render(workflows);
+                    for (auto const &workflow : workflows.at("workflows")) {
+                        ImGui::TextUnformatted(workflow.at("name").get_ref<const std::string&>().c_str());
+                    }
                 }
             );
             ImGui::PopID();

@@ -86,7 +86,7 @@ struct img_cache {
         auto it_thread = loader_threads_.find(url);
         if (it_thread == loader_threads_.end()) {
             // craete one
-            loader_threads_[url] = std::thread{&img_cache::load_into_cache, this, url};
+            loader_threads_[url] = std::jthread{&img_cache::load_into_cache, this, url};
         }
         // still loading, return a placeholder
         return load_texture_from_file("assets/b6a9d081425dd6a.png");
@@ -162,6 +162,6 @@ private:
     std::filesystem::path cache_path_;
     std::map<std::string, std::string> index_;
     std::mutex index_mutex_;
-    std::map<std::string, std::thread> loader_threads_;
+    std::map<std::string, std::jthread> loader_threads_;
     std::map<std::string, unsigned int> textures_;
 };
