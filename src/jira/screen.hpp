@@ -136,29 +136,20 @@ namespace jira
                 editing_new_ = false;
                 return;
             }
-            views::cached_view<std::string>("Projects",
+            views::cached_view<nlohmann::json>("Projects",
                 [&h]() {
-                    auto all = nlohmann::json::parse(h.get_projects());
-                    std::stringstream ss;
-                    for (auto const &project : all) {
-                        ss << project.at("key").get<std::string>() << " - " << project.at("name").get<std::string>() << '\0';
-                    }
-                    ss << '\0';
-                    return ss.str();
+                    return nlohmann::json::parse(h.get_projects());
                 },
-                [this, &h](std::string const &all_projects) {
-                    if (ImGui::Combo("Project", &selected_project_, all_projects.data())) {
-                        if (selected_project_ < 0) {
-                            selected_project_key_.clear();
-                        }
-                        else {
-                            const char *p_selected = all_projects.data();
-                            for (auto i = 0; i < selected_project_; ++i) {
-                                p_selected += strlen(p_selected) + 1;
+                [this, &h](nlohmann::json const &all_projects) {
+                    if (ImGui::BeginCombo("Project", selected_project_key_.empty() ? "Select Project" : selected_project_key_.c_str())) {
+                        for (auto const &project : all_projects) {
+                            auto const key {project.at("key").get_ref<std::string const &>()};
+                            if (ImGui::Selectable(std::format("{} - {}", key, project.at("name").get_ref<std::string const &>()).c_str(), selected_project_key_ == key)) {
+                                selected_project_key_ = key;
+                                selected_project_id_ = project.at("id").get<std::string>();
                             }
-                            std::string_view selected {p_selected};
-                            selected_project_key_ = selected.substr(0, selected.find(" - "));
                         }
+                        ImGui::EndCombo();
                     }
                 }, true);
             if (summary_text_.reserve(256); ImGui::InputText("Summary", summary_text_.data(), summary_text_.capacity())) {
@@ -169,13 +160,25 @@ namespace jira
                     return h.get_issue_types();
                 },
                 [this](nlohmann::json::array_t const &json_issue_types) {
-                    for (auto const &issue_type : json_issue_types)
-                    {
-                        auto const &name {issue_type.at("name").get_ref<std::string const &>()};
-                        auto const &id {issue_type.at("id").get_ref<std::string const &>()};
-                        if (ImGui::Selectable(std::format("{}-{}", name, id).c_str(), issuetype_id_ == id)) {
-                            issuetype_id_ = issue_type.at("id").get<std::string>();
+                    if (ImGui::BeginCombo("Issue Type", issuetype_id_.empty() ? "Select Issue Type" : issuetype_name_.c_str())) {
+                        for (auto const &issue_type : json_issue_types)
+                        {
+                            // determine if the scope applies
+                            bool applicable = true;
+                            auto const &scope {issue_type.at("scope")};
+                            if (scope.at("type").get_ref<std::string const &>() == "PROJECT") {
+                                applicable = scope.at("project").at("id").get_ref<const std::string &>() == selected_project_id_;
+                            }
+                            if (applicable) {
+                                auto const &name {issue_type.at("name").get_ref<std::string const &>()};
+                                auto const &id {issue_type.at("id").get_ref<std::string const &>()};
+                                if (ImGui::Selectable(std::format("{}", name).c_str(), issuetype_id_ == id)) {
+                                    issuetype_id_ = issue_type.at("id").get<std::string>();
+                                    issuetype_name_ = name;
+                                }
+                            }
                         }
+                        ImGui::EndCombo();
                     }
                 }, true);
             if (ImGui::CollapsingHeader("Sub-Tasks", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -197,11 +200,20 @@ namespace jira
                 }
             }
             if (ImGui::Button("Create and Assign to Me")) {
-                auto issue {h.create_issue(summary_text_, selected_project_key_, issuetype_id_)};
-                h.assign_issue_to_me(issue.at("key").get<std::string>());
-                summary_text_.clear();
-                editing_new_ = false;
-                query();
+                try {
+                    auto issue {h.create_issue(summary_text_, selected_project_key_, issuetype_id_)};
+                    h.assign_issue_to_me(issue.at("key").get<std::string>());
+                    summary_text_.clear();
+                    editing_new_ = false;
+                    query();
+                    last_error_.clear();
+                }
+                catch(std::exception const &e) {
+                    last_error_ = e.what();
+                }
+            }
+            if (!last_error_.empty()) {
+                ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "%s", last_error_.c_str());
             }
         }
 
@@ -264,7 +276,10 @@ namespace jira
         std::string summary_text_;
         int selected_project_{-1};
         std::string selected_project_key_;
+        std::string selected_project_id_;
         std::vector<std::string> subtasks_;
         std::string issuetype_id_;
+        std::string issuetype_name_;
+        std::string last_error_;
     };
 }
