@@ -41,7 +41,7 @@ namespace github {
         std::string fetch(const std::string &url) {
             http::fetch fetch;
             return fetch(url, [this](http::fetch::header_setter_t setheader) {
-                setheader("Authorization", "Bearer " + login_host_->personal_token());
+                setheader("Authorization: Bearer " + login_host_->personal_token());
             });
         }
 

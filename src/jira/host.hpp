@@ -7,6 +7,7 @@
 
 #include "../conversions/base64.hpp"
 #include "../conversions/uri.hpp"
+#include "../http/fetch.hpp"
 
 namespace jira {
     struct host {
@@ -191,42 +192,11 @@ namespace jira {
         }
 
         std::string get(std::string_view endpoint) {
-            CURL* curl = curl_easy_init();
-            if(!curl) {
-                return "CURL initialization failed";
-            }
-
-            std::string url = base_url + std::string{endpoint};
-            std::string response;
-            struct curl_slist* headers = nullptr;
-
-            auto const auth {auth_header()};
-            headers = curl_slist_append(headers, auth.c_str());
-            headers = curl_slist_append(headers, "Content-Type: application/json");
-
-            curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-            curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-            curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-            curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
-
-            // Enable verbose mode
-            // curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
-
-            // disable proxy
-            // curl_easy_setopt(curl, CURLOPT_NOPROXY, "betmavrik.atlassian.net");
-            
-            // Disable SSL verification (for testing only)
-            // curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
-            // curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
-
-            CURLcode res = curl_easy_perform(curl);
-            if(res != CURLE_OK) {
-                curl_easy_cleanup(curl);
-                return "CURL request failed";
-            }
-
-            curl_easy_cleanup(curl);
-            return response;
+            http::fetch fetch;
+            return fetch(base_url + std::string{endpoint}, [auth_h = auth_header()](auto hs){
+                hs("Content-Type: application/json");
+                hs(auth_h);
+            });
         }
 
     private:

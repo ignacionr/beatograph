@@ -9,7 +9,7 @@
 
 namespace http {
     struct fetch {
-        using header_setter_t = std::function<void(std::string_view, std::string_view)>;
+        using header_setter_t = std::function<void(std::string const&)>;
         using header_client_t = std::function<void(header_setter_t)>;
         std::string operator()(std::string const &url, header_client_t set_headers = [](header_setter_t setheader){}) const {
             CURL *curl = curl_easy_init();
@@ -26,8 +26,8 @@ namespace http {
                     curl_easy_setopt(curl, CURLOPT_PROXY, pproxy_str);
                 }
                 struct curl_slist *headers = nullptr;
-                auto setheader = [&headers](std::string_view header_name, std::string_view header_value) {
-                    headers = curl_slist_append(headers, std::format("{}: {}", header_name, header_value).c_str());
+                auto setheader = [&headers](std::string const& header_value) {
+                    headers = curl_slist_append(headers, header_value.c_str());
                 };
                 set_headers(setheader);
                 if (headers) {
