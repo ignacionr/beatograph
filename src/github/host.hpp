@@ -1,14 +1,47 @@
 #pragma once
 
+#include <format>
 #include <memory>
+#include <string>
+
+#include <nlohmann/json.hpp>
+
 #include "login_host.hpp"
+#include "../http/fetch.hpp"
 
 namespace github {
     struct host {
-        void login_host(github::login::host login_host) {
+        void login_host(std::shared_ptr<github::login::host> login_host) {
             login_host_ = login_host;
         }
+
+        nlohmann::json const& user() {
+            if (user_.empty()) {
+                user_ = fetch_user();
+            }
+            return user_;
+        }
+
+        nlohmann::json organizations() {
+            return nlohmann::json::parse(fetch("https://api.github.com/user/orgs"));
+        }
+
+        nlohmann::json fetch_user() {
+            return nlohmann::json::parse(fetch("https://api.github.com/user"));
+        }
+
+        nlohmann::json org_repos(std::string const &org) {
+            return nlohmann::json::parse(fetch(std::format("https://api.github.com/orgs/{}/repos", org)));
+        }
     private:
-        github::login::host login_host_;
+        std::string fetch(const std::string &url) {
+            http::fetch fetch;
+            return fetch(url, [this](http::fetch::header_setter_t setheader) {
+                setheader("Authorization", "Bearer " + login_host_->personal_token());
+            });
+        }
+
+        std::shared_ptr<github::login::host> login_host_;
+        nlohmann::json user_;
     };
 }

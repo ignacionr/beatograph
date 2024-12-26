@@ -1,6 +1,7 @@
 #pragma once
 
 #include <format>
+#include <functional>
 #include <stdexcept>
 #include <string>
 
@@ -8,7 +9,9 @@
 
 namespace http {
     struct fetch {
-        std::string operator()(std::string const &url) const {
+        using header_setter_t = std::function<void(std::string_view, std::string_view)>;
+        using header_client_t = std::function<void(header_setter_t)>;
+        std::string operator()(std::string const &url, header_client_t set_headers = [](header_setter_t setheader){}) const {
             CURL *curl = curl_easy_init();
             if (curl) {
                 curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
@@ -21,6 +24,14 @@ namespace http {
                 size_t len = 0;
                 if (!_dupenv_s(&pproxy_str, &len, "HTTP_PROXY") && pproxy_str != nullptr) {
                     curl_easy_setopt(curl, CURLOPT_PROXY, pproxy_str);
+                }
+                struct curl_slist *headers = nullptr;
+                auto setheader = [&headers](std::string_view header_name, std::string_view header_value) {
+                    headers = curl_slist_append(headers, std::format("{}: {}", header_name, header_value).c_str());
+                };
+                set_headers(setheader);
+                if (headers) {
+                    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
                 }
                 std::string response;
                 curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
