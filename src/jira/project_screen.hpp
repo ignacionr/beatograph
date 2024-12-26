@@ -8,14 +8,13 @@
 #include "../views/cached_view.hpp"
 #include "host.hpp"
 #include "user_screen.hpp"
-#include "../imgcache.hpp"
 #include "issue_screen.hpp"
 
 namespace jira
 {
     struct project_screen
     {
-        project_screen(img_cache &cache) : user_screen_{cache}, issue_screen_{cache}
+        project_screen()
         {
         }
 

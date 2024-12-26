@@ -11,7 +11,6 @@
 #include "../views/cached_view.hpp"
 #include "colors.hpp"
 #include "user_screen.hpp"
-#include "../imgcache.hpp"
 #include "jira_content_render.hpp"
 
 namespace jira
@@ -20,7 +19,7 @@ namespace jira
     {
         using context_actions_t = std::unordered_map<std::string, std::function<void(nlohmann::json::object_t const &)>>;
 
-        issue_screen(img_cache &cache): user_screen_{cache} {
+        issue_screen() {
         }
 
         void do_async(std::function<void()> fn) {

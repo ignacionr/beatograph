@@ -9,6 +9,7 @@
 #include "host.hpp"
 
 #include "../imgcache.hpp"
+#include "../registrar.hpp"
 
 namespace radio
 {
@@ -16,7 +17,7 @@ namespace radio
     {
         static constexpr auto dial_height{150};
 
-        screen(host &h, img_cache &img_cache) : host_{h}, img_cache_{img_cache}
+        screen(host &h) : host_{h}
         {
             presets = host_.presets();
             std::transform(presets.begin(), presets.end(), std::back_inserter(presets_c_strs),
@@ -199,7 +200,7 @@ namespace radio
         std::vector<const char *> presets_c_strs;
         std::optional<unsigned> currently_playing{};
         host &host_;
-        img_cache &img_cache_;
+        img_cache &img_cache_ = *registrar::get<img_cache>({});
         float dial_x{};
     };
 }

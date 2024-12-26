@@ -9,6 +9,7 @@
 
 #include "host.hpp"
 #include "../imgcache.hpp"
+#include "../registrar.hpp"
 
 #pragma execution_character_set("utf-8")
 #include "../../external/IconsMaterialDesign.h"
@@ -19,8 +20,8 @@ namespace rss
     {
         using player_t = std::function<void(std::string_view)>;
         using system_runner_t = std::function<std::string(std::string_view)>;
-        screen(std::shared_ptr<host> host, player_t player, img_cache &cache, system_runner_t system_runner)
-         : host_{host}, player_{player}, cache_{cache}, system_runner_{system_runner} {}
+        screen(std::shared_ptr<host> host, player_t player, system_runner_t system_runner)
+         : host_{host}, player_{player}, system_runner_{system_runner} {}
 
         void render_flag()
         {
@@ -178,7 +179,7 @@ namespace rss
     private:
         std::shared_ptr<host> host_;
         player_t player_;
-        img_cache &cache_;
+        img_cache &cache_ = *registrar::get<img_cache>({});
         std::shared_ptr<rss::feed> current_feed_;
         std::string filter_;
         std::function<std::string(std::string_view)> system_runner_;

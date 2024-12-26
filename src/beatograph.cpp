@@ -164,7 +164,8 @@ int main()
 
         hosting::local::host localhost;
 
-        img_cache cache{"imgcache"};
+        auto cache {std::make_shared<img_cache>("imgcache")};
+        registrar::add({}, cache);
 
         // get the Groq API key from GROQ_API_KEY
         auto groq_api_key = localhost.get_env_variable("GROQ_API_KEY");
@@ -287,8 +288,8 @@ int main()
                         },
                         menu_tabs};}},
             {"jira",
-                [&cache, &localhost, &menu_tabs_and, &toggl_screens_by_id] (nlohmann::json::object_t const& node) mutable {
-                    auto js = std::make_shared<jira::screen>(cache);
+                [&localhost, &menu_tabs_and, &toggl_screens_by_id] (nlohmann::json::object_t const& node) mutable {
+                    auto js = std::make_shared<jira::screen>();
                     jira::issue_screen::context_actions_t actions;
                     if (node.contains("integrate")) {
                         for (std::string const &action : node.at("integrate")) {
@@ -321,7 +322,7 @@ int main()
                     },
                     menu_tabs};}},
             {"radio",
-                [&menu_tabs, &notify_host, &radio_host, &cache, &localhost] (nlohmann::json::object_t const& ) {
+                [&menu_tabs, &notify_host, &radio_host, &localhost] (nlohmann::json::object_t const& ) {
                     auto podcast_host = std::make_shared<rss::host>([&localhost](std::string_view command) -> std::string {
                         return localhost.execute_command(command);
                     });
@@ -332,10 +333,9 @@ int main()
                                         {
                                             radio_host.play(std::string{url});
                                         },
-                                        cache,
                                         [&localhost](std::string_view text) {
                                             return localhost.execute_command(text, false); }),
-                        radio_screen = std::make_shared<radio::screen>(radio_host, cache)
+                        radio_screen = std::make_shared<radio::screen>(radio_host)
                         ]() mutable
                         {
                             radio_screen->render();
@@ -344,7 +344,7 @@ int main()
                         menu_tabs, ImVec4(0.05f, 0.5f, 0.05f, 1.0f)};
                 }},
             {"world-clocks",
-                [&cache, &menu_tabs_and, &localhost, &notify_host, &gpt](nlohmann::json::object_t const &node) {
+                [&menu_tabs_and, &localhost, &notify_host, &gpt](nlohmann::json::object_t const &node) {
                     auto weather_host = std::make_shared<weather::openweather_client>(localhost.resolve_environment(node.at("openweather_key")));
                     auto host = std::make_shared<clocks::host>();
                     host->set_weather_client(weather_host);
@@ -362,7 +362,6 @@ int main()
                     }
                     auto clocks_screen = std::make_shared<clocks::screen>(
                         host,
-                        cache, 
                         []{ return views::quitting(); }, 
                         std::move(gpt.new_conversation()), 
                         [&notify_host](std::string_view text) { notify_host(text, "Clocks"); });

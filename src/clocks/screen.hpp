@@ -18,6 +18,7 @@
 #include "../views/cached_view.hpp"
 #include "../views/json.hpp"
 #include "../imgcache.hpp"
+#include "../registrar.hpp"
 #include "../external/cppgpt/cppgpt.hpp"
 #include "host.hpp"
 
@@ -25,8 +26,8 @@ namespace clocks
 {
     struct screen
     {
-        screen(std::shared_ptr<host> h, img_cache &cache, std::function<bool()> quitting, ignacionr::cppgpt &&gpt, std::function<void(std::string_view)> notify)
-            : host_{h}, cache_{cache}, gpt_{gpt}, notify_{notify}
+        screen(std::shared_ptr<host> h, std::function<bool()> quitting, ignacionr::cppgpt &&gpt, std::function<void(std::string_view)> notify)
+            : host_{h}, gpt_{gpt}, notify_{notify}
         {
             refresh_ = std::jthread([this, quitting]
                                     {
@@ -244,7 +245,7 @@ namespace clocks
 
     private:
         std::shared_ptr<host> host_;
-        img_cache &cache_;
+        img_cache &cache_ = *registrar::get<img_cache>({});
         views::json json_view_;
         bool show_details_{false};
         std::jthread refresh_;

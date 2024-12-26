@@ -30,8 +30,12 @@ namespace github {
             return nlohmann::json::parse(fetch("https://api.github.com/user"));
         }
 
-        nlohmann::json org_repos(std::string const &org) {
+        nlohmann::json org_repos(std::string_view org) {
             return nlohmann::json::parse(fetch(std::format("https://api.github.com/orgs/{}/repos", org)));
+        }
+
+        nlohmann::json repo_workflows(std::string_view full_name) {
+            return nlohmann::json::parse(fetch(std::format("https://api.github.com/repos/{}/actions/workflows", full_name)));
         }
     private:
         std::string fetch(const std::string &url) {

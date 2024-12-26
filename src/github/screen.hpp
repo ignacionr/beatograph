@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <memory>
 #include <string>
 
@@ -13,6 +14,7 @@
 #include "../../external/IconsMaterialDesign.h"
 #include "../views/json.hpp"
 #include "../views/cached_view.hpp"
+#include "repo_screen.hpp"
 
 namespace github {
     struct screen {
@@ -47,15 +49,18 @@ namespace github {
                             for (auto const &org : organizations) {
                                 if (ImGui::Selectable(org["login"].get_ref<const std::string&>().c_str())) {
                                     selected_org_login_ = org["login"].get<std::string>();
-                                    repos_ = host_->org_repos(selected_org_login_);
+                                    repos_.clear();
+                                    for (auto repo_json: host_->org_repos(selected_org_login_)) {
+                                        repos_.emplace_back(repo::screen{std::move(repo_json), host_});
+                                    }
                                 }
                             }
                             ImGui::EndCombo();
                         }
                     }, false);
 
-                    if (!repos_.empty()) {
-                        json_.render(repos_);
+                    for (auto &rs: repos_) {
+                        rs.render();
                     }
 
                     views::cached_view<nlohmann::json>("User", [this] {
@@ -81,6 +86,6 @@ namespace github {
         std::string login_name_;
         std::string selected_org_login_;
         bool config_mode_{};
-        nlohmann::json repos_;
+        std::vector<repo::screen> repos_;
     };
 }

@@ -2,6 +2,7 @@
 
 #include <functional>
 #include <map>
+#include <memory>
 #include <mutex>
 #include <sstream>
 #include <unordered_map>
@@ -24,8 +25,7 @@ namespace jira
     {
         using selector_t = std::function<std::vector<nlohmann::json::object_t>()>;
 
-        screen(img_cache &cache) : 
-        user_screen_{cache}, issue_screen_{cache}, project_screen_{cache} {
+        screen() {
             search_text_.reserve(256);
             summary_text_.reserve(256);
         }

@@ -6,12 +6,13 @@
 #include <imgui.h>
 
 #include "../imgcache.hpp"
+#include "../registrar.hpp"
 
 namespace jira
 {
     struct user_screen
     {
-        user_screen(img_cache &cache) : cache_{cache} {}
+        user_screen() {}
 
         void render(nlohmann::json::object_t const &json_user) {
             // obtain the avatar url
@@ -23,7 +24,7 @@ namespace jira
                 }
             }
             ImGui::Image(reinterpret_cast<void *>(static_cast<uintptr_t>(
-                    cache_.load_texture_from_url(avatar_url))),
+                    cache_->load_texture_from_url(avatar_url))),
                 ImVec2{48,48});
             ImGui::SameLine();
 
@@ -38,6 +39,6 @@ namespace jira
             }
         }
     private:
-        img_cache &cache_;
+        std::shared_ptr<img_cache> cache_ = registrar::get<img_cache>({});
     };
 } // namespace jira
