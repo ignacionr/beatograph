@@ -10,6 +10,7 @@
 
 #include "../../imgcache.hpp"
 #include "../../registrar.hpp"
+#include "location.hpp"
 
 namespace radio
 {
@@ -193,6 +194,7 @@ namespace radio
                 }
             }
             ImGui::EndChild();
+            location_.render(host_.total_run(), host_.current_run());
         }
 
     private:
@@ -202,5 +204,6 @@ namespace radio
         host &host_;
         img_cache &img_cache_ = *registrar::get<img_cache>({});
         float dial_x{};
+        media::radio::location location_;
     };
 }

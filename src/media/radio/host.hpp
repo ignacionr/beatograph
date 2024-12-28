@@ -156,6 +156,11 @@ namespace radio
                                 av_free(audio_buf);
                                 throw std::runtime_error("Failed to convert audio");
                             }
+                            // update the current packet sent
+                            if (current_packet_length_.count() == 0) {
+                                current_packet_sent_ = std::chrono::system_clock::now();
+                            }
+                            current_packet_length_ += std::chrono::milliseconds{1000 * frame->nb_samples / codec_ctx->sample_rate};
                             auto sdl_ret = SDL_QueueAudio(dev, audio_buf, dst_buf_size);
                             if (sdl_ret < 0)
                             {
@@ -308,6 +313,16 @@ namespace radio
                 throw std::runtime_error("Failed to initialize resampler");
             }
 
+            // determine the total length as a duration
+            auto duration = fmt_ctx->duration;
+            if (duration != AV_NOPTS_VALUE)
+            {
+                duration /= AV_TIME_BASE;
+            }
+            total_run_ = std::chrono::milliseconds{1000 * duration};
+            current_run_ = std::chrono::milliseconds{0};
+            current_packet_length_ = std::chrono::milliseconds{0};
+
             // Start playing audio
             SDL_PauseAudioDevice(dev, 0);
 
@@ -368,6 +383,19 @@ namespace radio
             return empty;
         }
 
+        std::chrono::milliseconds total_run() const {
+            return total_run_;
+        }
+
+        std::chrono::milliseconds current_run() const {
+            auto now = std::chrono::system_clock::now();
+            if (current_packet_length_.count() == 0) {
+                return current_run_;
+            }
+            auto diff = std::min(std::chrono::duration_cast<std::chrono::milliseconds>(now - current_packet_sent_), current_packet_length_);
+            return current_run_ + diff;
+        }
+
     private:
 
         std::map<std::string, std::string> presets_;
@@ -381,5 +409,9 @@ namespace radio
         std::string last_error_;
         std::string last_played_;
         std::unordered_map<std::string, std::string> stream_metadata_;
+        std::chrono::milliseconds total_run_{};
+        std::chrono::milliseconds current_run_{};
+        std::chrono::milliseconds current_packet_length_{};
+        std::chrono::system_clock::time_point current_packet_sent_{};
     };
 }
