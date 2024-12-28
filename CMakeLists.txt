@@ -13,10 +13,11 @@ project(Beatograph VERSION 1.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-enable_testing()
+# enable_testing()
 
 # Add the main executable target
 add_executable(beatograph 
+  external/sqlite3.c
   src/pch.cpp
   src/cloud/metrics/metric_view.cpp
   src/beatograph.cpp

@@ -8,7 +8,8 @@
 #include <vector>
 #include <thread>
 
-#include <curl/curl.h>
+#include "../../registrar.hpp"
+#include "../../hosting/http/fetch.hpp"
 #include "feed.hpp"
 
 namespace rss
@@ -24,50 +25,6 @@ namespace rss
             auto parser = static_cast<rss::feed *>(userp);
             (*parser)(std::string_view{static_cast<char *>(contents), size * nmemb});
             return size * nmemb;
-        }
-
-        static feed get_feed(std::string_view url, std::function<std::string(std::string_view)> system_runner)
-        {
-            // use curl to obtain the feed contents
-            CURL *curl = curl_easy_init();
-            if (!curl)
-            {
-                throw std::runtime_error("Failed to initialize curl");
-            }
-            struct curl_slist *headers = nullptr;
-            headers = curl_slist_append(headers, "Accept: */*");
-            headers = curl_slist_append(headers, "User-Agent: beatograph/1.0");
-            curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-            curl_easy_setopt(curl, CURLOPT_URL, url.data());
-            curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
-            feed parser{system_runner};
-            curl_easy_setopt(curl, CURLOPT_WRITEDATA, &parser);
-            CURLcode res;
-            try
-            {
-                res = curl_easy_perform(curl);
-            }
-            catch (...)
-            {
-                curl_slist_free_all(headers);
-                curl_easy_cleanup(curl);
-                throw;
-            }
-            curl_slist_free_all(headers);
-            if (res != CURLE_OK)
-            {
-                curl_easy_cleanup(curl);
-                throw std::runtime_error("Failed to perform request: " + std::string(curl_easy_strerror(res)));
-            }
-            // check the status code
-            long response_code;
-            curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
-            curl_easy_cleanup(curl);
-            if (response_code >= 400)
-            {
-                throw std::runtime_error("Failed to fetch feed: " + std::to_string(response_code));
-            }
-            return parser;
         }
 
         void add_feeds(std::vector<std::string> urls, std::function<void(std::string_view)> error_sink, std::function<bool()> callback = []{ return true; })
@@ -133,5 +90,13 @@ namespace rss
     private:
         std::atomic<std::shared_ptr<std::vector<std::shared_ptr<rss::feed>>>> feeds_ = std::make_shared<std::vector<std::shared_ptr<rss::feed>>>();
         std::function<std::string(std::string_view)> system_runner_;
+
+        static feed get_feed(std::string_view url, std::function<std::string(std::string_view)> system_runner)
+        {
+            http::fetch fetch;
+            feed parser{system_runner};
+            fetch(std::string{url}, [](auto h){}, writeCallback, &parser);
+            return parser;
+        }
     };
 }
