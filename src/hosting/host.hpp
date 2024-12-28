@@ -7,8 +7,8 @@
 #include <string>
 #include "host_local.hpp"
 #include "local_mapping.hpp"
-#include "../metrics/from_url.hpp"
-#include "../docker/host.hpp"
+#include "../cloud/metrics/from_url.hpp"
+#include "../cloud/docker/host.hpp"
 
 namespace hosting::ssh
 {

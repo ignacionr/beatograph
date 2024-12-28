@@ -9,9 +9,9 @@
 
 #include "host.hpp"
 #include "host_local.hpp"
-#include "../metrics/metric_view.hpp"
-#include "../docker/screen.hpp"
-#include "../views/cached_view.hpp"
+#include "../cloud/metrics/metric_view.hpp"
+#include "../cloud/docker/screen.hpp"
+#include "../structural/views/cached_view.hpp"
 
 #include "../external/IconsMaterialDesign.h"
 

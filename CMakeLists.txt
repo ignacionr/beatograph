@@ -18,11 +18,11 @@ enable_testing()
 # Add the main executable target
 add_executable(beatograph 
   src/pch.cpp
-  src/metrics/metric_view.cpp
+  src/cloud/metrics/metric_view.cpp
   src/beatograph.cpp
-  src/metrics/metric_view_config_screen.cpp
-  src/metrics/metrics_menu.cpp
-  src/metrics/metrics_parser.cpp
+  src/cloud/metrics/metric_view_config_screen.cpp
+  src/cloud/metrics/metrics_menu.cpp
+  src/cloud/metrics/metrics_parser.cpp
   assets/assets.rc
 )
 

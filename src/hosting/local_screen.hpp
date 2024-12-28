@@ -1,8 +1,8 @@
 #pragma once
 
 #include "host_local.hpp"
-#include "../views/cached_view.hpp"
-#include "../views/json.hpp"
+#include "../structural/views/cached_view.hpp"
+#include "../structural/views/json.hpp"
 
 namespace hosting::local
 {
