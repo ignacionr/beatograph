@@ -124,6 +124,11 @@ namespace toggl
                     std::cerr << "Error: " << error_message << std::endl;
                 }
             }
+            if (!is_running) {
+                if (ImGui::SameLine(); ImGui::SmallButton(ICON_MD_PLAY_ARROW)) {
+                    start_time_entry(description);
+                }
+            }
             ImGui::PopID();
         }
 
