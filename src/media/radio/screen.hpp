@@ -194,7 +194,12 @@ namespace radio
                 }
             }
             ImGui::EndChild();
-            location_.render(host_.total_run(), host_.current_run());
+            if (host_.is_playing()) {
+                location_.render(host_.total_run(), host_.current_run());
+            }
+            else {
+                location_.render(std::chrono::milliseconds{0}, std::chrono::milliseconds{0});
+            }
         }
 
     private:
