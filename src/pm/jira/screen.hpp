@@ -165,9 +165,11 @@ namespace jira
                         {
                             // determine if the scope applies
                             bool applicable = true;
-                            auto const &scope {issue_type.at("scope")};
-                            if (scope.at("type").get_ref<std::string const &>() == "PROJECT") {
-                                applicable = scope.at("project").at("id").get_ref<const std::string &>() == selected_project_id_;
+                            auto const it_scope {issue_type.find("scope")};
+                            if (it_scope != issue_type.end()) {
+                                if (it_scope->at("type").get_ref<std::string const &>() == "PROJECT") {
+                                    applicable = it_scope->at("project").at("id").get_ref<const std::string &>() == selected_project_id_;
+                                }
                             }
                             if (applicable) {
                                 auto const &name {issue_type.at("name").get_ref<std::string const &>()};
