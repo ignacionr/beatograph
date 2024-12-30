@@ -195,7 +195,10 @@ namespace radio
             }
             ImGui::EndChild();
             if (host_.is_playing()) {
-                location_.render(host_.total_run(), host_.current_run());
+                auto new_location = location_.render(host_.total_run(), host_.current_run());
+                if (new_location.has_value()) {
+                    host_.move_to(std::chrono::milliseconds{static_cast<long long>(new_location.value() * host_.total_run().count())});
+                }
             }
             else {
                 location_.render(std::chrono::milliseconds{0}, std::chrono::milliseconds{0});

@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <format>
+#include <optional>
 #include <string>
 
 #include <imgui.h>
@@ -10,15 +11,17 @@ namespace media::radio
 {
     struct location
     {
-        void render(std::chrono::milliseconds total_run, 
+        std::optional<float> render(std::chrono::milliseconds total_run, 
             std::chrono::milliseconds current_run) 
         {
-            float progress = total_run.count() == 0 ? 
+            std::optional<float> result;
+            float progress = dial_x.value_or(total_run.count() == 0 ? 
                 1.0f :
-                static_cast<float>(static_cast<float>(current_run.count()) / total_run.count());
+                static_cast<float>(static_cast<float>(current_run.count()) / total_run.count()));
+            auto const target_run = std::chrono::milliseconds(dial_x.has_value() ? static_cast<long long>(dial_x.value() * total_run.count()) : current_run.count());
             auto current_run_str = std::format(" {:02}:{:02}\n/{:02}:{:02}", 
-                std::chrono::duration_cast<std::chrono::minutes>(current_run).count(),
-                std::chrono::duration_cast<std::chrono::seconds>(current_run).count() % 60,
+                std::chrono::duration_cast<std::chrono::minutes>(target_run).count(),
+                std::chrono::duration_cast<std::chrono::seconds>(target_run).count() % 60,
                 std::chrono::duration_cast<std::chrono::minutes>(total_run).count(),
                 std::chrono::duration_cast<std::chrono::seconds>(total_run).count() % 60);
 
@@ -68,8 +71,22 @@ namespace media::radio
             draw_list->AddRectFilled({ImGui::GetCursorPosX(), ImGui::GetCursorPosY() + 85}, {ImGui::GetCursorPosX() + 190, ImGui::GetCursorPosY() + 140}, IM_COL32(0, 0, 0, 170));
             
             // draw progress
-            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 170);
+            auto const start_x {ImGui::GetCursorPosX() + 170};
+            auto const start_y {ImGui::GetCursorPosY() + 20};
+            ImGui::SetCursorPosX(start_x);
+            auto const width_x {ImGui::GetWindowWidth() - start_x};
             ImGui::ProgressBar(progress, {-1, 70}, current_run_str.c_str());
+            if (ImGui::IsMouseHoveringRect({start_x, start_y}, {start_x + width_x, start_y + 70})) {
+                if (ImGui::IsMouseDown(ImGuiMouseButton_Left) ) {
+                    dial_x = (ImGui::GetMousePos().x - start_x - 6) / width_x;
+                }
+                else if (dial_x.has_value()) {
+                    result = dial_x;
+                    dial_x.reset();
+                }
+            }
+            return result;
         }
+        std::optional<float> dial_x;
     };
 }

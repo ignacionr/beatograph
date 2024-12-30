@@ -49,21 +49,25 @@ namespace radio
         using release_audio_t = std::function<void()>;
         using audio_converter_t = std::function<release_audio_t(void *, uint32_t, void **, uint32_t *)>;
 
-        void play(std::string url) {
+        void stop_and_wait() {
+            stop();
+            while (is_playing())
+            {
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            }
+        }
+
+        void play(std::string url, std::chrono::milliseconds start = std::chrono::milliseconds{0}) {
             last_played_ = url;
             // start the player in a separate thread
-            std::thread([this, url]() {
+            std::thread([this, url, start]() {
                 if (is_playing())
                 {
-                    stop();
-                    while (is_playing())
-                    {
-                        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-                    }
+                    stop_and_wait();
                 }
                 has_error_ = false;
                 try {
-                    play_sync(url);
+                    play_sync(url, start);
                 }
                 catch(const std::exception &e) {
                     last_error_ = e.what();
@@ -191,7 +195,7 @@ namespace radio
             }
         }
 
-        void play_sync(std::string url)
+        void play_sync(std::string url, std::chrono::milliseconds start = std::chrono::milliseconds{0})
         {
             keep_playing = true;
             // if the url is in the presets, use the preset
@@ -320,8 +324,20 @@ namespace radio
                 duration /= AV_TIME_BASE;
             }
             total_run_ = std::chrono::milliseconds{1000 * duration};
-            current_run_ = std::chrono::milliseconds{0};
             current_packet_length_ = std::chrono::milliseconds{0};
+
+            if (start.count() > 0) {
+                // seek to the start
+                if (0 <= av_seek_frame(fmt_ctx, -1, start.count() * AV_TIME_BASE / 1000, 0)) {
+                    current_run_ = start;
+                }
+                else {
+                    current_run_ = std::chrono::milliseconds{0};
+                }
+            }
+            else {
+                current_run_ = std::chrono::milliseconds{0};
+            }
 
             // Start playing audio
             SDL_PauseAudioDevice(dev, 0);
@@ -394,6 +410,11 @@ namespace radio
             }
             auto diff = std::min(std::chrono::duration_cast<std::chrono::milliseconds>(now - current_packet_sent_), current_packet_length_);
             return current_run_ + diff;
+        }
+
+        void move_to(std::chrono::milliseconds new_position) {
+            stop_and_wait();
+            play(last_played_, new_position);
         }
 
     private:
