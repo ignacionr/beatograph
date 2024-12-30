@@ -18,7 +18,9 @@ namespace media::radio
             float progress = dial_x.value_or(total_run.count() == 0 ? 
                 1.0f :
                 static_cast<float>(static_cast<float>(current_run.count()) / total_run.count()));
-            auto const target_run = std::chrono::milliseconds(dial_x.has_value() ? static_cast<long long>(dial_x.value() * total_run.count()) : current_run.count());
+            auto const target_run = std::chrono::milliseconds(
+                dial_x.has_value() ? 
+                static_cast<long long>(dial_x.value() * total_run.count()) : current_run.count());
             auto current_run_str = std::format(" {:02}:{:02}\n/{:02}:{:02}", 
                 std::chrono::duration_cast<std::chrono::minutes>(target_run).count(),
                 std::chrono::duration_cast<std::chrono::seconds>(target_run).count() % 60,
@@ -26,13 +28,13 @@ namespace media::radio
                 std::chrono::duration_cast<std::chrono::seconds>(total_run).count() % 60);
 
             auto draw_list = ImGui::GetWindowDrawList();
-            static constexpr float max_thickness = 27.0f;
+            static constexpr float max_thickness = 26.0f;
             static constexpr float reel_radius = 11.0f;
             static constexpr float M_2PIf = 6.28318530717958647692528676655900576f;
             float const to_thickness {progress * max_thickness};
             float const from_thickness {max_thickness - to_thickness};
-            ImVec2 const center_from {ImGui::GetCursorPosX() + 50, ImGui::GetCursorPosY() + 68};
-            ImVec2 const center_to {ImGui::GetCursorPosX() + 120, ImGui::GetCursorPosY() + 68};
+            ImVec2 const center_from {ImGui::GetCursorPosX() + 50, ImGui::GetCursorPosY() + 64};
+            ImVec2 const center_to {ImGui::GetCursorPosX() + 120, ImGui::GetCursorPosY() + 64};
 
             // reel marks
             for (int i = 0; i < 8; i++)
@@ -45,7 +47,7 @@ namespace media::radio
                 draw_list->AddRectFilled(min, max, IM_COL32(255, 255, 255, 128));
                 auto const min2 = ImVec2{center_to.x + x1 - 1, center_to.y + y1 - 1};
                 auto const max2 = ImVec2{center_to.x + x1 + 1, center_to.y + y1 + 1};
-                draw_list->AddRectFilled(min2, max2, IM_COL32(255, 255, 255, 255));
+                draw_list->AddRectFilled(min2, max2, IM_COL32(255, 255, 255, 128));
             }
 
             // the reels
@@ -53,8 +55,8 @@ namespace media::radio
             draw_list->AddCircle(center_to, reel_radius + to_thickness / 2.0f, IM_COL32(255, 255, 0, 255), 36, to_thickness);
 
             // knobs
-            draw_list->AddCircleFilled({center_from.x - 30.0f, center_from.y + 30.0f}, 4.0f, IM_COL32(255, 255, 0, 255), 6);
-            draw_list->AddCircleFilled({center_to.x + 30.0f, center_to.y + 30.0f}, 4.0f, IM_COL32(255, 255, 0, 255), 6);
+            draw_list->AddCircleFilled({center_from.x - 30.0f, center_from.y + 33.0f}, 4.0f, IM_COL32(255, 255, 0, 255), 6);
+            draw_list->AddCircleFilled({center_to.x + 30.0f, center_to.y + 33.0f}, 4.0f, IM_COL32(255, 255, 0, 255), 6);
 
             // the tape
             draw_list->AddLine(
@@ -67,8 +69,8 @@ namespace media::radio
                 IM_COL32(255, 255, 0, 255));
 
             // cover top and bottom
-            draw_list->AddRectFilled({ImGui::GetCursorPosX(), ImGui::GetCursorPosY() + 20}, {ImGui::GetCursorPosX() + 190, ImGui::GetCursorPosY() + 60}, IM_COL32(0, 0, 0, 170));
-            draw_list->AddRectFilled({ImGui::GetCursorPosX(), ImGui::GetCursorPosY() + 85}, {ImGui::GetCursorPosX() + 190, ImGui::GetCursorPosY() + 140}, IM_COL32(0, 0, 0, 170));
+            draw_list->AddRectFilled({ImGui::GetCursorPosX(), ImGui::GetCursorPosY() + 20}, {ImGui::GetCursorPosX() + 180, ImGui::GetCursorPosY() + 45}, IM_COL32(0, 0, 0, 170));
+            draw_list->AddRectFilled({ImGui::GetCursorPosX(), ImGui::GetCursorPosY() + 85}, {ImGui::GetCursorPosX() + 180, ImGui::GetCursorPosY() + 101}, IM_COL32(0, 0, 0, 170));
             
             // draw progress
             auto const start_x {ImGui::GetCursorPosX() + 170};
