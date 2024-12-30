@@ -201,7 +201,11 @@ int main()
         constexpr std::string_view lastplayed_key{"radio.last_played"};
         if (auto last_played = fconfig->get(std::string{lastplayed_key}); last_played)
         {
-            radio_host.play(*last_played);
+            long long last_played_time {};
+            if (auto last_played_time_str = fconfig->get("radio.last_run"); last_played_time_str) {
+                last_played_time = std::stoll(*last_played_time_str);
+            }
+            radio_host.play(*last_played, std::chrono::milliseconds(last_played_time));
         }
 
         conversions::screen conv_screen{};
@@ -474,7 +478,17 @@ int main()
         save_services<toggl::login::host>(fconfig, toggl_login_base);
         save_services<github::login::host>(fconfig, github_login_base);
 
-        fconfig->set(std::string{lastplayed_key}, radio_host.last_played());
+        auto const last_played_value {radio_host.last_played()};
+        fconfig->set(std::string{lastplayed_key}, last_played_value);
+        if (last_played_value) {
+            long long const run {radio_host.current_run().count() - 5000};
+            if (run > 0) {
+                fconfig->set("radio.last_run", std::to_string(run));
+            }
+            else {
+                fconfig->set("radio.last_run", {});
+            }
+        }
         fconfig->save();
 
         views::quitting(true);
