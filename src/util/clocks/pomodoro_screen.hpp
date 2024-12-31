@@ -34,19 +34,22 @@ namespace clocks {
                     auto const radius = std::min(
                         0.45 * ImGui::GetWindowWidth(), 
                         0.45 * ImGui::GetWindowHeight());
+                    auto const animation_angle = percentage * -75.0f;
+
+
                     // five spikes
                     for (int i = 0; i < 5; ++i) {
-                        auto const angle = 2 * M_PI * i / 5 + M_PI / 2;
+                        auto const angle = 2 * M_PI * i / 5 + M_PI / 2 + animation_angle;
                         auto const spike = ImVec2 {
                             static_cast<float>(center.x + radius * std::cos(angle)),
                             static_cast<float>(center.y + radius * std::sin(angle))};
                         dd->AddLine(center, spike, IM_COL32(255, 255, 255, 255), 2);
                     }
                     // and now fill the percentage that corresponds to the time accrued
-                    auto const angle = 2 * M_PI * percentage + M_PI / 2;
+                    auto const angle = 2 * M_PI * percentage + M_PI / 2 + animation_angle;
                     // first the parts that are completed
                     static constexpr double fifth_of_circle {2.0 * M_PI / 5.0};
-                    for (auto angle_to {M_PI / 2.0 + fifth_of_circle}; angle_to <= angle ; angle_to += fifth_of_circle) {
+                    for (auto angle_to {M_PI / 2.0 + fifth_of_circle + animation_angle}; angle_to <= angle ; angle_to += fifth_of_circle) {
                         auto const angle_from = angle_to - fifth_of_circle;
                         auto const spike_from = ImVec2 {
                             static_cast<float>(center.x + radius * std::cos(angle_from)),
@@ -57,7 +60,7 @@ namespace clocks {
                         dd->AddTriangleFilled(center, spike_from, spike_to, IM_COL32(255, 200, 0, 255));
                     }
                     // then the fraction currently running
-                    auto const reference_angle = std::floor((angle - M_PI / 2) / fifth_of_circle) * fifth_of_circle + M_PI / 2;
+                    auto const reference_angle = std::floor((angle - animation_angle - M_PI / 2) / fifth_of_circle) * fifth_of_circle + M_PI / 2 + animation_angle;
                     auto const spike = ImVec2 {
                         static_cast<float>(center.x + radius * std::cos(angle)),
                         static_cast<float>(center.y + radius * std::sin(angle))};
