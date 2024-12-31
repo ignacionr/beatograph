@@ -16,7 +16,7 @@ namespace clocks {
 
         double percentaged_done(std::chrono::system_clock::time_point current_time) const
         {
-            return (current_time - start_time_).count() / static_cast<double>(duration_.count());
+            return std::chrono::duration_cast<std::chrono::seconds>(current_time - start_time_).count() / static_cast<double>(duration_.count());
         }
 
         std::chrono::system_clock::time_point start_time() const
@@ -32,6 +32,10 @@ namespace clocks {
         std::chrono::seconds duration() const
         {
             return duration_;
+        }
+
+        void reset() {
+            start_time_ = std::chrono::system_clock::now();
         }
     private:
         std::chrono::system_clock::time_point start_time_;

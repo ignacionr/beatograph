@@ -55,6 +55,7 @@
 #include "cloud/github/host.hpp"
 #include "cloud/github/screen.hpp"
 #include "cloud/github/login_host.hpp"
+#include "util\clocks\pomodoro_screen.hpp"
 
 void setup_fonts()
 {
@@ -291,6 +292,17 @@ int main()
                               [cs = calendar::screen{std::make_shared<calendar::host>(localhost.resolve_environment(cal.at("endpoint")))}]() mutable
                               { cs.render(); },
                               menu_tabs}; }},
+            {"pomodoro",
+                [&menu_tabs](nlohmann::json::object_t const &pomodoro_item) {
+                    return group_t{
+                        pomodoro_item.at("title"),
+                        [pom = clocks::pomodoro_screen(std::make_shared<clocks::pomodoro>())] () mutable -> void {
+                            pom.render();
+                        },
+                        menu_tabs
+                    };
+                }
+            },
             {"ssh-hosts",
              [&menu_tabs, &localhost](nlohmann::json::object_t const &)
              { return group_t{ICON_MD_SETTINGS_REMOTE " SSH Hosts",
@@ -424,7 +436,13 @@ int main()
              menu_tabs,
              ImVec4(0.75f, 0.75f, 0.75f, 1.0f)},
             {ICON_MD_COMPUTER " Local Host", [&menu_tabs, ls = hosting::local::screen{localhost}]
-             { ls.render(); }, menu_tabs}});
+             { ls.render(); }, menu_tabs},
+             { ICON_MD_CIRCLE " Pomodoro",
+                        [pom = clocks::pomodoro_screen(std::make_shared<clocks::pomodoro>())] () mutable -> void {
+                            pom.render();
+                        },
+                        menu_tabs}
+            });
 
         auto split = std::make_shared<split_screen>([&tabs]
                                                     { tabs->render(); }, [tools]
