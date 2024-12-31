@@ -64,7 +64,7 @@ namespace media::radio
                 {center_from.x - 32.0f, center_from.y + 30.0f}, 
                 IM_COL32(255, 255, 0, 255));
             draw_list->AddLine(
-                {center_to.x + reel_radius + to_thickness, center_to.y}, 
+                {center_to.x + reel_radius + to_thickness - 1.0f, center_to.y}, 
                 {center_to.x + 32.0f, center_to.y + 30.0f}, 
                 IM_COL32(255, 255, 0, 255));
 
