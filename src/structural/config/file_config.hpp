@@ -66,3 +66,6 @@ namespace config
         std::map<std::string, std::string> properties_;
     };
 }
+
+#include "../key_value.hpp"
+static_assert(KeyValue<config::file_config>);

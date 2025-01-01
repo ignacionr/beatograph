@@ -61,6 +61,15 @@ namespace hosting::db
                 throw std::runtime_error(std::format("SQL error: {}", sqlite3_errmsg(db_)));
             }
         }
+
+        void exec(const std::string &sql, auto callback) {
+            auto rc = sqlite3_exec(db_, sql.c_str(), callback, nullptr, nullptr);
+            if (rc != SQLITE_OK)
+            {
+                throw std::runtime_error(std::format("SQL error: {}", sqlite3_errmsg(db_)));
+            }
+        }
+        
     private:
         sqlite3 *db_ {nullptr};
     };
