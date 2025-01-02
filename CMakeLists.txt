@@ -13,6 +13,9 @@ project(Beatograph VERSION 1.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+# Set default char type to unsigned
+add_compile_definitions(CHAR_UNSIGNED)
+
 # enable_testing()
 
 # Add the main executable target
@@ -52,6 +55,7 @@ target_link_libraries(beatograph PRIVATE
   ${FFMPEG_LIBRARIES} avformat
   tinyfiledialogs::tinyfiledialogs
   tinyxml2
+  sqlite3
 )
 
 # Enable Unity builds

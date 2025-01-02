@@ -26,6 +26,7 @@
         "libssh",
         "zlib",
         "libpng",
+        "sqlite3",
         {
             "name": "ffmpeg",
             "features": [

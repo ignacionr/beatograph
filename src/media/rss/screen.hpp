@@ -14,7 +14,7 @@
 #pragma execution_character_set("utf-8")
 #include "../../../external/IconsMaterialDesign.h"
 
-namespace rss
+namespace media::rss
 {
     struct screen
     {

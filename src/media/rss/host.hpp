@@ -11,13 +11,26 @@
 #include "../../registrar.hpp"
 #include "../../hosting/http/fetch.hpp"
 #include "feed.hpp"
+#include "sqliterepo.hpp"
 
-namespace rss
+namespace media::rss
 {
     struct host
     {
         host(std::function<std::string(std::string_view)> system_runner) : system_runner_(system_runner)
         {
+            repo_.scan_feeds([this](long long feed_id, const char * url, const char * title, const char * image_url) {
+                auto feed_ptr = std::make_shared<media::rss::feed>(system_runner_);
+                feed_ptr->feed_title = title;
+                feed_ptr->feed_link = url;
+                feed_ptr->set_image(image_url);
+                feed_ptr->repo_id = feed_id;
+                repo_.scan_items(feed_id, [feed_ptr](const char * link, const char * enclosure, const char * title, const char * description, const char * pub_date, const char * image_url) {
+                    feed_ptr->items.emplace_back(media::rss::feed::item{title, link, description, enclosure, image_url, std::chrono::system_clock::from_time_t(std::stoll(pub_date))});
+                });
+                auto feeds = feeds_.load();
+                feeds->emplace_back(feed_ptr);
+            });
         }
 
         static size_t writeCallback(void *contents, size_t size, size_t nmemb, void *userp)
@@ -49,9 +62,9 @@ namespace rss
                 .detach();
         }
 
-        auto add_feed_sync(std::string_view url)
+        std::shared_ptr<media::rss::feed> add_feed_sync(std::string_view url)
         {
-            auto feed_ptr = std::make_shared<rss::feed>(get_feed(url, system_runner_));
+            auto feed_ptr = std::make_shared<media::rss::feed>(get_feed(url, system_runner_));
             {
                 static std::mutex mutex;
                 std::lock_guard<std::mutex> lock(mutex);
@@ -62,14 +75,45 @@ namespace rss
                                         {
                                             return f->feed_link == ourlink;
                                         });
-                // add or replace with the new one
+                // add or merge with the new one
                 if (pos != feeds->end())
                 {
-                    *pos = feed_ptr;
+                    // update the feed
+                    (*pos)->feed_title = feed_ptr->feed_title;
+                    (*pos)->feed_description = feed_ptr->feed_description;
+                    (*pos)->feed_link = feed_ptr->feed_link;
+                    (*pos)->items = feed_ptr->items;
+                    (*pos)->set_image(feed_ptr->image_url());
+                    // now merge all items, avoiding duplicates
+                    for (auto const &item : feed_ptr->items)
+                    {
+                        auto item_pos = std::find_if((*pos)->items.begin(), (*pos)->items.end(),
+                                                     [ourlink = item.link](auto const &i)
+                                                     {
+                                                         return i.link == ourlink;
+                                                     });
+                        if (item_pos == (*pos)->items.end())
+                        {
+                            (*pos)->items.emplace_back(item);
+                        }
+                    }
                 }
                 else
                 {
                     feeds->emplace_back(feed_ptr);
+                    feed_ptr->repo_id = repo_.upsert_feed(url, feed_ptr->feed_title, feed_ptr->image_url());
+                }
+                // update the items
+                for (auto const &item : feed_ptr->items)
+                {
+                    // format the date time
+                    repo_.upsert_item(feed_ptr->repo_id, 
+                        item.title, 
+                        item.enclosure,
+                        item.link, 
+                        item.description, 
+                        std::format("{:%F %T}", item.updated), 
+                        item.image_url);
                 }
                 // sort the feeds from the latest updated to the oldest
                 std::sort(feeds->begin(), feeds->end(),
@@ -98,5 +142,6 @@ namespace rss
             fetch(std::string{url}, [](auto h){}, writeCallback, &parser);
             return parser;
         }
+        sqliterepo repo_{"rss.db"};
     };
 }

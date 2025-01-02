@@ -52,7 +52,7 @@ namespace views
                 {
                     ImGui::TextWrapped("Empty.");
                 }
-                else
+                else if (json[0].is_object())
                 {
                     std::set<std::string> column_names;
                     for (nlohmann::json::object_t const &row : json)
@@ -82,6 +82,12 @@ namespace views
                             }
                         }
                         ImGui::EndTable();
+                    }
+                }
+                else {
+                    for (auto const &item : json)
+                    {
+                        render_internal(item);
                     }
                 }
             }

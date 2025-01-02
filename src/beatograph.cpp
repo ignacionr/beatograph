@@ -80,23 +80,6 @@ void setup_fonts()
     io.Fonts->AddFontFromFileTTF("assets/fonts/Montserrat-Bold.ttf", 23.0f, nullptr, io.Fonts->GetGlyphRangesCyrillic());
 }
 
-void load_podcasts(auto host, auto sink)
-{
-    std::ifstream file("podcasts.txt");
-    // get all urls into a vector
-    std::vector<std::string> urls;
-    std::string line;
-    while (std::getline(file, line))
-    {
-        if (!line.empty() && line[0] != '#')
-        {
-            urls.push_back(line);
-        }
-    }
-    host->add_feeds(urls, sink, []
-                    { return !views::quitting(); });
-}
-
 void load_panels(auto tabs, auto &loaded_panels, auto &localhost, auto menu_tabs)
 {
     // remove previously loaded panels
@@ -364,11 +347,9 @@ int main()
             {"radio",
              [&menu_tabs, &notify_host, &radio_host, &localhost](nlohmann::json::object_t const &)
              {
-                 auto podcast_host = std::make_shared<rss::host>([&localhost](std::string_view command) -> std::string
+                 auto podcast_host = std::make_shared<media::rss::host>([&localhost](std::string_view command) -> std::string
                                                                  { return localhost.execute_command(command); });
-                 load_podcasts(podcast_host, [&notify_host](auto text)
-                               { notify_host(text, "RSS"); });
-                 return group_t{radio_tab_name, [rss_screen = std::make_shared<rss::screen>(podcast_host, [&radio_host](std::string_view url)
+                 return group_t{radio_tab_name, [rss_screen = std::make_shared<media::rss::screen>(podcast_host, [&radio_host](std::string_view url)
                                                                                             { radio_host.play(std::string{url}); }, [&localhost](std::string_view text)
                                                                                             { return localhost.execute_command(text, false); }),
                                                  radio_screen = std::make_shared<radio::screen>(radio_host)]() mutable

@@ -10,7 +10,7 @@
 
 #include <tinyxml2.h>
 
-namespace rss {
+namespace media::rss {
     struct feed {
 
         struct item {
@@ -197,6 +197,8 @@ namespace rss {
         std::string feed_description;
         std::vector<item> items;
         std::function<std::string(std::string_view)> system_runner_;
+        long long repo_id;
+
     private:
         std::string feed_image_url;
     };

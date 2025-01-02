@@ -62,15 +62,54 @@ namespace hosting::db
             }
         }
 
-        void exec(const std::string &sql, auto callback) {
-            auto rc = sqlite3_exec(db_, sql.c_str(), callback, nullptr, nullptr);
-            if (rc != SQLITE_OK)
-            {
+        using stmt_callback_t = std::function<void(sqlite3_stmt *)>;
+
+        // a variadic version of exec with callback
+        template <typename... Args>
+        void exec(const std::string &sql, stmt_callback_t callback, Args... args) {
+            sqlite3_stmt *stmt;
+            if (sqlite3_prepare_v2(db_, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
+                throw std::runtime_error(std::format("Failed to prepare statement: {}", sqlite3_errmsg(db_)));
+            }
+
+            int index = 1;
+            (bind_param(stmt, index++, args), ...);
+
+            while (sqlite3_step(stmt) == SQLITE_ROW && callback) {
+                callback(stmt);
+            }
+
+            if (sqlite3_finalize(stmt) != SQLITE_OK) {
                 throw std::runtime_error(std::format("SQL error: {}", sqlite3_errmsg(db_)));
             }
         }
+
+        long long last_insert_rowid() const {
+            return sqlite3_last_insert_rowid(db_);
+        }
         
     private:
+        template <typename T>
+        void bind_param(sqlite3_stmt *stmt, int index, T value) {
+            if constexpr (std::is_integral_v<T>) {
+                if constexpr (sizeof(T) <= sizeof(int)) {
+                    sqlite3_bind_int(stmt, index, value);
+                } else {
+                    sqlite3_bind_int64(stmt, index, value);
+                }
+            } else if constexpr (std::is_floating_point_v<T>) {
+                sqlite3_bind_double(stmt, index, value);
+            } else if constexpr (std::is_same_v<T, std::string>) {
+                sqlite3_bind_text(stmt, index, value.data(), value.size(), SQLITE_TRANSIENT);
+            } else if constexpr (std::is_same_v<T, std::string_view>) {
+                sqlite3_bind_text(stmt, index, value.data(), static_cast<int>(value.size()), SQLITE_TRANSIENT);
+            } else {
+                static_assert(always_false<T>::value, "Unsupported parameter type");
+            }
+        }
+
+        template <typename T>
+        struct always_false : std::false_type {};
         sqlite3 *db_ {nullptr};
     };
 }
