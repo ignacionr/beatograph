@@ -60,6 +60,23 @@
                         },
                         {
                             "type": "group",
+                            "title": "Get (by key)",
+                            "contents": [
+                                {
+                                    "type": "input",
+                                    "title": "Key Value",
+                                    "variable": "documentKey"
+                                },
+                                {
+                                    "type": "command-output",
+                                    "title": "Find documents in collection",
+                                    "command": "ssh arangodb3 \"arangosh --server.password '' --server.database sport --quiet --javascript.execute-string \\\"print(db._collection('${collectionName}').document('${documentKey}'))\\\"\"",
+                                    "view": "json"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "group",
                             "title": "Find",
                             "contents": [
                                 {
