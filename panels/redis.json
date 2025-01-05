@@ -1,0 +1,49 @@
+{
+    "title": " Redis Service",
+    "contents": [
+        {
+            "type": "input",
+            "title": "Redis Password",
+            "variable": "redisPassword"
+        },
+        {
+            "type": "container-command-output",
+            "title": "List keys",
+            "command": "redis-cli -a ${redisPassword} keys '*'",
+            "container": "storm-redis-1",
+            "host": "storm1"
+        },
+        {
+            "type": "group",
+            "title": "Key Tools",
+            "contents": [
+                {
+                    "type": "input",
+                    "title": "Key Name",
+                    "variable": "keyName"
+                },
+                {
+                    "type": "container-command-output",
+                    "title": "Get single key value",
+                    "command": "redis-cli -a ${redisPassword} get ${keyName}",
+                    "container": "storm-redis-1",
+                    "host": "storm1"
+                },
+                {
+                    "type": "container-command-output",
+                    "title": "Get single key TTL",
+                    "command": "redis-cli -a ${redisPassword} ttl ${keyName}",
+                    "container": "storm-redis-1",
+                    "host": "storm1"
+                },
+                {
+                    "type": "container-command-output",
+                    "title": "Get single key type",
+                    "command": "redis-cli -a ${redisPassword} type ${keyName}",
+                    "container": "storm-redis-1",
+                    "host": "storm1"
+                }
+            ]
+        }
+    ]
+}
