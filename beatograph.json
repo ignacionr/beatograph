@@ -70,7 +70,10 @@
                 "London",
                 "Rome, IT",
                 "Riga, LV",
-                "Tel Aviv",
+                {
+                    "place": "Tel Aviv",
+                    "background_color": "#e0e000"
+                },
                 "Saint Petersburg, RU",
                 "Antalya, TR",
                 "Dubai, AE",

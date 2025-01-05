@@ -24,6 +24,7 @@ namespace clocks {
         int sunrise_seconds;
         int sunset_seconds;
         std::string main_weather;
+        ImVec4 background_color{0.0f, 0.0f, 0.0f, 0.0f};
 
         city_info(std::string const &city) : label{city} {}
 
@@ -59,10 +60,12 @@ namespace clocks {
     };
 
     struct host {
-        void add_city(std::string const &city)
+        void add_city(std::string const &place_name, ImVec4 background_color = ImVec4{0.0f, 0.0f, 0.0f, 0.0f})
         {
             auto all_cities_vector = std::make_shared<std::vector<city_info>>(*all_cities.load());
-            all_cities_vector->push_back({city});
+            city_info city{place_name};
+            city.background_color = background_color;
+            all_cities_vector->emplace_back(city);
             all_cities.store(all_cities_vector);
         }
         auto get_cities() const

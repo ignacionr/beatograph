@@ -380,14 +380,26 @@ int main()
                  {
                      notify_host(e.what(), "Clocks");
                  }
-                 for (std::string const &city : node.at("cities"))
+                 for (auto const &city : node.at("cities"))
                  {
-                     host->add_city(city);
+                    if (city.is_string()) {
+                        host->add_city(city.get_ref<std::string const &>());
+                    }
+                    else {
+                        ImVec4 background_color{0.0f, 0.0f, 0.0f, 0.0f};
+                        // "background_color": "#e0e000"
+                        if (city.contains("background_color")) {
+                            auto const &color = city.at("background_color").get_ref<std::string const &>();
+                            background_color = ImVec4{std::stoi(color.substr(1, 2), nullptr, 16) / 255.0f,
+                                                      std::stoi(color.substr(3, 2), nullptr, 16) / 255.0f,
+                                                      std::stoi(color.substr(5, 2), nullptr, 16) / 255.0f,
+                                                      0.25f};
+                        }
+                        host->add_city(city.at("place").get_ref<std::string const &>(), background_color);
+                    }
                  }
                  auto clocks_screen = std::make_shared<clocks::screen>(
                      host,
-                     []
-                     { return views::quitting(); },
                      std::move(gpt.new_conversation()),
                      [&notify_host](std::string_view text)
                      { notify_host(text, "Clocks"); });

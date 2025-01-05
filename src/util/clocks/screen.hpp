@@ -26,12 +26,13 @@ namespace clocks
 {
     struct screen
     {
-        screen(std::shared_ptr<host> h, std::function<bool()> quitting, ignacionr::cppgpt &&gpt, std::function<void(std::string_view)> notify)
+        screen(std::shared_ptr<host> h, ignacionr::cppgpt &&gpt, std::function<void(std::string_view)> notify)
             : host_{h}, gpt_{gpt}, notify_{notify}
         {
-            refresh_ = std::jthread([this, quitting]
+            refresh_ = std::jthread([this]
                                     {
-                                        while (!quitting()) {
+                                        auto quitting = registrar::get<std::function<bool()>>("quitting");
+                                        while (!(*quitting)()) {
                                             auto all_cities_vector = host_->get_cities();
                                             for (auto &city : *all_cities_vector) {
                                                 try
@@ -46,11 +47,11 @@ namespace clocks
                                                     notify_(e.what());
                                                 }
                                                 std::this_thread::sleep_for(std::chrono::seconds(3));
-                                                if (quitting()) {
+                                                if ((*quitting)()) {
                                                     break;
                                                 }
                                             }
-                                            for (int i = 0; i < 130 && !quitting(); ++i) {
+                                            for (int i = 0; i < 130 && !(*quitting)(); ++i) {
                                                 std::this_thread::sleep_for(std::chrono::seconds(1));
                                             }
                                         }
@@ -172,6 +173,7 @@ namespace clocks
                     for (clocks::city_info const &city : *all_cities_vector)
                     {
                         ImGui::TableNextColumn();
+                        ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, ImGui::ColorConvertFloat4ToU32(city.background_color));
                         ImGui::BeginChild(city.label.data(), ImVec2{side_width, cell_height});
                         if (city.has_weather_info())
                         {
