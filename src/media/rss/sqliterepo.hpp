@@ -74,7 +74,7 @@ namespace media::rss
 
         void scan_items(long long feed_id, auto sink)
         {
-            std::string sql = "SELECT link, enclosure, title, description, pub_date, image_url FROM item WHERE feed_id = ?";
+            std::string sql = "SELECT link, enclosure, title, description, pub_date, image_url FROM item WHERE feed_id = ? ORDER BY pub_date DESC";
             db_.exec(sql, [&sink](sqlite3_stmt *stmt) {
                 sink(reinterpret_cast<const char *>(sqlite3_column_text(stmt, 0)), 
                      reinterpret_cast<const char *>(sqlite3_column_text(stmt, 1)), 

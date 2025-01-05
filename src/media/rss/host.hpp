@@ -97,6 +97,7 @@ namespace media::rss
                 if (pos != feeds->end())
                 {
                     // update the feed
+                    feed_ptr->repo_id = (*pos)->repo_id;
                     (*pos)->feed_title = feed_ptr->feed_title;
                     (*pos)->feed_description = feed_ptr->feed_description;
                     (*pos)->feed_link = feed_ptr->feed_link;
