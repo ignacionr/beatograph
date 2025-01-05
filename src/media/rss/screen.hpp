@@ -111,6 +111,18 @@ namespace media::rss
                     {
                         filter_ = filter_.data();
                     }
+                    if (ImGui::SameLine(), ImGui::Button(ICON_MD_SETTINGS))
+                    {
+                        configure_current_feed_ = !configure_current_feed_;
+                    }
+                    if (configure_current_feed_)
+                    {
+                        if (ImGui::Button(ICON_MD_DELETE))
+                        {
+                            host_->delete_feed(current_feed_->feed_link);
+                            current_feed_.reset();
+                        }
+                    }
 
                     ImGui::Columns(2);
                     render_flag();
@@ -183,5 +195,6 @@ namespace media::rss
         std::shared_ptr<rss::feed> current_feed_;
         std::string filter_;
         std::function<std::string(std::string_view)> system_runner_;
+        bool configure_current_feed_{false};
     };
 }

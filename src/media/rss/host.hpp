@@ -150,6 +150,22 @@ namespace media::rss
             return *feeds_.load();
         }
 
+        void delete_feed(std::string_view url)
+        {
+            auto feeds = feeds_.load();
+            auto pos = std::find_if(feeds->begin(), feeds->end(),
+                                    [url](auto const &f)
+                                    {
+                                        return f->feed_link == url;
+                                    });
+            if (pos != feeds->end())
+            {
+                feeds->erase(pos);
+                feeds_.store(feeds);
+                repo_.delete_feed(url);
+            }
+        }
+
     private:
         std::atomic<std::shared_ptr<std::vector<std::shared_ptr<rss::feed>>>> feeds_ = std::make_shared<std::vector<std::shared_ptr<rss::feed>>>();
         std::function<std::string(std::string_view)> system_runner_;

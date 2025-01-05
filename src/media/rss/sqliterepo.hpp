@@ -46,8 +46,19 @@ namespace media::rss
 
         void delete_feed(std::string_view url)
         {
-            std::string sql = "DELETE FROM feed WHERE url = ?";
-            db_.exec(sql, {}, url);
+            long long feed_id = -1;
+            std::string sql = "SELECT id FROM feed WHERE url = ?";
+            db_.exec(sql, [&feed_id](sqlite3_stmt *stmt) {
+                feed_id = sqlite3_column_int64(stmt, 0);
+            }, url);
+
+            if (feed_id != -1) {
+                sql = "DELETE FROM item WHERE feed_id = ?";
+                db_.exec(sql, {}, feed_id);
+
+                sql = "DELETE FROM feed WHERE url = ?";
+                db_.exec(sql, {}, url);
+            }
         }
 
         void scan_feeds(auto sink)
