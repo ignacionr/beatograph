@@ -13,7 +13,9 @@ struct host {
     }
 
     std::string execute_command(std::string_view command, std::string_view container_id, ::hosting::local::host &localhost, bool sudo = true) const {
-        return localhost.ssh(std::format("docker exec {} {} {}", container_id, sudo ? "sudo" : "", command), host_name_);
+        auto cmd = std::format("docker exec {} {} {}", container_id, sudo ? "sudo" : "", command);
+        cmd = localhost.resolve_environment(cmd);
+        return localhost.ssh(cmd, host_name_);
     }
 
     void fetch_ps(::hosting::local::host &localhost) {
