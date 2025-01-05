@@ -191,6 +191,7 @@ namespace media::rss {
             }
         }
 
+        std::string source_link;
         std::string contents;
         std::string feed_title;
         std::string feed_link;

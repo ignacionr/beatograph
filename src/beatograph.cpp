@@ -161,6 +161,8 @@ int main()
 
         gtts::host gtts_host{"./gtts_cache"};
         notify::host notify_host;
+        auto notify_service = std::make_shared<std::function<void(std::string_view)>>([&notify_host](std::string_view text){ notify_host(text); });
+        registrar::add("notify", notify_service);
         radio::host::init();
         bool quiet{fconfig->get("quiet").value_or("false") == "true"};
         notify_host.sink([&gtts_host, &quiet](std::string_view text, std::string_view title)
@@ -259,6 +261,9 @@ int main()
         }
 
         std::unordered_map<std::string, std::shared_ptr<toggl::screen>> toggl_screens_by_id;
+
+        auto quitting = std::make_shared<std::function<bool()>>([]{ return views::quitting(); });
+        registrar::add("quitting", quitting);
 
         std::map<std::string, std::function<group_t(nlohmann::json::object_t const &)>> factories = {
             {"github",

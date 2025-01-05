@@ -103,7 +103,7 @@ namespace media::rss
                 else if (ImGui::SameLine(); ImGui::Button(ICON_MD_REFRESH))
                 {
                     // we will re-add the selected feed into the host
-                    host_->add_feeds({current_feed_->feed_link}, [](std::string_view) {});
+                    host_->add_feeds({current_feed_->feed_link});
                 }
                 else 
                 {

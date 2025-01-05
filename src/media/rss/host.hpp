@@ -2,6 +2,9 @@
 
 #include <algorithm>
 #include <atomic>
+#include <ctime>
+#include <functional>
+#include <iomanip>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -19,18 +22,31 @@ namespace media::rss
     {
         host(std::function<std::string(std::string_view)> system_runner) : system_runner_(system_runner)
         {
-            repo_.scan_feeds([this](long long feed_id, const char * url, const char * title, const char * image_url) {
+            std::vector<std::string> urls;
+            repo_.scan_feeds([this, &urls](long long feed_id, const char * url, const char * title, const char * image_url) {
                 auto feed_ptr = std::make_shared<media::rss::feed>(system_runner_);
                 feed_ptr->feed_title = title;
+                feed_ptr->source_link = url;
                 feed_ptr->feed_link = url;
                 feed_ptr->set_image(image_url);
                 feed_ptr->repo_id = feed_id;
                 repo_.scan_items(feed_id, [feed_ptr](const char * link, const char * enclosure, const char * title, const char * description, const char * pub_date, const char * image_url) {
-                    feed_ptr->items.emplace_back(media::rss::feed::item{title, link, description, enclosure, image_url, std::chrono::system_clock::from_time_t(std::stoll(pub_date))});
+                    // the published date time appears as a string of format "2024-12-07 06:49:08"
+                    std::tm tm = {};
+                    std::istringstream ss(pub_date);
+                    ss >> std::get_time(&tm, "%Y-%m-%d %H:%M:%S");
+                    if (ss.fail()) {
+                        throw std::runtime_error("Failed to parse date");
+                    }
+                    auto const published_date = std::chrono::system_clock::from_time_t(std::mktime(&tm));
+                    feed_ptr->items.emplace_back(media::rss::feed::item{
+                        title, link, description, enclosure, image_url, published_date});
                 });
                 auto feeds = feeds_.load();
                 feeds->emplace_back(feed_ptr);
+                urls.emplace_back(url);
             });
+            add_feeds(std::move(urls));
         }
 
         static size_t writeCallback(void *contents, size_t size, size_t nmemb, void *userp)
@@ -40,23 +56,25 @@ namespace media::rss
             return size * nmemb;
         }
 
-        void add_feeds(std::vector<std::string> urls, std::function<void(std::string_view)> error_sink, std::function<bool()> callback = []{ return true; })
+        void add_feeds(std::vector<std::string> urls)
         {
-            std::thread([this, urls, callback, error_sink] {
+            std::thread([this, urls] {
+                auto quit_job = registrar::get<std::function<bool()>>({"quitting"});
+                auto error_sink = registrar::get<std::function<void(std::string_view)>>({"notify"});
                 for (auto const &url_str : urls) {
                     try {
                         auto const ptr = add_feed_sync(url_str);
                         if (ptr->image_url().empty()) {
-                            error_sink(std::format("Feed {}: no image found\n", url_str));
+                            (*error_sink)(std::format("Feed {}: no image found\n", url_str));
                         }
                     } 
                     catch(std::exception const &e) {
-                        error_sink(std::format("Failed to add feed {}: {}\n", url_str, e.what()));
+                        (*error_sink)(std::format("Failed to add feed {}: {}\n", url_str, e.what()));
                     }
                     catch(...) {
-                        error_sink(std::format("Failed to add feed {}\n", url_str));
+                        (*error_sink)(std::format("Failed to add feed {}\n", url_str));
                     }
-                    if (!callback()) break;
+                    if ((*quit_job)()) break;
                 }
                 })
                 .detach();
@@ -71,9 +89,9 @@ namespace media::rss
                 auto feeds = feeds_.load();
                 // does the feed already exist?
                 auto pos = std::find_if(feeds->begin(), feeds->end(),
-                                        [ourlink = feed_ptr->feed_link](auto const &f)
+                                        [ourlink = feed_ptr->feed_link, oursrc = feed_ptr->source_link](auto const &f)
                                         {
-                                            return f->feed_link == ourlink;
+                                            return f->feed_link == ourlink || f->source_link == oursrc;
                                         });
                 // add or merge with the new one
                 if (pos != feeds->end())
@@ -107,12 +125,13 @@ namespace media::rss
                 for (auto const &item : feed_ptr->items)
                 {
                     // format the date time
+                    auto const pub_date = std::format("{:%F %T}", item.updated);
                     repo_.upsert_item(feed_ptr->repo_id, 
                         item.title, 
                         item.enclosure,
                         item.link, 
                         item.description, 
-                        std::format("{:%F %T}", item.updated), 
+                        pub_date, 
                         item.image_url);
                 }
                 // sort the feeds from the latest updated to the oldest
@@ -139,6 +158,7 @@ namespace media::rss
         {
             http::fetch fetch;
             feed parser{system_runner};
+            parser.source_link = url;
             fetch(std::string{url}, [](auto h){}, writeCallback, &parser);
             return parser;
         }
