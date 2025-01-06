@@ -14,7 +14,7 @@
 
 struct docker_screen
 {
-    void render(auto getter, ::hosting::local::host &localhost)
+    void render(auto getter, std::shared_ptr<::hosting::local::host> localhost)
     {
         if (ImGui::CollapsingHeader("Containers"))
         {
@@ -112,7 +112,7 @@ struct docker_screen
             }
             if (ImGui::SmallButton(ICON_MD_REFRESH))
             {
-                auto t = std::thread([&localhost, &host]
+                auto t = std::thread([localhost, &host]
                                      {
                     try {
                         host.fetch_ps(localhost);

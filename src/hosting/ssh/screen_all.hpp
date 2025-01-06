@@ -40,7 +40,7 @@ namespace ssh
                 }
             }
         }
-        void render(hosting::local::host &localhost)
+        void render(std::shared_ptr<hosting::local::host> localhost)
         {
             for (auto const &[name, host] : hosts)
             {

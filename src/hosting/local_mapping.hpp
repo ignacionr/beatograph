@@ -13,7 +13,7 @@ namespace hosting::local
 {
     struct mapping
     {
-        mapping(unsigned short port, const std::string &hostname, host &localhost)
+        mapping(unsigned short port, const std::string &hostname, std::shared_ptr<host> localhost)
             : mapped_port_{port}, hostname_{hostname}, localhost_{localhost}
         {
             std::cerr << "Starting port mapping for " << hostname_ << " port " << mapped_port_ << std::endl;
@@ -26,7 +26,7 @@ namespace hosting::local
 
                 for (unsigned short port_candidate = watermark_; port_candidate < 65535; ++port_candidate)
                 {
-                    if (!localhost_.IsPortInUse(port_candidate))
+                    if (!localhost_->IsPortInUse(port_candidate))
                     {
                         local_port_ = port_candidate;
                         break;
@@ -41,7 +41,7 @@ namespace hosting::local
             }
             // Map the port
             std::string command = std::format("ssh -o ConnectTimeout=10 -N -L {0}:localhost:{1} {2}", local_port_, mapped_port_, hostname_);
-            process_ = localhost.run(command.c_str());
+            process_ = localhost->run(command.c_str());
         }
         ~mapping()
         {
@@ -60,7 +60,7 @@ namespace hosting::local
         unsigned short mapped_port_;
         unsigned short local_port_;
         std::string hostname_;
-        host &localhost_;
+        std::shared_ptr<host> localhost_;
         std::unique_ptr<running_process> process_;
     };
 }

@@ -80,7 +80,7 @@ void setup_fonts()
     io.Fonts->AddFontFromFileTTF("assets/fonts/Montserrat-Bold.ttf", 23.0f, nullptr, io.Fonts->GetGlyphRangesCyrillic());
 }
 
-void load_panels(auto tabs, auto &loaded_panels, auto &localhost, auto menu_tabs)
+void load_panels(auto tabs, auto &loaded_panels, auto localhost, auto menu_tabs)
 {
     // remove previously loaded panels
     while (!loaded_panels.empty())
@@ -150,13 +150,14 @@ int main()
         // auto constexpr impact_sound = "assets/mixkit-underground-explosion-impact-echo-1686.wav";
         auto static constexpr radio_tab_name{ICON_MD_AUDIOTRACK " Radio"};
 
-        hosting::local::host localhost;
+        auto localhost = std::make_shared<hosting::local::host>();
+        registrar::add("localhost", localhost);
 
         auto cache{std::make_shared<img_cache>("imgcache")};
         registrar::add({}, cache);
 
         // get the Groq API key from GROQ_API_KEY
-        auto groq_api_key = localhost.get_env_variable("GROQ_API_KEY");
+        auto groq_api_key = localhost->get_env_variable("GROQ_API_KEY");
         ignacionr::cppgpt gpt{groq_api_key, ignacionr::cppgpt::groq_base};
 
         gtts::host gtts_host{"./gtts_cache"};
@@ -205,7 +206,7 @@ int main()
         std::vector<group_t> all_tabs;
         std::function<void(std::string_view)> menu_tabs;
         std::shared_ptr<main_screen<split_screen>> screen;
-        menu_tabs = [&tabs, &all_tabs, &loaded_panels, &localhost, &menu_tabs, &screen](std::string_view key)
+        menu_tabs = [&tabs, &all_tabs, &loaded_panels, localhost, &menu_tabs, &screen](std::string_view key)
         {
             if (key == "Main")
             {
@@ -275,9 +276,9 @@ int main()
                         [screen] { screen->render(); },
                         menu_tabs}; }},
             {"calendar",
-             [&menu_tabs, &localhost](nlohmann::json::object_t const &cal)
+             [&menu_tabs, localhost](nlohmann::json::object_t const &cal)
              { return group_t{cal.at("title"),
-                              [cs = calendar::screen{std::make_shared<calendar::host>(localhost.resolve_environment(cal.at("endpoint")))}]() mutable
+                              [cs = calendar::screen{std::make_shared<calendar::host>(localhost->resolve_environment(cal.at("endpoint")))}]() mutable
                               { cs.render(); },
                               menu_tabs}; }},
             {"pomodoro",
@@ -292,13 +293,13 @@ int main()
                 }
             },
             {"ssh-hosts",
-             [&menu_tabs, &localhost](nlohmann::json::object_t const &)
+             [&menu_tabs, localhost](nlohmann::json::object_t const &)
              { return group_t{ICON_MD_SETTINGS_REMOTE " SSH Hosts",
-                              [&localhost]
+                              [localhost]
                               { ssh::screen_all{}.render(localhost); },
                               menu_tabs}; }},
             {"toggl",
-             [&menu_tabs, &localhost, &notify_host, &toggl_screens_by_id](nlohmann::json::object_t const &node)
+             [&menu_tabs, localhost, &notify_host, &toggl_screens_by_id](nlohmann::json::object_t const &node)
              {
                     auto toggle_client {std::make_shared<toggl::client>(
                             [&notify_host](std::string_view text) { notify_host(text, "Toggl"); })};
@@ -315,7 +316,7 @@ int main()
                         },
                         menu_tabs}; }},
             {"jira",
-             [&localhost, &menu_tabs_and, &toggl_screens_by_id](nlohmann::json::object_t const &node) mutable
+             [localhost, &menu_tabs_and, &toggl_screens_by_id](nlohmann::json::object_t const &node) mutable
              {
                     auto js = std::make_shared<jira::screen>();
                     jira::issue_screen::context_actions_t actions;
@@ -330,9 +331,9 @@ int main()
                         }
                     }
                     auto jh = std::make_shared<jira::host>(
-                            localhost.resolve_environment(node.at("username")),
-                            localhost.resolve_environment(node.at("token")),
-                            localhost.resolve_environment(node.at("endpoint"))
+                            localhost->resolve_environment(node.at("username")),
+                            localhost->resolve_environment(node.at("token")),
+                            localhost->resolve_environment(node.at("endpoint"))
                          );
                     return group_t{
                         node.at("title"), 
@@ -341,7 +342,7 @@ int main()
                            { js->render_menu(item); }),
                          ImVec4(0.5f, 0.5f, 1.0f, 1.0f)}; }},
             {"git-repositories",
-             [&cache, &localhost, &menu_tabs](nlohmann::json::object_t const &node) mutable
+             [&cache, localhost, &menu_tabs](nlohmann::json::object_t const &node) mutable
              { return group_t{
                    ICON_MD_CODE " Git Repositories",
                    [git_screen = std::make_shared<git::screen>(std::make_shared<git::host>(localhost, node.at("root")))]
@@ -350,13 +351,13 @@ int main()
                    },
                    menu_tabs}; }},
             {"radio",
-             [&menu_tabs, &notify_host, &radio_host, &localhost](nlohmann::json::object_t const &)
+             [&menu_tabs, &notify_host, &radio_host, localhost](nlohmann::json::object_t const &)
              {
-                 auto podcast_host = std::make_shared<media::rss::host>([&localhost](std::string_view command) -> std::string
-                                                                 { return localhost.execute_command(command); });
+                 auto podcast_host = std::make_shared<media::rss::host>([localhost](std::string_view command) -> std::string
+                                                                 { return localhost->execute_command(command); });
                  return group_t{radio_tab_name, [rss_screen = std::make_shared<media::rss::screen>(podcast_host, [&radio_host](std::string_view url)
-                                                                                            { radio_host.play(std::string{url}); }, [&localhost](std::string_view text)
-                                                                                            { return localhost.execute_command(text, false); }),
+                                                                                            { radio_host.play(std::string{url}); }, [localhost](std::string_view text)
+                                                                                            { return localhost->execute_command(text, false); }),
                                                  radio_screen = std::make_shared<radio::screen>(radio_host)]() mutable
                                 {
                             radio_screen->render();
@@ -364,14 +365,14 @@ int main()
                                 menu_tabs, ImVec4(0.05f, 0.5f, 0.05f, 1.0f)};
              }},
             {"world-clocks",
-             [&menu_tabs_and, &localhost, &notify_host, &gpt](nlohmann::json::object_t const &node)
+             [&menu_tabs_and, localhost, &notify_host, &gpt](nlohmann::json::object_t const &node)
              {
-                 auto weather_host = std::make_shared<weather::openweather_client>(localhost.resolve_environment(node.at("openweather_key")));
+                 auto weather_host = std::make_shared<weather::openweather_client>(localhost->resolve_environment(node.at("openweather_key")));
                  auto host = std::make_shared<clocks::host>();
                  host->set_weather_client(weather_host);
                  try
                  {
-                     auto const local_data{localhost.get_my_ip_and_geolocation()};
+                     auto const local_data{localhost->get_my_ip_and_geolocation()};
                      host->add_city(std::format("{}, {}",
                                                 local_data.at("city").get_ref<std::string const &>(),
                                                 local_data.at("region").get_ref<std::string const &>()));

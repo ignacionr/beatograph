@@ -19,7 +19,7 @@ namespace hosting::ssh
 {
     struct screen
     {
-        void render(host::ptr host, local::host &localhost)
+        void render(host::ptr host, std::shared_ptr<local::host> localhost)
         {
             if (!host)
             {
@@ -36,7 +36,7 @@ namespace hosting::ssh
                 ImGui::Columns(3);
                 if (ImGui::CollapsingHeader("SSH Properties"))
                 {
-                    if (localhost.has_session(host->name()))
+                    if (localhost->has_session(host->name()))
                     {
                         ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 255, 0, 255));
                         ImGui::TextUnformatted("Connected");
@@ -44,7 +44,7 @@ namespace hosting::ssh
                         ImGui::SameLine();
                         if (ImGui::Button( ICON_MD_RECYCLING ))
                         {
-                            localhost.recycle_session(host->name());
+                            localhost->recycle_session(host->name());
                         }
                     }
                     else
@@ -62,7 +62,7 @@ namespace hosting::ssh
                 }
                 ImGui::NextColumn();
                 views::cached_view<std::string>("OS Release",
-                    [host, &localhost] {return host->get_os_release(localhost).c_str(); },
+                    [host, localhost] {return host->get_os_release(localhost).c_str(); },
                     [](std::string const &data) { ImGui::TextUnformatted(data.c_str()); });
                 ImGui::NextColumn();
                 if (ImGui::CollapsingHeader("Performance Metrics"))
@@ -134,8 +134,8 @@ namespace hosting::ssh
                     std::string sub;
                     std::string description;
                 };
-                views::cached_view<std::vector<unit>>("SystemCtl Units", [hostname = host->name(), &localhost]() {
-                    auto const result {localhost.ssh("sudo systemctl list-units", hostname)};
+                views::cached_view<std::vector<unit>>("SystemCtl Units", [hostname = host->name(), localhost]() {
+                    auto const result {localhost->ssh("sudo systemctl list-units", hostname)};
                     std::vector<unit> units;
                     for (auto const &line : std::string_view{result} | std::views::split('\n') | std::views::drop(1))
                     {

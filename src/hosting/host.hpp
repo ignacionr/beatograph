@@ -77,12 +77,12 @@ namespace hosting::ssh
             return *p;
         }
 
-        auto metrics(local::host &localhost)
+        auto metrics(std::shared_ptr<local::host> localhost)
         {
             auto const now = std::chrono::system_clock::now();
             if ((now - last_metrics_fetch_) > std::chrono::seconds(30))
             {
-                std::thread{[this, &localhost]
+                std::thread{[this, localhost]
                             {
                                 try
                                 {
@@ -99,7 +99,7 @@ namespace hosting::ssh
             return metrics_.load();
         }
 
-        void fetch_metrics(local::host &localhost)
+        void fetch_metrics(std::shared_ptr<local::host> localhost)
         {
             if (!nodeexporter_mapping_.load())
             {
@@ -119,12 +119,12 @@ namespace hosting::ssh
             return *docker_host_;
         }
 
-        std::string execute_command(std::string const &command, local::host &localhost, bool use_sudo = true)
+        std::string execute_command(std::string const &command, std::shared_ptr<local::host> localhost, bool use_sudo = true)
         {
             return docker().execute_command(command, localhost, use_sudo);
         }
 
-        std::string get_os_release(local::host &localhost)
+        std::string get_os_release(std::shared_ptr<local::host> localhost)
         {
             if (os_release_.empty())
             {
