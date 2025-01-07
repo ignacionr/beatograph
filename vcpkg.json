@@ -24,6 +24,7 @@
         "tinyfiledialogs",
         "cpr",
         "libssh",
+        "librsvg",
         "zlib",
         "libpng",
         "sqlite3",

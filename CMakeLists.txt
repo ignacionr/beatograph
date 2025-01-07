@@ -39,6 +39,11 @@ endif()
 
 # Include directories
 target_include_directories(beatograph PRIVATE "src" ${UTF8H_INCLUDE_DIRS} external)
+target_include_directories(beatograph PRIVATE "build\\vcpkg_installed\\x64-windows\\include\\cairo")
+target_include_directories(beatograph PRIVATE "build\\vcpkg_installed\\x64-windows\\include\\gdk-pixbuf-2.0")
+target_include_directories(beatograph PRIVATE "build\\vcpkg_installed\\x64-windows\\include\\glib-2.0")
+target_include_directories(beatograph PRIVATE "build\\vcpkg_installed\\x64-windows\\include\\librsvg-2.0")
+target_include_directories(beatograph PRIVATE "build\\vcpkg_installed\\x64-windows\\lib\\glib-2.0\\include")
 
 target_link_directories(beatograph PRIVATE "build\\vcpkg_installed\\x64-windows\\lib\\")
 
@@ -56,6 +61,9 @@ target_link_libraries(beatograph PRIVATE
   tinyfiledialogs::tinyfiledialogs
   tinyxml2
   sqlite3
+  rsvg-2
+  cairo
+  gobject-2.0
 )
 
 # Enable Unity builds

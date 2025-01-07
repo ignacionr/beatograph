@@ -15,7 +15,7 @@ namespace http {
         typedef size_t (*write_callback_t)(void *, size_t, size_t, void *);
 
         std::string operator()(std::string const &url, 
-            header_client_t set_headers = [](header_setter_t setheader){},
+            header_client_t header_client = {},
             write_callback_t write_callback = fetch::write_string,
             void *write_data = nullptr) const
         {
@@ -32,13 +32,17 @@ namespace http {
                 if (!_dupenv_s(&pproxy_str, &len, "HTTP_PROXY") && pproxy_str != nullptr) {
                     curl_easy_setopt(curl, CURLOPT_PROXY, pproxy_str);
                 }
-                struct curl_slist *headers = nullptr;
-                auto setheader = [&headers](std::string const& header_value) {
-                    headers = curl_slist_append(headers, header_value.c_str());
-                };
-                set_headers(setheader);
-                if (headers) {
-                    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+                if (header_client) {
+                    struct curl_slist *headers = nullptr;
+                    auto setheader = [&headers](std::string const& header_value) {
+                        headers = curl_slist_append(headers, header_value.c_str());
+                    };
+
+                    header_client(setheader);
+                    
+                    if (headers) {
+                        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+                    }
                 }
                 std::string response;
                 if (write_data) {
@@ -51,6 +55,12 @@ namespace http {
                 if (cr != CURLE_OK) {
                     curl_easy_cleanup(curl);
                     throw std::runtime_error(std::format("Error: {}", curl_easy_strerror(cr)));
+                }
+                // obtain the response code
+                long response_code;
+                curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
+                if (response_code != 200) {
+                    throw std::runtime_error(std::format("Error: HTTP response code {}", response_code));
                 }
                 curl_easy_cleanup(curl);
                 return response;
