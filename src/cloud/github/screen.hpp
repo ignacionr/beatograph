@@ -73,7 +73,7 @@ namespace github {
                             repo_filter_ = repo_filter_.data();
                         }
                         for (auto &rs: repos_) {
-                            if (repo_filter_.empty() || rs.name().find(repo_filter_) != std::string::npos) {
+                            if (repo_filter_.empty() || rs.full_name().find(repo_filter_) != std::string::npos) {
                                 rs.render();
                             }
                         }

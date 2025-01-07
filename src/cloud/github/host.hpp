@@ -52,7 +52,6 @@ namespace github {
             };
         }
 
-    private:
         nlohmann::json fetch(const std::string &url) const {
             http::fetch fetch;
             auto const source { fetch(url, header_client()) };
@@ -74,7 +73,8 @@ namespace github {
             }
             return result;
         }
-
+        
+    private:
         std::shared_ptr<github::login::host> login_host_;
         mutable nlohmann::json user_;
     };
