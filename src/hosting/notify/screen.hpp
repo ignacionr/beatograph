@@ -42,11 +42,12 @@ namespace notify
                 for (auto const &n: notifications_) {
                     ImGui::TableNextRow();
                     ImGui::TableNextColumn();
-                    ImGui::TextUnformatted(std::format("{:%F %T}", n.time).c_str());
+                    auto const time {std::format("{:%F %T}", n.time)};
+                    ImGui::TextUnformatted(time.data(), time.data() + time.size());
                     ImGui::TableNextColumn();
-                    ImGui::TextUnformatted(n.topic.c_str());
+                    ImGui::TextUnformatted(n.topic.data(), n.topic.data() + n.topic.size());
                     ImGui::TableNextColumn();
-                    ImGui::TextUnformatted(n.text.c_str());
+                    ImGui::TextWrapped("%s", n.text.data());
                 }
             }
             ImGui::EndTable();
