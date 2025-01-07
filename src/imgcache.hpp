@@ -193,20 +193,16 @@ struct img_cache
         if (!std::filesystem::exists(file_path))
         {
             // download the image into file_path
-
-            http::fetch fetcher;
             try {
+                http::fetch fetcher;
                 std::ofstream image_file{file_path, std::ios::binary};
-
-            fetcher(url, header_client,
-                   write_callback, &image_file);
+                fetcher(url, header_client, write_callback, &image_file);
             }
             catch (std::exception const &)
             {
                 std::filesystem::remove(file_path);
                 throw;
             }
-
         }
         {
             std::lock_guard lock{index_mutex_};
