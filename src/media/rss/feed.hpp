@@ -44,6 +44,9 @@ namespace media::rss {
         void set_image(std::string const &url) {
             std::lock_guard<std::mutex> lock(image_mutex());
             feed_image_url = url;
+            if (feed_image_url.ends_with("/")) {
+                feed_image_url.pop_back();
+            }
         }
 
         std::string const &image_url() const {
@@ -147,6 +150,9 @@ namespace media::rss {
                 else if (auto image_el = root_feed->FirstChildElement("media:thumbnail"); image_el) {
                     set_image(image_el->Attribute("url"));
                 }
+                else if (auto icon_el = root_feed->FirstChildElement("icon"); icon_el) {
+                    set_image(icon_el->GetText());
+                }
                 
                 for (
                     auto xml_item = root_feed->FirstChildElement("entry"); 
@@ -164,6 +170,9 @@ namespace media::rss {
                     }
                     description = xml_item->FirstChildElement("summary");
                     if (description) {
+                        new_item.description = description->GetText();
+                    }
+                    else if (description = xml_item->FirstChildElement("content"); description) {
                         new_item.description = description->GetText();
                     }
                     // look for a media:group tag
