@@ -151,7 +151,7 @@ int main()
         auto static constexpr radio_tab_name{ICON_MD_AUDIOTRACK " Radio"};
 
         auto localhost = std::make_shared<hosting::local::host>();
-        registrar::add("localhost", localhost);
+        registrar::add({}, localhost);
 
         auto cache{std::make_shared<img_cache>("imgcache")};
         registrar::add({}, cache);

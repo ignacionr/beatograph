@@ -11,6 +11,7 @@
 #include "../../structural/views/cached_view.hpp"
 #include "../../structural/views/json.hpp"
 #include "host.hpp"
+#include "../../hosting/host_local.hpp"
 
 namespace github::repo
 {
@@ -54,6 +55,7 @@ namespace github::repo
                             json_view.render(workflows);
                         }
                         for (auto const &workflow : workflows.at("workflows")) {
+                            ImGui::PushID(workflow.at("name").get_ref<const std::string&>().c_str());
                             // is there a badge_url?
                             bool badge_painted{false};
                             if (workflow.contains("badge_url")) {
@@ -77,12 +79,43 @@ namespace github::repo
                                 if (show_details_) {
                                     json_view.render(runs);
                                 }
-                                for (auto const &run : runs.at("workflow_runs")) {
-                                    ImGui::TextUnformatted(run.at("status").get_ref<const std::string&>().c_str());
-                                    ImGui::TextUnformatted(run.at("conclusion").get_ref<const std::string&>().c_str());
-                                    ImGui::TextUnformatted(run.at("run_started_at").get_ref<const std::string&>().c_str());
+                                if (ImGui::BeginTable("runs", 5, ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg))
+                                {
+                                    ImGui::TableSetupColumn("Status");
+                                    ImGui::TableSetupColumn("Title");
+                                    ImGui::TableSetupColumn("Started At");
+                                    ImGui::TableSetupColumn("Hash");
+                                    ImGui::TableSetupColumn("##actions");
+                                    ImGui::TableHeadersRow();
+                                    for (auto const &run : runs.at("workflow_runs")) {
+                                        ImGui::PushID(run.at("id").get<int>());
+                                        ImGui::TableNextRow();
+                                        ImGui::TableNextColumn();
+                                        auto const &conclusion {run.at("conclusion").get_ref<const std::string&>()};
+                                        bool const is_ok = conclusion == "success";
+                                        ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, ImGui::GetColorU32(is_ok ? ImVec4{0.0f, 1.0f, 0.0f, 0.5f} : ImVec4{1.0f, 0.0f, 0.0f, 0.5f}));
+                                        ImGui::TextUnformatted(is_ok ? ICON_MD_CHECK_CIRCLE : ICON_MD_CANCEL);
+                                        ImGui::SameLine();
+                                        ImGui::TextUnformatted(run.at("status").get_ref<const std::string&>().c_str());
+                                        ImGui::SameLine();
+                                        ImGui::TextUnformatted(conclusion.c_str());
+                                        ImGui::TableNextColumn();
+                                        ImGui::TextUnformatted(run.at("display_title").get_ref<const std::string&>().c_str());
+                                        ImGui::TableNextColumn();
+                                        ImGui::TextUnformatted(run.at("run_started_at").get_ref<const std::string&>().c_str());
+                                        ImGui::TableNextColumn();
+                                        ImGui::TextUnformatted(run.at("head_sha").get_ref<const std::string&>().c_str());
+                                        ImGui::TableNextColumn();
+                                        if (ImGui::SmallButton(ICON_MD_WEB " Open...")) {
+                                            auto local_host = registrar::get<hosting::local::host>({});
+                                            local_host->open_content(run.at("html_url").get<std::string>());
+                                        }
+                                        ImGui::PopID();
+                                    }
                                 }
+                                ImGui::EndTable();
                             });
+                            ImGui::PopID();
                         } });
             }
             ImGui::EndTable();

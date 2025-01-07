@@ -68,6 +68,11 @@ namespace hosting::local
             proc->read_all(sink);
         }
 
+        void open_content(std::string const &content)
+        {
+            ShellExecuteA(nullptr, "open", content.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+        }
+
         std::string ssh(std::string_view command, std::string_view host_name, unsigned int timeout_seconds = 5)
         {
             std::string key{host_name};
