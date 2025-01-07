@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:media="http://search.yahoo.com/mrss/">
+    <category term="devsarg" label="r/devsarg" />
+    <updated>2025-01-07T13:59:25+00:00</updated>
+    <icon>https://www.redditstatic.com/icon.png/</icon>
+    <id>/r/devsarg.rss</id>
+    <link rel="self" href="https://old.reddit.com/r/devsarg.rss" type="application/atom+xml" />
+    <link rel="alternate" href="https://old.reddit.com/r/devsarg" type="text/html" />
+    <subtitle>Subreddit para developers de Argentina. En la sidebar podés encontrar links útiles
+        para cuestiones como conseguir el primer trabajo, link a nuestro Discord y demás. También es
+        posible filtrar los posts por flairs, se pueden ver algunos después de los bookmarks.</subtitle>
+    <title>devsarg</title>
+
+    <entry>
+        <author>
+            <name>/u/According_Ad3255</name>
+            <uri>https://old.reddit.com/user/According_Ad3255</uri>
+        </author>
+        <category term="devsarg" label="r/devsarg" />
+        <content type="html">&lt;table&gt; &lt;tr&gt;&lt;td&gt; &lt;a
+            href=&quot;https://old.reddit.com/r/devsarg/comments/1hvqd9o/devops_qué_usan_diariamente_en_github/&quot;&gt;
+            &lt;img
+            src=&quot;https://b.thumbs.redditmedia.com/VBesrnJjJESr1h8NrkFP9iJ9HYzrdCN9AdfQV08NVmY.jpg&quot;
+            alt=&quot;DevOps: ¿qué usan diariamente en GitHub?&quot; title=&quot;DevOps: ¿qué usan
+            diariamente en GitHub?&quot; /&gt; &lt;/a&gt; &lt;/td&gt;&lt;td&gt; &lt;!-- SC_OFF
+            --&gt;&lt;div class=&quot;md&quot;&gt;&lt;p&gt;&lt;a
+            href=&quot;https://preview.redd.it/2xoi6qg2fkbe1.png?width=802&amp;amp;format=png&amp;amp;auto=webp&amp;amp;s=a9e258e8332c437e36a6a9dbad13e8901c3f51ba&quot;&gt;https://preview.redd.it/2xoi6qg2fkbe1.png?width=802&amp;amp;format=png&amp;amp;auto=webp&amp;amp;s=a9e258e8332c437e36a6a9dbad13e8901c3f51ba&lt;/a&gt;&lt;/p&gt;
+            &lt;p&gt;Sigo desarrollando mi aplicación para manejar &amp;quot;todas las cosas
+            DevOps&amp;quot; y no alcanzo a ver otro punto de entrada a GitHub que sea 100% DevOps,
+            más
+            que el de las corridas de CI/CD (Workflows).&lt;/p&gt; &lt;p&gt;Amigos que hagan DevOps:
+            ¿hay algo más de GitHub que usen habitualmente? ¿Tal vez se fijan en el consumo de
+            minutos,
+            en los Code Spaces, configuración de runners, tal vez Tags/Branches, o Releases, o
+            Pages?&lt;/p&gt; &lt;/div&gt;&lt;!-- SC_ON --&gt; &amp;#32; submitted by &amp;#32; &lt;a
+            href=&quot;https://old.reddit.com/user/According_Ad3255&quot;&gt; /u/According_Ad3255
+            &lt;/a&gt; &lt;br/&gt; &lt;span&gt;&lt;a
+            href=&quot;https://old.reddit.com/r/devsarg/comments/1hvqd9o/devops_qué_usan_diariamente_en_github/&quot;&gt;[link]&lt;/a&gt;&lt;/span&gt;
+            &amp;#32; &lt;span&gt;&lt;a
+            href=&quot;https://old.reddit.com/r/devsarg/comments/1hvqd9o/devops_qué_usan_diariamente_en_github/&quot;&gt;[comments]&lt;/a&gt;&lt;/span&gt;
+            &lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</content>
+        <id>t3_1hvqd9o</id>
+        <media:thumbnail
+            url="https://b.thumbs.redditmedia.com/VBesrnJjJESr1h8NrkFP9iJ9HYzrdCN9AdfQV08NVmY.jpg" />
+        <link
+            href="https://old.reddit.com/r/devsarg/comments/1hvqd9o/devops_qué_usan_diariamente_en_github/" />
+        <updated>2025-01-07T12:30:02+00:00</updated>
+        <published>2025-01-07T12:30:02+00:00</published>
+        <title>DevOps: ¿qué usan diariamente en GitHub?</title>
+    </entry>
+</feed>
