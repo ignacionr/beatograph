@@ -41,7 +41,7 @@ namespace github {
             }
             else {
                 try {
-                    views::cached_view<nlohmann::json>("Organizations", [this] {
+                    views::cached_view<nlohmann::json>("Organization", [this] {
                         return host_->organizations();
                     },
                     [this](nlohmann::json const &organizations) {
@@ -55,12 +55,45 @@ namespace github {
                                     }
                                 }
                             }
+                            // append the user login to the list
+                            auto const all_option {"All Repositories"};
+                            if (ImGui::Selectable(all_option)) {
+                                selected_org_login_ = all_option;
+                                repos_.clear();
+                                for (auto repo_json: host_->user_repos()) {
+                                    repos_.emplace_back(repo::screen{std::move(repo_json), host_});
+                                }
+                            }
                             ImGui::EndCombo();
                         }
                     }, false);
 
-                    for (auto &rs: repos_) {
-                        rs.render();
+                    if (ImGui::CollapsingHeader("Repositories")) {
+                        if (repo_filter_.reserve(256); ImGui::InputText("Filter", repo_filter_.data(), repo_filter_.capacity())) {
+                            repo_filter_ = repo_filter_.data();
+                        }
+                        for (auto &rs: repos_) {
+                            if (repo_filter_.empty() || rs.name().find(repo_filter_) != std::string::npos) {
+                                rs.render();
+                            }
+                        }
+                    }
+
+                    if (ImGui::CollapsingHeader("Add Repository")) {
+                        if (repo_name_.reserve(256); ImGui::InputText("Full Name", repo_name_.data(), repo_name_.capacity(), ImGuiInputTextFlags_EnterReturnsTrue)) {
+                            repo_name_ = repo_name_.data();
+                            try {
+                                repos_.emplace_back(repo::screen{host_->find_repo(repo_name_), host_});
+                                latest_error_.clear();
+                                repo_name_.clear();
+                            }
+                            catch(std::exception const &e) {
+                                latest_error_ = e.what();
+                            }
+                        }
+                        if (!latest_error_.empty()) {
+                            ImGui::Text("Error: %s", latest_error_.c_str());
+                        }
                     }
 
                     views::cached_view<nlohmann::json>("User", [this] {
@@ -87,5 +120,8 @@ namespace github {
         std::string selected_org_login_;
         bool config_mode_{};
         std::vector<repo::screen> repos_;
+        std::string repo_name_;
+        std::string latest_error_;
+        std::string repo_filter_;
     };
 }

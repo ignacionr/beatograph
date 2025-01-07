@@ -23,19 +23,27 @@ namespace github {
         }
 
         nlohmann::json organizations() const {
-            return nlohmann::json::parse(fetch("https://api.github.com/user/orgs"));
+            return fetch("https://api.github.com/user/orgs");
         }
 
         nlohmann::json fetch_user() const {
-            return nlohmann::json::parse(fetch("https://api.github.com/user"));
+            return fetch("https://api.github.com/user");
         }
 
         nlohmann::json org_repos(std::string_view org) const {
-            return nlohmann::json::parse(fetch(std::format("https://api.github.com/orgs/{}/repos", org)));
+            return fetch(std::format("https://api.github.com/orgs/{}/repos", org));
+        }
+
+        nlohmann::json user_repos() const {
+            return fetch_all("https://api.github.com/user/repos");
+        }
+
+        nlohmann::json find_repo(std::string_view full_name) const {
+            return fetch(std::format("https://api.github.com/repos/{}", full_name));
         }
 
         nlohmann::json repo_workflows(std::string_view full_name) const {
-            return nlohmann::json::parse(fetch(std::format("https://api.github.com/repos/{}/actions/workflows", full_name)));
+            return fetch(std::format("https://api.github.com/repos/{}/actions/workflows", full_name));
         }
 
         http::fetch::header_client_t header_client() const {
@@ -45,9 +53,26 @@ namespace github {
         }
 
     private:
-        std::string fetch(const std::string &url) const {
+        nlohmann::json fetch(const std::string &url) const {
             http::fetch fetch;
-            return fetch(url, header_client());
+            auto const source { fetch(url, header_client()) };
+            return nlohmann::json::parse(source);
+        }
+
+        nlohmann::json fetch_all(const std::string &url) const {
+            static auto constexpr page_size {100};
+            nlohmann::json::array_t result;
+            for (int page = 1; ; ++page) {
+                auto const source { fetch(std::format("{}?per_page={}&page={}", url, page_size, page)) };
+                if (source.empty()) {
+                    break;
+                }
+                result.insert(result.end(), source.begin(), source.end());
+                if (source.size() < page_size) {
+                    break;
+                }
+            }
+            return result;
         }
 
         std::shared_ptr<github::login::host> login_host_;

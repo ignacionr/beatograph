@@ -15,6 +15,11 @@
 namespace github::repo {
     struct screen {
         screen(nlohmann::json::object_t &&repo, std::shared_ptr<host> host): repo_{repo}, host_{host} {}
+
+        std::string const &name() const {
+            return repo_.at("name").get_ref<const std::string&>();
+        }
+
         void render() {
             auto const& repo_name {repo_.at("name").get_ref<const std::string&>()};
             ImGui::PushID(repo_name.c_str());
@@ -42,7 +47,9 @@ namespace github::repo {
                                 auto cache = registrar::get<img_cache>({});
                                 auto const badge_url = workflow.at("badge_url").get_ref<const std::string&>();
                                 auto const texture_id = cache->load_texture_from_url(badge_url, host_->header_client());
-                                ImGui::Image(reinterpret_cast<ImTextureID>(static_cast<long long>(texture_id)), ImVec2(100, 17));
+                                if (texture_id != cache->default_texture()) {
+                                    ImGui::Image(reinterpret_cast<ImTextureID>(static_cast<long long>(texture_id)), ImVec2(170, 17));
+                                }
                             }
                             else {
                                 ImGui::TextUnformatted(workflow.at("name").get_ref<const std::string&>().c_str());

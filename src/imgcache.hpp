@@ -163,6 +163,10 @@ struct img_cache
                 }};
         }
         // still loading, return a placeholder
+        return default_texture();
+    }
+
+    unsigned int default_texture() {
         return load_texture_from_file("assets/b6a9d081425dd6a.png");
     }
 
