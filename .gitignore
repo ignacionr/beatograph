@@ -6,3 +6,5 @@ imgcache
 gtts_cache/*.mp3
 gtts_cache/gtts.cache
 beatograph.ini
+rss.db
+*.db-journal
