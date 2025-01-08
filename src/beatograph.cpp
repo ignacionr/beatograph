@@ -158,7 +158,8 @@ int main()
 
         // get the Groq API key from GROQ_API_KEY
         auto groq_api_key = localhost->get_env_variable("GROQ_API_KEY");
-        ignacionr::cppgpt gpt{groq_api_key, ignacionr::cppgpt::groq_base};
+        auto gpt = std::make_shared<ignacionr::cppgpt> (groq_api_key, ignacionr::cppgpt::groq_base);
+        registrar::add({}, gpt);
 
         gtts::host gtts_host{"./gtts_cache"};
         notify::host notify_host;
@@ -365,7 +366,7 @@ int main()
                                 menu_tabs, ImVec4(0.05f, 0.5f, 0.05f, 1.0f)};
              }},
             {"world-clocks",
-             [&menu_tabs_and, localhost, &notify_host, &gpt](nlohmann::json::object_t const &node)
+             [&menu_tabs_and, localhost, &notify_host, gpt](nlohmann::json::object_t const &node)
              {
                  auto weather_host = std::make_shared<weather::openweather_client>(localhost->resolve_environment(node.at("openweather_key")));
                  auto host = std::make_shared<clocks::host>();
@@ -401,7 +402,7 @@ int main()
                  }
                  auto clocks_screen = std::make_shared<clocks::screen>(
                      host,
-                     std::move(gpt.new_conversation()),
+                     std::move(gpt->new_conversation()),
                      [&notify_host](std::string_view text)
                      { notify_host(text, "Clocks"); });
 
@@ -429,7 +430,7 @@ int main()
         auto tools = std::make_shared<tool_screen>(std::vector<group_t>{
             {ICON_MD_CURRENCY_EXCHANGE " Conversions", [&conv_screen]
              { conv_screen.render(); }, menu_tabs},
-            {ICON_MD_CHAT_BUBBLE " AI", [&gpt_screen, &gpt, &notify_host]
+            {ICON_MD_CHAT_BUBBLE " AI", [&gpt_screen, gpt, &notify_host]
              { gpt_screen.render(gpt, [&notify_host](std::string_view text)
                                  { notify_host(text, "AI"); }); },
              menu_tabs,

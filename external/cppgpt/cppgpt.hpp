@@ -64,6 +64,11 @@ namespace ignacionr
             conversation.clear();
         }
 
+        auto const &get_conversation() const
+        {
+            return conversation;
+        }
+
     private:
         std::string api_key_;            // Your OpenAI API key
         std::vector<json> conversation; // To keep track of the conversation history

@@ -5,6 +5,7 @@
 
 #include <imgui.h>
 #include <nlohmann/json.hpp>
+#include <cppgpt/cppgpt.hpp>
 
 #include "../../imgcache.hpp"
 #include "../../registrar.hpp"
@@ -33,7 +34,7 @@ namespace github::repo
         {
             auto const &repo_name{name()};
             ImGui::PushID(repo_name.c_str());
-            if (ImGui::BeginTable(repo_name.c_str(), 4, ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg))
+            if (ImGui::BeginTable(repo_name.c_str(), 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg))
             {
                 static views::json json_view;
                 ImGui::TableNextRow();
@@ -109,6 +110,13 @@ namespace github::repo
                                         if (ImGui::SmallButton(ICON_MD_WEB " Open...")) {
                                             auto local_host = registrar::get<hosting::local::host>({});
                                             local_host->open_content(run.at("html_url").get<std::string>());
+                                        }
+                                        if (ImGui::SameLine(); ImGui::SmallButton(ICON_MD_CHAT_BUBBLE " Explain...")) {
+                                            auto gpt = registrar::get<ignacionr::cppgpt>({});
+                                            gpt->clear();
+                                            gpt->add_instructions("You are a GitHub Actions workflow run. What can you tell me about yourself as per the following?");
+                                            gpt->add_instructions(run.dump());
+                                            gpt->sendMessage("Explain yourself", "user", "llama3-70b-8192");
                                         }
                                         ImGui::PopID();
                                     }
