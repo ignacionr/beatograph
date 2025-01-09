@@ -18,6 +18,8 @@
                 "opengl3-binding"
             ]
         },
+        "gperf",
+        "openssl",
         "gtest",
         "nlohmann-json",
         "utf8h",

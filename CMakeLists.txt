@@ -16,7 +16,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 # Set default char type to unsigned
 add_compile_definitions(CHAR_UNSIGNED)
 
-# enable_testing()
+# add_subdirectory(external/td)
 
 # Add the main executable target
 add_executable(beatograph 
@@ -64,6 +64,7 @@ target_link_libraries(beatograph PRIVATE
   rsvg-2
   cairo
   gobject-2.0
+  # Td::TdStatic
 )
 
 # Enable Unity builds
