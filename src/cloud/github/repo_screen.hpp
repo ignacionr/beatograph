@@ -94,10 +94,21 @@ namespace github::repo
                                         ImGui::PushID(run.at("id").get<int>());
                                         ImGui::TableNextRow();
                                         ImGui::TableNextColumn();
-                                        auto const &conclusion {run.at("conclusion").get_ref<const std::string&>()};
+                                        auto const &conclusion_el {run.at("conclusion")};
+                                        auto const &conclusion {conclusion_el.is_string() ? conclusion_el.get_ref<const std::string&>() : "pending"};
                                         bool const is_ok = conclusion == "success";
-                                        ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, ImGui::GetColorU32(is_ok ? ImVec4{0.0f, 1.0f, 0.0f, 0.5f} : ImVec4{1.0f, 0.0f, 0.0f, 0.5f}));
-                                        ImGui::TextUnformatted(is_ok ? ICON_MD_CHECK_CIRCLE : ICON_MD_CANCEL);
+                                        if (conclusion == "failure") {
+                                            ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, ImGui::GetColorU32(ImVec4{1.0f, 0.0f, 0.0f, 0.5f}));
+                                            ImGui::TextUnformatted(ICON_MD_CANCEL);
+                                        }
+                                        else if (conclusion == "success") {
+                                            ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, ImGui::GetColorU32(ImVec4{0.0f, 1.0f, 0.0f, 0.5f}));
+                                            ImGui::TextUnformatted(ICON_MD_CHECK_CIRCLE);
+                                        }
+                                        else {
+                                            ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, ImGui::GetColorU32(ImVec4{0.0f, 0.0f, 1.0f, 0.25f}));
+                                            ImGui::TextUnformatted(ICON_MD_RUN_CIRCLE);
+                                        }
                                         ImGui::SameLine();
                                         ImGui::TextUnformatted(run.at("status").get_ref<const std::string&>().c_str());
                                         ImGui::SameLine();
