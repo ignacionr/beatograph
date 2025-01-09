@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <string>
+#include <stdexcept>
 
 #include <imgui.h>
 #include <nlohmann/json.hpp>
@@ -13,6 +14,7 @@
 #include "../../structural/views/json.hpp"
 #include "host.hpp"
 #include "../../hosting/host_local.hpp"
+#include "../../util/conversions/base64.hpp"
 
 namespace github::repo
 {
@@ -112,11 +114,32 @@ namespace github::repo
                                             local_host->open_content(run.at("html_url").get<std::string>());
                                         }
                                         if (ImGui::SameLine(); ImGui::SmallButton(ICON_MD_CHAT_BUBBLE " Explain...")) {
-                                            auto gpt = registrar::get<ignacionr::cppgpt>({});
-                                            gpt->clear();
-                                            gpt->add_instructions("You are a GitHub Actions workflow run. What can you tell me about yourself as per the following?");
-                                            gpt->add_instructions(run.dump());
-                                            gpt->sendMessage("Explain yourself", "user", "llama3-70b-8192");
+                                            try {
+                                                auto gpt = registrar::get<ignacionr::cppgpt>({});
+                                                gpt->clear();
+                                                gpt->add_instructions("You are a GitHub Actions workflow run. What can you tell me about yourself as per the following?");
+                                                // try to get the logs
+                                                auto const &logs_url {run.at("logs_url").get_ref<const std::string&>()};
+                                                try {
+                                                    auto raw_logs = host_->fetch_string(logs_url);
+                                                    auto base_64_logs = conversions::text_to_base64(raw_logs);
+                                                    gpt->add_instructions("Here are your logs in base64 encoding; read them and understand them to provide an accurate description:");
+                                                    if (base_64_logs.size() > 5000) {
+                                                        // keep the last 5k characters
+                                                        base_64_logs = base_64_logs.substr(base_64_logs.size() - 5000);
+                                                    }
+                                                    gpt->add_instructions(base_64_logs);
+                                                    gpt->sendMessage(is_ok ?  "Summarize this run and its outcome; if there are assets produced/released (look in the log contents), explain how to access them." : "Using the log contents, explain the failure and how to proceed.", "user", "llama3-70b-8192");
+                                                }
+                                                catch(std::exception &) {
+                                                    gpt->sendMessage("Explain this run to me. The logs aren't available.", "user", "llama-3.3-70b-specdec");
+                                                }
+                                            }
+                                            catch(std::exception &e) {
+                                                // notify the error
+                                                auto notify = registrar::get<std::function<void(std::string_view)>>({"notify"});
+                                                (*notify)(e.what());
+                                            }
                                         }
                                         ImGui::PopID();
                                     }

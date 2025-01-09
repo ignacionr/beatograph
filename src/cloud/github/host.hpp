@@ -52,10 +52,14 @@ namespace github {
             };
         }
 
-        nlohmann::json fetch(const std::string &url) const {
+        std::string fetch_string(const std::string &url) const {
             http::fetch fetch;
             auto const source { fetch(url, header_client()) };
-            return nlohmann::json::parse(source);
+            return source;
+        }
+
+        nlohmann::json fetch(const std::string &url) const {
+            return nlohmann::json::parse(fetch_string(url));
         }
 
         nlohmann::json fetch_all(const std::string &url) const {
