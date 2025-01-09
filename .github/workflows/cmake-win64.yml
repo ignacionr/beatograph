@@ -1,4 +1,4 @@
-name: CMake on Windows
+name: CMake on Windows-64
 
 on:
   push:
@@ -17,19 +17,27 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Set up vcpkg
+      run: |
+        git clone https://github.com/microsoft/vcpkg.git
+        .\vcpkg\bootstrap-vcpkg.bat
+      env:
+        VCPKG_DEFAULT_TRIPLET: x64-windows
+
     - name: Configure CMake
       working-directory: ${{github.workspace}}
-      run: cmake -S ${{github.workspace}} -B ${{github.workspace}}/build -G Ninja -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_TOOLCHAIN_FILE=E:/vcpkg/scripts/buildsystems/vcpkg.cmake
-
+      run: |
+        cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_TOOLCHAIN_FILE=${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake
 
     - name: Build
-      run: cmake --build ${{github.workspace}}/build --parallel
+      run: cmake --build build --parallel
 
     - name: Publish Release
       if: github.ref == 'refs/heads/main'
       run: |
         mkdir ${{github.workspace}}/release
         xcopy ${{github.workspace}}/build\Release\* ${{github.workspace}}/release /s /e /y
+
     - name: Upload Release
       uses: actions/upload-artifact@v3
       with:
