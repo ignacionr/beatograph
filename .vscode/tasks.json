@@ -8,9 +8,9 @@
             "args": [
                 "-S", "${workspaceFolder}",
                 "-B", "${workspaceFolder}/build",
-                "-G", "Ninja",
+                "-G", "Visual Studio 17 2022",
                 "-DCMAKE_BUILD_TYPE=Debug",
-                "-DCMAKE_TOOLCHAIN_FILE=E:/vcpkg/scripts/buildsystems/vcpkg.cmake"
+                "-DCMAKE_TOOLCHAIN_FILE=/Program Files/Microsoft Visual Studio/2022/Community/VC/vcpkg/scripts/buildsystems/vcpkg.cmake"
             ],
             "group": {
                 "kind": "build",

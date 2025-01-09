@@ -4,7 +4,6 @@ cmake_minimum_required(VERSION 3.16)
 # set(CMAKE_TOOLCHAIN_FILE "E:/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE STRING "Vcpkg toolchain file")
 # Enable CMake's find_package to use vcpkg
 set(VCPKG_TARGET_TRIPLET "x64-windows" CACHE STRING "Vcpkg target triplet")
-include("/Program Files/Microsoft Visual Studio/2022/Community/VC/vcpkg/scripts/buildsystems/vcpkg.cmake")
 
 # Set the project name and version
 project(Beatograph VERSION 1.0 LANGUAGES CXX)
@@ -46,6 +45,8 @@ target_include_directories(beatograph PRIVATE "build\\vcpkg_installed\\x64-windo
 target_include_directories(beatograph PRIVATE "build\\vcpkg_installed\\x64-windows\\lib\\glib-2.0\\include")
 
 target_link_directories(beatograph PRIVATE "build\\vcpkg_installed\\x64-windows\\lib\\")
+
+find_package(FFmpeg REQUIRED)
 
 # Link external libraries to beatograph
 target_link_libraries(beatograph PRIVATE 
