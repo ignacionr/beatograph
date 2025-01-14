@@ -183,6 +183,16 @@ namespace media::rss
                             ImGui::PopID();
                         }
                     }
+                    static std::string new_feed_url;
+                    ImGui::NewLine();
+                    if (new_feed_url.reserve(256); ImGui::InputTextWithHint("##new_feed", "New feed URL", new_feed_url.data(), new_feed_url.capacity()))
+                    {
+                        new_feed_url = new_feed_url.data();
+                    }
+                    if (ImGui::SameLine(); ImGui::SmallButton(ICON_MD_ADD))
+                    {
+                        host_->add_feeds({new_feed_url});
+                    }
                 }
                 ImGui::EndChild();
             }
