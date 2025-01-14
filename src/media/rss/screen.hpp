@@ -192,6 +192,7 @@ namespace media::rss
                     if (ImGui::SameLine(); ImGui::SmallButton(ICON_MD_ADD))
                     {
                         host_->add_feeds({new_feed_url});
+                        new_feed_url.clear();
                     }
                 }
                 ImGui::EndChild();
