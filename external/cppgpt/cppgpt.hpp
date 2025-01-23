@@ -26,7 +26,7 @@ namespace ignacionr
         }
 
         // Function to send a message to GPT and receive the reply
-        json sendMessage(std::string_view message, std::string_view role = "user", std::string_view model = "gpt-3.5-turbo", float temperature = 0.25)
+        json sendMessage(std::string_view message, std::string_view role = "user", std::string_view model = "llama3-8b-8192", float temperature = 0.45)
         {
             // Append the new message to the conversation history
             conversation.push_back({{"role", role}, {"content", message}});
