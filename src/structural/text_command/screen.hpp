@@ -10,9 +10,11 @@ namespace structural::text_command {
         screen(host &host) : host_{host} {}
 
         void render() {
+            ImGui::PushID("text_command");
             if (search_text_.reserve(256); ImGui::InputText("##text_command", search_text_.data(), search_text_.capacity())) {
                 search_text_ = search_text_.data();
             }
+            ImGui::PopID();
             bool const focused{ImGui::IsItemActive()};
             if (focused) {
                 if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_DownArrow))) {

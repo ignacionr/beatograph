@@ -515,7 +515,7 @@ int main()
         screen->run(
             [&notify_host](std::string_view text)
             { notify_host(text, "Main"); },
-            [&tabs]
+            [&tabs, &tools]
             {
             if (ImGui::IsKeyDown(ImGuiMod_Ctrl)) {
                 // if (ImGui::IsKeyPressed(ImGuiKey_J)) {
@@ -523,6 +523,9 @@ int main()
                 // }
                 if (ImGui::IsKeyPressed(ImGuiKey_R)) {
                     tabs->select(radio_tab_name);
+                }
+                else if (ImGui::IsKeyDown(ImGuiMod_Shift) && ImGui::IsKeyPressed(ImGuiKey_P)) {
+                    tools->select(ICON_MD_KEYBOARD_COMMAND " Commands");
                 }
             } });
 
