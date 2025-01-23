@@ -272,6 +272,9 @@ int main()
         auto quitting = std::make_shared<std::function<bool()>>([]{ return views::quitting(); });
         registrar::add("quitting", quitting);
 
+
+        ssh::screen_all ssh_all{};
+
         std::map<std::string, std::function<group_t(nlohmann::json::object_t const &)>> factories = {
             {"github",
              [&menu_tabs](nlohmann::json::object_t const &node)
@@ -299,10 +302,12 @@ int main()
                 }
             },
             {"ssh-hosts",
-             [&menu_tabs, localhost](nlohmann::json::object_t const &)
+             [&menu_tabs, localhost, &ssh_all](nlohmann::json::object_t const &)
              { return group_t{ICON_MD_SETTINGS_REMOTE " SSH Hosts",
-                              [localhost]
-                              { ssh::screen_all{}.render(localhost); },
+                              [localhost, &ssh_all]
+                              { 
+                                ssh_all.render(localhost);
+                            },
                               menu_tabs}; }},
             {"toggl",
              [&menu_tabs, localhost, &notify_host, &toggl_screens_by_id](nlohmann::json::object_t const &node)
@@ -434,9 +439,9 @@ int main()
 
         text_command_host->add_source({
             [&tabs](std::string const &partial, std::function<void(std::string const &)> callback) {
-                if (partial.starts_with("Focus")) {
-                    tabs->tab_names([&partial,&callback](std::string_view name) { 
-                        if (partial.size() < 7 || name.contains(partial.substr(7))) {
+                if (partial.starts_with("focus")) {
+                    tabs->tab_names([&partial,&callback](std::string_view name) {
+                        if (partial.size() < 7 || name.contains(partial.substr(6))) {
                             callback(std::format("Focus on {}", name));
                         }
                         return true;
