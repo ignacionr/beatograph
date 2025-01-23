@@ -24,11 +24,18 @@ extern "C" {
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_audio.h>
 
+#include "../../registrar.hpp"
+#include "../../structural/text_command/host.hpp"
+
 namespace radio
 {
     struct host
     {
         host() {
+            auto text_command_host = registrar::get<structural::text_command::host>({});
+            text_command_host->add_command("Stop radio", [this] { stop(); });
+            text_command_host->add_command("Play radio", [this] { play(last_played_); });
+
             // load the presets from file
             std::ifstream file("presets.txt");
             if (file.is_open())
@@ -40,6 +47,7 @@ namespace radio
                     if (pos != std::string::npos)
                     {
                         presets_[line.substr(0, pos)] = line.substr(pos + 1);
+                        text_command_host->add_command(std::format("Play {} on the radio", line.substr(0, pos)), [this, url = line.substr(pos + 1)] { play(url); });
                     }
                 }
             }

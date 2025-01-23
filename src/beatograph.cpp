@@ -56,6 +56,8 @@
 #include "cloud/github/screen.hpp"
 #include "cloud/github/login_host.hpp"
 #include "util\clocks\pomodoro_screen.hpp"
+#include "structural/text_command/host.hpp"
+#include "structural/text_command/screen.hpp"
 
 void setup_fonts()
 {
@@ -155,6 +157,9 @@ int main()
 
         auto cache{std::make_shared<img_cache>("imgcache")};
         registrar::add({}, cache);
+
+        auto text_command_host = std::make_shared<structural::text_command::host>();
+        registrar::add({}, text_command_host);
 
         // get the Groq API key from GROQ_API_KEY
         auto groq_api_key = localhost->get_env_variable("GROQ_API_KEY");
@@ -427,6 +432,33 @@ int main()
         tabs = std::make_shared<screen_tabs>(all_tabs, [&screen](std::string_view tab_name)
                                              { screen->set_title(tab_name); });
 
+        text_command_host->add_source({
+            [&tabs](std::string const &partial, std::function<void(std::string const &)> callback) {
+                if (partial.starts_with("Focus")) {
+                    tabs->tab_names([&partial,&callback](std::string_view name) { 
+                        if (partial.size() < 7 || name.contains(partial.substr(7))) {
+                            callback(std::format("Focus on {}", name));
+                        }
+                        return true;
+                    });
+                }
+            },
+            [&tabs](std::string const &command) -> bool {
+                bool found{false};
+                tabs->tab_names([&command, &found, &tabs](std::string_view name) {
+                    if (command == std::format("Focus on {}", name)) {
+                        tabs->select(name);
+                        found = true;
+                        return false;
+                    }
+                    return true;
+                });
+                return found;
+            }
+        });
+
+        structural::text_command::screen text_command_screen{*text_command_host};
+
         auto tools = std::make_shared<tool_screen>(std::vector<group_t>{
             {ICON_MD_CURRENCY_EXCHANGE " Conversions", [&conv_screen]
              { conv_screen.render(); }, menu_tabs},
@@ -435,6 +467,8 @@ int main()
                                  { notify_host(text, "AI"); }); },
              menu_tabs,
              ImVec4(0.75f, 0.75f, 0.75f, 1.0f)},
+            {ICON_MD_KEYBOARD_COMMAND " Commands", [&text_command_screen]
+             { text_command_screen.render(); }, menu_tabs},
             {ICON_MD_COMPUTER " Local Host", [&menu_tabs, ls = hosting::local::screen{localhost}]
              { ls.render(); }, menu_tabs},
              { ICON_MD_CIRCLE " Pomodoro",

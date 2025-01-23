@@ -54,7 +54,7 @@ struct screen_tabs {
 
     void select(std::string_view name) {
         select_tab_ = name;
-        tab_changed_(name);
+        if (tab_changed_) tab_changed_(name);
     }
 
     size_t add(group_t tab) {
@@ -66,6 +66,12 @@ struct screen_tabs {
         tabs.erase(std::remove_if(tabs.begin(), tabs.end(), [name](const group_t &tab) {
             return tab.name == name;
         }), tabs.end());
+    }
+
+    void tab_names(auto callback) const {
+        for (auto const &tab : tabs) {
+            if (!callback(tab.name)) break;
+        }
     }
     
 private:
