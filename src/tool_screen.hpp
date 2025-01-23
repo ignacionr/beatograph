@@ -12,8 +12,16 @@ struct tool_screen {
     {
         for (const auto &tab : tabs)
         {
+            bool selected = tab.name == select_tab_;
+            if (selected) {
+                ImGui::SetNextItemOpen(true);
+                select_tab_.clear();
+            }
             if (ImGui::CollapsingHeader(tab.name.c_str()))
             {
+                if (selected) {
+                    ImGui::SetKeyboardFocusHere();
+                }
                 tab.render();
             }
         }

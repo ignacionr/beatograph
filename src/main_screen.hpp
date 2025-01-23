@@ -114,12 +114,11 @@ struct main_screen
                 }
                 ImGui_ImplSDL2_ProcessEvent(&event);
             }
-            pre_frame();
             ImGui_ImplOpenGL3_NewFrame();
             ImGui_ImplSDL2_NewFrame();
             ImGui::NewFrame();
             try {
-                do_frame();
+                do_frame(pre_frame);
             }
             catch (std::exception const &e) {
                 notifier(e.what());
@@ -145,7 +144,7 @@ struct main_screen
     }
 
 private:
-    void do_frame()
+    void do_frame(auto pre_frame)
     {
 
         ImGuiIO &io{ImGui::GetIO()};
@@ -156,6 +155,7 @@ private:
         if (ImGui::Begin("Beat-o-Graph", nullptr,
                          ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar))
         {
+            pre_frame();
             auto const flags = SDL_GetWindowFlags(window);
             auto const is_fullscreen {flags & SDL_WINDOW_FULLSCREEN_DESKTOP};
             auto toggle_fullscreen = [&] {
