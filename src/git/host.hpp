@@ -10,6 +10,8 @@
 #include <vector>
 
 #include "../hosting/host_local.hpp"
+#include "../registrar.hpp"
+#include "../structural/text_command/host.hpp"
 
 namespace git{
 struct host
@@ -17,6 +19,28 @@ struct host
     host(std::shared_ptr<hosting::local::host> localhost, std::string_view root) : localhost_{localhost}, root_{root}
     {
         async_harvest();
+        registrar::get<structural::text_command::host>({})->add_source({
+            [this](std::string const &partial, std::function<void(std::string const &)> callback) {
+                auto repos = m_repos.load();
+                for (auto const &repo : *repos)
+                {
+                    if (repo.find(partial) != std::string::npos)
+                    {
+                        callback(std::format("open {} with VSCode", repo));
+                    }
+                }
+            },
+            [](std::string const &name) -> bool {
+                if (name.starts_with("open ") && name.ends_with(" with VSCode"))
+                {
+                    auto const repo = name.substr(5, name.size() - 5 - 12);
+                    auto const command = std::format("code \"{}\"", repo);
+                    std::system(command.c_str());
+                    return true;
+                }
+                return false;
+            }
+        });
     }
 
     static void enumerate_repos(std::filesystem::path path, auto sink)

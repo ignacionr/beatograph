@@ -162,8 +162,8 @@ int main()
         registrar::add({}, text_command_host);
 
         // get the Groq API key from GROQ_API_KEY
-        auto groq_api_key = localhost->get_env_variable("GROQ_API_KEY");
-        auto gpt = std::make_shared<ignacionr::cppgpt> (groq_api_key, ignacionr::cppgpt::groq_base);
+        auto grok_api_key = localhost->get_env_variable("GROK_API_KEY");
+        auto gpt = std::make_shared<ignacionr::cppgpt> (grok_api_key, ignacionr::cppgpt::grok_base);
         registrar::add({}, gpt);
 
         gtts::host gtts_host{"./gtts_cache"};

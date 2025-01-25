@@ -214,7 +214,7 @@ namespace clocks
                                         "If there are upcoming local holidays, mention it together with a short reference to what is celebrated. "
                                         "The local date and time is {:%Y-%m-%d %H:%M:%S}", local_time)
                                     );
-                                    std::string const result = gpt_.sendMessage(city.weather_info().dump(), "user", "llama3-8b-8192").at("choices").at(0).at("message").at("content");
+                                    std::string const result = gpt_.sendMessage(city.weather_info().dump(), "user", "grok-2-latest").at("choices").at(0).at("message").at("content");
                                     notify_(result);
                                 }
                                 catch(std::exception &e) {

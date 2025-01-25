@@ -14,6 +14,7 @@ namespace ignacionr
     public:
         static constexpr auto open_ai_base = "https://api.openai.com/v1/";
         static constexpr auto  groq_base = "https://api.groq.com/openai/v1";
+        static constexpr auto  grok_base = "https://api.x.ia/v1";
         cppgpt(const std::string &api_key, const std::string &base_url) : api_key_(api_key), base_url_{base_url} {}
 
         cppgpt new_conversation() {
@@ -26,7 +27,7 @@ namespace ignacionr
         }
 
         // Function to send a message to GPT and receive the reply
-        json sendMessage(std::string_view message, std::string_view role = "user", std::string_view model = "llama3-8b-8192", float temperature = 0.45)
+        json sendMessage(std::string_view message, std::string_view role = "user", std::string_view model = "grok-2-latest", float temperature = 0.45)
         {
             // Append the new message to the conversation history
             conversation.push_back({{"role", role}, {"content", message}});

@@ -16,7 +16,7 @@ namespace cppgpt {
             std::string result;
             if (ImGui::SmallButton("Run") || ImGui::IsKeyChordPressed(ImGuiKey_Enter | ImGuiMod_Ctrl)) {
                 try {
-                    result = gpt->sendMessage(prompt, "user", "llama3-8b-8192")["choices"][0]["message"]["content"];
+                    result = gpt->sendMessage(prompt, "user", "grok-2-latest")["choices"][0]["message"]["content"];
                 }
                 catch(std::exception &e) {
                     result = e.what();

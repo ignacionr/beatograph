@@ -84,9 +84,9 @@
         },
         {
             "type": "ai",
-            "endpoint": "https://api.groq.com/openai/v1",
-            "token": "${GROQ_API_KEY}",
-            "model": "llama3-groq-70b-8192-tool-use-preview"
+            "endpoint": "https://api.x.ai/openai/v1",
+            "token": "${GROK_API_KEY}",
+            "model": "grok-2-latest"
         },
         {
             "type": "notifications"

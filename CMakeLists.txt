@@ -71,9 +71,6 @@ target_link_libraries(beatograph PRIVATE
 # Enable Unity builds
 set_target_properties(beatograph PROPERTIES UNITY_BUILD ON)
 
-# Include GoogleTest
-include(GoogleTest)
-
 # Find and link required packages
 list(APPEND CMAKE_PREFIX_PATH "vcpkg_installed/x64-windows/share")
 find_package(GTest CONFIG REQUIRED)
