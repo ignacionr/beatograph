@@ -24,7 +24,6 @@
         "nlohmann-json",
         "utf8h",
         "tinyfiledialogs",
-        "cpr",
         "libssh",
         "librsvg",
         "zlib",

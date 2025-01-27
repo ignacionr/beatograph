@@ -55,7 +55,6 @@ target_link_libraries(beatograph PRIVATE
   GLEW::GLEW
   imgui::imgui
   nlohmann_json::nlohmann_json
-  cpr::cpr
   PNG::PNG
   ssh
   ${FFMPEG_LIBRARIES} avformat
@@ -81,7 +80,6 @@ find_package(CURL CONFIG REQUIRED)
 find_package(imgui REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 find_package(GLEW REQUIRED)
-find_package(cpr CONFIG REQUIRED)
 find_package(libssh CONFIG REQUIRED)
 find_package(FFMPEG REQUIRED)
 find_package(tinyfiledialogs CONFIG REQUIRED)
