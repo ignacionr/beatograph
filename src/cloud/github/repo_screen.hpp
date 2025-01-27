@@ -140,10 +140,21 @@ namespace github::repo
                                                         base_64_logs = base_64_logs.substr(base_64_logs.size() - 5000);
                                                     }
                                                     gpt->add_instructions(base_64_logs);
-                                                    gpt->sendMessage(is_ok ?  "Summarize this run and its outcome; if there are assets produced/released (look in the log contents), explain how to access them." : "Using the log contents, explain the failure and how to proceed.", "user", "grok-2-latest");
+                                                    gpt->sendMessage(is_ok ?  "Summarize this run and its outcome; if there are assets produced/released (look in the log contents), explain how to access them." : "Using the log contents, explain the failure and how to proceed.", 
+                                                    [](auto a, auto b, auto c) {
+                                                        http::fetch fetch;
+                                                        return fetch.post(a, b, c);
+                                                    },
+                                                    "user", "grok-2-latest");
                                                 }
                                                 catch(std::exception &) {
-                                                    gpt->sendMessage("Explain this run to me. The logs aren't available.", "user", "grok-2-latest");
+                                                    gpt->sendMessage(
+                                                        "Explain this run to me. The logs aren't available.", 
+                                                        [](auto a, auto b, auto c) {
+                                                            http::fetch fetch;
+                                                            return fetch.post(a, b, c);
+                                                        },
+                                                        "user", "grok-2-latest");
                                                 }
                                             }
                                             catch(std::exception &e) {

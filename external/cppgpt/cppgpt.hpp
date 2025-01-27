@@ -2,7 +2,6 @@
 #include <format>
 #include <string>
 #include <vector>
-#include <cpr/cpr.h>
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
@@ -14,7 +13,7 @@ namespace ignacionr
     public:
         static constexpr auto open_ai_base = "https://api.openai.com/v1/";
         static constexpr auto  groq_base = "https://api.groq.com/openai/v1";
-        static constexpr auto  grok_base = "https://api.x.ia/v1";
+        static constexpr auto  grok_base = "https://api.x.ai/v1";
         cppgpt(const std::string &api_key, const std::string &base_url) : api_key_(api_key), base_url_{base_url} {}
 
         cppgpt new_conversation() {
@@ -27,7 +26,7 @@ namespace ignacionr
         }
 
         // Function to send a message to GPT and receive the reply
-        json sendMessage(std::string_view message, std::string_view role = "user", std::string_view model = "grok-2-latest", float temperature = 0.45)
+        json sendMessage(std::string_view message, auto do_post, std::string_view role = "user", std::string_view model = "grok-2-latest", float temperature = 0.45)
         {
             // Append the new message to the conversation history
             conversation.push_back({{"role", role}, {"content", message}});
@@ -38,20 +37,18 @@ namespace ignacionr
                 {"messages", conversation},
                 {"temperature", temperature}};
 
-            // Send the API request
-            auto url = cpr::Url{base_url_ + "/chat/completions"};
-            auto r = cpr::Post(
-                url,
-                cpr::Header{{"Authorization", "Bearer " + api_key_}, {"Content-Type", "application/json"}},
-                cpr::Body{payload.dump()});
+            
 
-            if (r.status_code != 200) {
-                std::cerr << "Error: " << r.text << " (" << r.status_code << ")" << std::endl;
-                throw std::runtime_error(std::format("Error: {} ({})", r.text, r.status_code));
-            }
+            // Send the API request
+            auto url = std::format("{}/chat/completions", base_url_);
+            auto body = payload.dump();
+            auto r = do_post(url, body, [this](auto header_setter){
+                header_setter("Authorization: Bearer " + api_key_);
+                header_setter("Content-Type: application/json");
+            });
 
             // Parse the API response
-            auto response = json::parse(r.text);
+            auto response = json::parse(r);
             auto gpt_reply = response["choices"][0]["message"]["content"];
 
             // Append GPT's reply to the conversation history
