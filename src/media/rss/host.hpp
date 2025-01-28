@@ -63,7 +63,7 @@ namespace media::rss
                 auto error_sink = registrar::get<std::function<void(std::string_view)>>({"notify"});
                 for (auto const &url_str : urls) {
                     try {
-                        auto const ptr = add_feed_sync(url_str);
+                        add_feed_sync(url_str);
                     } 
                     catch(std::exception const &e) {
                         (*error_sink)(std::format("Failed to add feed {}: {}\n", url_str, e.what()));
@@ -98,7 +98,6 @@ namespace media::rss
                     (*pos)->feed_title = feed_ptr->feed_title;
                     (*pos)->feed_description = feed_ptr->feed_description;
                     (*pos)->feed_link = feed_ptr->feed_link;
-                    (*pos)->items = feed_ptr->items;
                     (*pos)->set_image(feed_ptr->image_url());
                     // now merge all items, avoiding duplicates
                     for (auto const &item : feed_ptr->items)
@@ -113,12 +112,13 @@ namespace media::rss
                             (*pos)->items.emplace_back(item);
                         }
                     }
+                    feed_ptr = *pos;
                 }
                 else
                 {
                     feeds->emplace_back(feed_ptr);
-                    feed_ptr->repo_id = repo_.upsert_feed(url, feed_ptr->feed_title, feed_ptr->image_url());
                 }
+                feed_ptr->repo_id = repo_.upsert_feed(url, feed_ptr->feed_title, feed_ptr->image_url());
                 // update the items
                 for (auto const &item : feed_ptr->items)
                 {
