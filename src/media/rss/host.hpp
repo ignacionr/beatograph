@@ -64,9 +64,6 @@ namespace media::rss
                 for (auto const &url_str : urls) {
                     try {
                         auto const ptr = add_feed_sync(url_str);
-                        if (ptr->image_url().empty()) {
-                            (*error_sink)(std::format("Feed {}: no image found\n", url_str));
-                        }
                     } 
                     catch(std::exception const &e) {
                         (*error_sink)(std::format("Failed to add feed {}: {}\n", url_str, e.what()));
