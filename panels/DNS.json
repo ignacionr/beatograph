@@ -1,0 +1,20 @@
+{
+    "title": "\ue875 DNS",
+    "contents": [
+        {
+            "type": "input",
+            "title": "Domain",
+            "variable": "domain"
+        },
+        {
+            "type": "command-output",
+            "title": "Lookup default",
+            "command": "nslookup ${domain}"
+        },
+        {
+            "type": "command-output",
+            "title": "Lookup TXT",
+            "command": "nslookup -type=TXT ${domain}"
+        }
+    ]
+}
