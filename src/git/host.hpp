@@ -55,6 +55,8 @@ struct host
                     if (entry_path.filename() == ".git")
                     {
                         sink(entry_path.parent_path());
+                        // avoid going any deeper, since we don't want to open submodules separately
+                        return;
                     }
                     else
                     {
