@@ -11,7 +11,8 @@
 #include <thread>
 
 #include <curl/curl.h>
-extern "C" {
+extern "C"
+{
 
 #include <libavutil/opt.h>
 #include <libavutil/mathematics.h>
@@ -31,23 +32,30 @@ namespace radio
 {
     struct host
     {
-        host() {
-            auto text_command_host = registrar::get<structural::text_command::host>({});
-            text_command_host->add_command("Stop radio", [this] { stop(); });
-            text_command_host->add_command("Play radio", [this] { play(last_played_); });
-
-            // load the presets from file
-            std::ifstream file("presets.txt");
-            if (file.is_open())
+        host(bool main_host = true)
+        {
+            if (main_host)
             {
-                std::string line;
-                while (std::getline(file, line))
+                auto text_command_host = registrar::get<structural::text_command::host>({});
+                text_command_host->add_command("Stop radio", [this]
+                                               { stop(); });
+                text_command_host->add_command("Play radio", [this]
+                                               { play(last_played_); });
+
+                // load the presets from file
+                std::ifstream file("presets.txt");
+                if (file.is_open())
                 {
-                    auto pos = line.find_first_of('=');
-                    if (pos != std::string::npos)
+                    std::string line;
+                    while (std::getline(file, line))
                     {
-                        presets_[line.substr(0, pos)] = line.substr(pos + 1);
-                        text_command_host->add_command(std::format("Play {} on the radio", line.substr(0, pos)), [this, url = line.substr(pos + 1)] { play(url); });
+                        auto pos = line.find_first_of('=');
+                        if (pos != std::string::npos)
+                        {
+                            presets_[line.substr(0, pos)] = line.substr(pos + 1);
+                            text_command_host->add_command(std::format("Play {} on the radio", line.substr(0, pos)), [this, url = line.substr(pos + 1)]
+                                                           { play(url); });
+                        }
                     }
                 }
             }
@@ -57,7 +65,8 @@ namespace radio
         using release_audio_t = std::function<void()>;
         using audio_converter_t = std::function<release_audio_t(void *, uint32_t, void **, uint32_t *)>;
 
-        void stop_and_wait() {
+        void stop_and_wait()
+        {
             stop();
             while (is_playing())
             {
@@ -65,10 +74,14 @@ namespace radio
             }
         }
 
-        void play(std::string url, std::chrono::milliseconds start = std::chrono::milliseconds{0}) {
+        void play(std::string url, std::chrono::milliseconds start = std::chrono::milliseconds{0})
+        {
+            static std::mutex play_mutex;
+            std::lock_guard<std::mutex> lock(play_mutex);
             last_played_ = url;
             // start the player in a separate thread
-            std::thread([this, url, start]() {
+            std::thread([this, url, start]()
+                        {
                 if (is_playing())
                 {
                     stop_and_wait();
@@ -80,12 +93,14 @@ namespace radio
                 catch(const std::exception &e) {
                     last_error_ = e.what();
                     has_error_ = true;
-                }
-            }).detach();
+                } })
+                .detach();
         }
 
-        void stop() {
-            if (dev != 0) {
+        void stop()
+        {
+            if (dev != 0)
+            {
                 SDL_PauseAudioDevice(dev, 1);
                 SDL_ClearQueuedAudio(dev);
             }
@@ -93,13 +108,16 @@ namespace radio
             keep_playing = false;
         }
 
-        static size_t ignore_write(void *, size_t size, size_t nmemb, void *)  {
+        static size_t ignore_write(void *, size_t size, size_t nmemb, void *)
+        {
             return size * nmemb;
         };
 
-        std::string resolve_redirections(std::string const &url) {
+        std::string resolve_redirections(std::string const &url)
+        {
             CURL *curl = curl_easy_init();
-            if (!curl) {
+            if (!curl)
+            {
                 throw std::runtime_error("Failed to initialize curl");
             }
             curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
@@ -111,7 +129,8 @@ namespace radio
             curl_easy_setopt(curl, CURLOPT_HEADERDATA, nullptr);
             auto res = curl_easy_perform(curl);
             std::string result{url}; // if we fail, we return the original url
-            if (res == CURLE_OK) {
+            if (res == CURLE_OK)
+            {
                 char *url_out;
                 curl_easy_getinfo(curl, CURLINFO_EFFECTIVE_URL, &url_out);
             }
@@ -119,7 +138,8 @@ namespace radio
             return result;
         }
 
-        void feed_the_beast(AVFormatContext *fmt_ctx, AVStream *audio_stream, AVCodecContext *codec_ctx, SwrContext *swr_ctx) {
+        void feed_the_beast(AVFormatContext *fmt_ctx, AVStream *audio_stream, AVCodecContext *codec_ctx, SwrContext *swr_ctx)
+        {
             AVPacket packet;
             AVFrame *frame = av_frame_alloc();
             uint8_t *audio_buf = nullptr;
@@ -127,8 +147,10 @@ namespace radio
             playing = true;
             for (int read_result = av_read_frame(fmt_ctx, &packet); keep_playing.load(); read_result = av_read_frame(fmt_ctx, &packet))
             {
-                if (read_result < 0) {
-                    if (read_result == AVERROR_EOF) {
+                if (read_result < 0)
+                {
+                    if (read_result == AVERROR_EOF)
+                    {
                         std::cerr << "End of file" << std::endl;
                         break;
                     }
@@ -149,7 +171,8 @@ namespace radio
                             {
                                 break;
                             }
-                            else if (res == AVERROR(EAGAIN)) {
+                            else if (res == AVERROR(EAGAIN))
+                            {
                                 break;
                             }
                             else if (res < 0)
@@ -169,7 +192,8 @@ namespace radio
                                 throw std::runtime_error("Failed to convert audio");
                             }
                             // update the current packet sent
-                            if (current_packet_length_.count() == 0) {
+                            if (current_packet_length_.count() == 0)
+                            {
                                 current_packet_sent_ = std::chrono::system_clock::now();
                             }
                             current_packet_length_ += std::chrono::milliseconds{1000 * frame->nb_samples / codec_ctx->sample_rate};
@@ -179,15 +203,17 @@ namespace radio
                                 av_free(audio_buf);
                                 throw std::runtime_error("Failed to queue audio");
                             }
-                            
+
                             av_free(audio_buf);
                         }
                     }
-                    else {
+                    else
+                    {
                         std::cerr << std::format("Failed to send packet to codec, code: {}\n", send_res);
                     }
                 }
-                else {
+                else
+                {
                     std::cerr << std::format("Skipping packet from stream {}\n", packet.stream_index);
                 }
                 av_packet_unref(&packet);
@@ -195,7 +221,8 @@ namespace radio
             av_frame_free(&frame);
         }
 
-        static void init() {
+        static void init()
+        {
             // Initialize SDL
             if (SDL_Init(SDL_INIT_AUDIO) < 0)
             {
@@ -211,7 +238,8 @@ namespace radio
             {
                 url = presets_[url];
             }
-            else {
+            else
+            {
                 url = resolve_redirections(url);
             }
 
@@ -237,7 +265,8 @@ namespace radio
             if (fmt_ctx->metadata)
             {
                 const AVDictionaryEntry *e = nullptr;
-                while ((e = av_dict_iterate(fmt_ctx->metadata, e))) {
+                while ((e = av_dict_iterate(fmt_ctx->metadata, e)))
+                {
                     stream_metadata_[e->key] = e->value;
                 }
             }
@@ -291,7 +320,8 @@ namespace radio
                 throw std::runtime_error("Failed to open codec");
             }
 
-            if (dev == 0) {
+            if (dev == 0)
+            {
                 // Set up SDL audio specs
                 SDL_AudioSpec wanted_spec{};
                 wanted_spec.freq = codec_ctx->sample_rate;
@@ -334,16 +364,20 @@ namespace radio
             total_run_ = std::chrono::milliseconds{1000 * duration};
             current_packet_length_ = std::chrono::milliseconds{0};
 
-            if (start.count() > 0) {
+            if (start.count() > 0)
+            {
                 // seek to the start
-                if (0 <= av_seek_frame(fmt_ctx, -1, start.count() * AV_TIME_BASE / 1000, 0)) {
+                if (0 <= av_seek_frame(fmt_ctx, -1, start.count() * AV_TIME_BASE / 1000, 0))
+                {
                     current_run_ = start;
                 }
-                else {
+                else
+                {
                     current_run_ = std::chrono::milliseconds{0};
                 }
             }
-            else {
+            else
+            {
                 current_run_ = std::chrono::milliseconds{0};
             }
 
@@ -371,62 +405,75 @@ namespace radio
             return playing.load();
         }
 
-        auto presets() const {
+        auto presets() const
+        {
             // return the preset keys
             std::vector<std::string> keys;
             std::transform(presets_.begin(), presets_.end(), std::back_inserter(keys),
-                           [](const auto &preset) { return preset.first; });
+                           [](const auto &preset)
+                           { return preset.first; });
             return keys;
         }
 
-        auto has_error() const {
+        auto has_error() const
+        {
             return has_error_.load();
         }
-        auto last_error() const {
+        auto last_error() const
+        {
             return last_error_;
         }
 
-        std::optional<std::string> last_played() const {
-            if (!playing || last_played_.empty()) {
+        std::optional<std::string> last_played() const
+        {
+            if (!playing || last_played_.empty())
+            {
                 return std::nullopt;
             }
             return last_played_;
         }
 
-        std::string const &stream_name() const {
-            if (stream_metadata_.find("title") != stream_metadata_.end()) {
+        std::string const &stream_name() const
+        {
+            if (stream_metadata_.find("title") != stream_metadata_.end())
+            {
                 return stream_metadata_.at("title");
             }
-            else if (stream_metadata_.find("icy-name") != stream_metadata_.end()) {
+            else if (stream_metadata_.find("icy-name") != stream_metadata_.end())
+            {
                 return stream_metadata_.at("icy-name");
             }
-            else if (!stream_metadata_.empty()) {
+            else if (!stream_metadata_.empty())
+            {
                 return stream_metadata_.begin()->second;
             }
             static std::string empty{};
             return empty;
         }
 
-        std::chrono::milliseconds total_run() const {
+        std::chrono::milliseconds total_run() const
+        {
             return total_run_;
         }
 
-        std::chrono::milliseconds current_run() const {
+        std::chrono::milliseconds current_run() const
+        {
             auto now = std::chrono::system_clock::now();
-            if (current_packet_length_.count() == 0) {
+            if (current_packet_length_.count() == 0)
+            {
                 return current_run_;
             }
             auto diff = std::min(std::chrono::duration_cast<std::chrono::milliseconds>(now - current_packet_sent_), current_packet_length_);
             return current_run_ + diff;
         }
 
-        void move_to(std::chrono::milliseconds new_position) {
+        void move_to(std::chrono::milliseconds new_position)
+        {
             stop_and_wait();
             play(last_played_, new_position);
         }
 
     private:
-
         std::map<std::string, std::string> presets_;
 
         SDL_AudioDeviceID dev{};

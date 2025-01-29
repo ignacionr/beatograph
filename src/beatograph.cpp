@@ -177,7 +177,7 @@ int main()
                                        {
             if (!quiet) {
             try {
-                radio::host notifications_radio_host;
+                radio::host notifications_radio_host{false};
                 gtts_host.tts_job(std::format("{}: {}", title, text), [&notifications_radio_host](std::string_view file_produced) {
                     std::string file{file_produced.data(), file_produced.size()};
                     notifications_radio_host.play_sync(file);
