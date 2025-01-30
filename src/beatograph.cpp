@@ -244,15 +244,26 @@ int main()
             };
         };
 
+        auto set_quiet = [&quiet, fconfig](bool q)
+        {
+            quiet = q;
+            fconfig->set("quiet", quiet ? "true" : "false");
+        };
+
+        text_command_host->add_command("Quiet Notifications", [set_quiet, &quiet]
+                                       { set_quiet(true); });
+        text_command_host->add_command("Unquiet (audible) Notifications", [set_quiet, &quiet]
+                                       { set_quiet(false); });
+
         all_tabs = {
             {ICON_MD_NOTIFICATIONS " Notifications", [&notify_screen]
-             { notify_screen.render(); }, menu_tabs_and([&quiet, &fconfig](std::string_view item)
+             { notify_screen.render(); }, menu_tabs_and([set_quiet, &quiet, &fconfig](std::string_view item)
                                                         {
                                                             if (item == "Main") {
                                                                 if (ImGui::BeginMenu("Settings"))
                                                                 {
                                                                     if (ImGui::Checkbox("Quiet", &quiet)) {
-                                                                        fconfig->set("quiet", quiet ? "true" : "false");
+                                                                        set_quiet(quiet);
                                                                     }
                                                                     ImGui::EndMenu();
                                                                 }
