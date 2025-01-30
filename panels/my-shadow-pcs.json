@@ -1,0 +1,28 @@
+{
+    "title": "Shadow PCs",
+    "contents": [
+        {
+            "type": "input",
+            "title": "Token",
+            "variable": "SHADOW_TECH_TOKEN"
+        },
+        {
+            "type": "command-output",
+            "title": "Shadow PCs",
+            "command": "curl -s https://api.eu.shadow.tech/v1/subscription/?page=0&page_size=10&product_family=cloudpc -H \"authorization: Bearer ${SHADOW_TECH_TOKEN}\"",
+            "view": "json"
+        },
+        {
+            "type": "command-output",
+            "title": "DevOps Shota",
+            "command": "curl -s https://api.eu.shadow.tech/v1/pu/shadow-vdi/vm/BTM7HxUbNYGUH20ZI/status -H \"authorization: Bearer ${SHADOW_TECH_TOKEN}\"",
+            "view": "json"
+        },
+        {
+            "type": "command-output",
+            "title": "DevOps Zurab",
+            "command": "curl -s https://api.eu.shadow.tech/v1/pu/shadow-vdi/vm/BTM7HxUbNXcDo1zxM/status -H \"authorization: Bearer ${SHADOW_TECH_TOKEN}\"",
+            "view": "json"
+        }
+    ]
+}

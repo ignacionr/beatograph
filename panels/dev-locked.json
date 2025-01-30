@@ -126,6 +126,74 @@
                     }]
                 },
                 {
+                    "type": "group",
+                    "title": "dev4",
+                    "contents": [                {
+                        "type": "assertion",
+                        "title": "dev4_container is running",
+                        "test": {
+                            "type": "docker-container-running",
+                            "container": "dev4_container",
+                            "host": "dev-locked"
+                        }
+                    },
+                    {
+                        "type": "assertion",
+                        "title": "xrdp is running for dev4",
+                        "test": {
+                            "type": "docker-process-running",
+                            "host": "dev-locked",
+                            "container": "dev4_container",
+                            "process": "xrdp"
+                        }
+                    },
+                    {
+                        "type": "assertion",
+                        "title": "dev4 can log in for gitservice usage with ssh",
+                        "test": {
+                            "type": "container-command",
+                            "host": "dev-locked",
+                            "container": "dev4_container",
+                            "command": "su - dev4 -c 'ssh -T git@gitservice'",
+                            "should-contain": "Welcome to git-server-docker!"
+                        }
+                    }]
+                },
+                {
+                    "type": "group",
+                    "title": "dev5",
+                    "contents": [                {
+                        "type": "assertion",
+                        "title": "dev5_container is running",
+                        "test": {
+                            "type": "docker-container-running",
+                            "container": "dev5_container",
+                            "host": "dev-locked"
+                        }
+                    },
+                    {
+                        "type": "assertion",
+                        "title": "xrdp is running for dev5",
+                        "test": {
+                            "type": "docker-process-running",
+                            "host": "dev-locked",
+                            "container": "dev5_container",
+                            "process": "xrdp"
+                        }
+                    },
+                    {
+                        "type": "assertion",
+                        "title": "dev5 can log in for gitservice usage with ssh",
+                        "test": {
+                            "type": "container-command",
+                            "host": "dev-locked",
+                            "container": "dev5_container",
+                            "command": "su - dev5 -c 'ssh -T git@gitservice'",
+                            "should-contain": "Welcome to git-server-docker!"
+                        }
+                    }]
+                },
+                {
                     "type": "assertion",
                     "title": "gitservice is running",
                     "test": {

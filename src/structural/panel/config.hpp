@@ -78,7 +78,19 @@ namespace panel {
                     if (view_type == "json") {
                         return [command, localhost, title]{
                             views::cached_view<nlohmann::json>(title,
-                            [command, localhost]{ return nlohmann::json::parse(localhost->execute_command(command));},
+                            [command, localhost] {
+                                auto const output {localhost->execute_command(command)}; 
+                                nlohmann::json ret;
+                                try {
+                                    ret = nlohmann::json::parse(output);
+                                }
+                                catch(nlohmann::json::parse_error const &e) {
+                                    ret = nlohmann::json::object();
+                                    ret["error"] = e.what();
+                                    ret["received"] = output;
+                                }
+                                return ret;
+                            },
                             [](nlohmann::json const &output) {
                                 static views::json jv;
                                 jv.render(output);
