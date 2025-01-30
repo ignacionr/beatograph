@@ -27,7 +27,7 @@ jobs:
     - name: Install dependencies with vcpkg
       run: |
         # Replace 'glib' with specific libraries you need
-        .\vcpkg\vcpkg.exe install --triplet x64-windows-release curl sdl2 glew sdl2-image imgui gperf openssl nlohmann-json utf7h tinyfiledialogs libssh librsvg zlib libpng sqlite3 ffmpeg tinyxml2
+        .\vcpkg\vcpkg.exe install --triplet x64-windows-release
       env:
         VCPKG_DEFAULT_TRIPLET: x64-windows-release
 
