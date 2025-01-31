@@ -9,6 +9,7 @@
 #include <iostream>
 #include <ranges>
 #include <string>
+#include <stdexcept>
 #include <unordered_map>
 
 #define IMGUI_USE_WCHAR32
@@ -58,6 +59,7 @@
 #include "util\clocks\pomodoro_screen.hpp"
 #include "structural/text_command/host.hpp"
 #include "structural/text_command/screen.hpp"
+#include "hosting/telnet/host.hpp"
 
 void setup_fonts()
 {
@@ -132,13 +134,84 @@ void save_services(auto config, auto key_base)
 }
 
 #if defined(_WIN32)
-int WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
+int WinMain(HINSTANCE, HINSTANCE, LPSTR szArguments, int)
 {
 #else
 int main()
 {
 #endif
     {
+        std::string args {szArguments};
+        if (!args.empty()) {
+            try {
+                if (args.front() == '"') {
+                    args = args.substr(1);
+                    if (args.back() == '"') {
+                        args.pop_back();
+                    }
+                }
+                if (!args.starts_with("beatograph:")) {
+                    throw std::runtime_error(std::format("Invalid protocol: {}", args));
+                }
+                else args = args.substr(11);
+                // replace every %20 with a space
+                for (auto pos {args.find("%20")}; pos != std::string::npos; pos = args.find("%20", pos)) {
+                    args.replace(pos, 3, " ");
+                }
+                // initialize sockets
+                WSADATA wsaData;
+                if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
+                    throw std::runtime_error("WSAStartup failed");
+                }
+                // connect to localhost port 23
+                SOCKET s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+                if (s == INVALID_SOCKET) {
+                    throw std::runtime_error("socket failed");
+                }
+                sockaddr_in service;
+                service.sin_family = AF_INET;
+                if (inet_pton(AF_INET, "127.0.0.1", &service.sin_addr) <= 0) {
+                    throw std::runtime_error("inet_pton failed");
+                }
+                service.sin_port = htons(23);
+                if (connect(s, (SOCKADDR*)&service, sizeof(service)) == SOCKET_ERROR) {
+                    closesocket(s);
+                    throw std::runtime_error("connect failed");
+                }
+                // send the command
+                std::string command {args};
+                command += "\n";
+                if (send(s, command.c_str(), static_cast<int>(command.size()), 0) == SOCKET_ERROR) {
+                    closesocket(s);
+                    throw std::runtime_error("send failed");
+                }
+                // receive the response
+                std::string response;
+                for (;;) {
+                    char buffer[1024];
+                    int bytesReceived = recv(s, buffer, sizeof(buffer), 0);
+                    if (bytesReceived == SOCKET_ERROR) {
+                        std::cerr << "recv failed" << std::endl;
+                        closesocket(s);
+                        return 1;
+                    }
+                    else if (bytesReceived == 0) {
+                        break;
+                    }
+                    response += std::string(buffer, bytesReceived);
+                    if (response.back() == '\n') {
+                        response.pop_back();
+                        break;
+                    }
+                }
+                ::MessageBoxA(nullptr, response.c_str(), "Response", MB_OK);
+            }
+            catch(std::exception const &e) {
+                ::MessageBoxA(nullptr, e.what(), "Error", MB_OK|MB_ICONERROR);
+            }
+            return 0;
+        }
+
         auto fconfig{std::make_shared<config::file_config>("./beatograph.ini")};
 
         // load toggl_logins
@@ -160,6 +233,8 @@ int main()
 
         auto text_command_host = std::make_shared<structural::text_command::host>();
         registrar::add({}, text_command_host);
+
+        
 
         // get the Groq API key from GROQ_API_KEY
         auto grok_api_key = localhost->get_env_variable("GROK_API_KEY");
@@ -283,6 +358,7 @@ int main()
         auto quitting = std::make_shared<std::function<bool()>>([]{ return views::quitting(); });
         registrar::add("quitting", quitting);
 
+        auto telnet_host = std::make_shared<hosting::telnet::host>(*quitting);
 
         ssh::screen_all ssh_all{};
 
