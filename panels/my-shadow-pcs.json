@@ -10,7 +10,8 @@
             "type": "command-output",
             "title": "Shadow PCs",
             "command": "curl -s https://api.eu.shadow.tech/v1/subscription/?page=0&page_size=10&product_family=cloudpc -H \"authorization: Bearer ${SHADOW_TECH_TOKEN}\"",
-            "view": "json"
+            "view": "json",
+            "auto-refresh": 60
         },
         {
             "type": "command-output",

@@ -75,8 +75,12 @@ namespace panel {
                     auto const command = element.at("command").get<std::string>();
                     auto const title = element.at("title").get<std::string>();
                     auto const view_type = element.contains("view") ? element.at("view").get<std::string>() : "text";
+                    std::optional<std::chrono::system_clock::duration> autorefresh_seconds = std::nullopt;
+                    if (element.contains("auto-refresh")) {
+                        autorefresh_seconds = std::chrono::seconds(element.at("auto-refresh").get<int>());
+                    }
                     if (view_type == "json") {
-                        return [command, localhost, title]{
+                        return [command, localhost, title, autorefresh_seconds]{
                             views::cached_view<nlohmann::json>(title,
                             [command, localhost] {
                                 auto const output {localhost->execute_command(command)}; 
@@ -94,17 +98,21 @@ namespace panel {
                             [](nlohmann::json const &output) {
                                 static views::json jv;
                                 jv.render(output);
-                            });
+                            },
+                            false,
+                            autorefresh_seconds);
                         };
                     }
-                    return [command, localhost, title]{
+                    return [command, localhost, title, autorefresh_seconds]{
                         views::cached_view<std::string>(title,
                         [command, localhost] {
                             return localhost->execute_command(command);
                         },
                         [](std::string const &output) {
                             ImGui::TextWrapped("%s", output.c_str());
-                        });
+                        },
+                        false,
+                        autorefresh_seconds);
                     };
                 }},
                 {"input", [localhost, this] (nlohmann::json const &element) -> fn_t {

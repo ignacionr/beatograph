@@ -17,22 +17,20 @@ namespace views {
     void cached_view(
         std::string const &name, std::function<cached_t()> const &factory, 
         std::function<void(cached_t const &)> const &renderer,
-        bool no_title = false) 
+        bool no_title = false,
+        std::optional<std::chrono::system_clock::duration> autorefresh_seconds = std::nullopt)
     {
         using cached_item_t = std::expected<cached_t, std::string>;
         using ptr_t = std::shared_ptr<cached_item_t>;
-        using envelope_t = std::atomic<ptr_t>;
+        using envelope_t = std::pair<std::atomic<ptr_t>, std::chrono::system_clock::time_point>;
 
         static std::unordered_map<int, envelope_t> cache;
 
-        if (no_title || ImGui::CollapsingHeader(name.c_str())) {
-            auto const item_id {ImGui::GetID(name.c_str())};
-            envelope_t cached_copy{cache[item_id].load()};
-            ptr_t item_ptr = cached_copy.load();
-            ImGui::PushID(item_id);
-            if (item_ptr == nullptr) {
-                cache[item_id].store(std::make_shared<cached_item_t>(std::unexpected("Loading...")));
-                std::thread([name, factory, item_id] {
+        auto const item_id {ImGui::GetID(name.c_str())};
+        auto reload = [&name, &factory, item_id] {
+                cache[item_id].second = std::chrono::system_clock::now();
+                cache[item_id].first.store(std::make_shared<cached_item_t>(std::unexpected("Loading...")));
+                std::thread([factory, item_id] {
                     ptr_t contents;
                     try {
                         contents = std::make_shared<cached_item_t>(factory());
@@ -40,8 +38,23 @@ namespace views {
                     catch(std::exception const &ex) {
                         contents = std::make_shared<cached_item_t>(std::unexpected(ex.what()));
                     }
-                    cache[item_id].store(contents);
+                    cache[item_id].first.store(contents);
                 }).detach();
+        };
+
+        if (autorefresh_seconds.has_value()) {
+            auto const now = std::chrono::system_clock::now();
+            if (!cache.contains(item_id) || cache[item_id].second + autorefresh_seconds.value() < now) {
+                reload();
+            }
+        }
+
+        if (no_title || ImGui::CollapsingHeader(name.c_str())) {
+            envelope_t &cached_copy{cache[item_id]};
+            ptr_t item_ptr = cached_copy.first.load();
+            ImGui::PushID(item_id);
+            if (item_ptr == nullptr) {
+                reload();
             }
             else {
                 if (item_ptr->has_value()) {
