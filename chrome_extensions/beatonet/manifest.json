@@ -1,0 +1,15 @@
+{
+    "manifest_version": 3,
+    "name": "Beatonet",
+    "version": "1.0",
+    "permissions": [
+        "webRequest"
+    ],
+    "background": {
+        "service_worker": "background.js"
+    },
+    "host_permissions": [
+        "https://manager.eu.shadow.tech/*",
+        "https://api.eu.shadow.tech/*"
+    ]
+}
