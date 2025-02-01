@@ -11,7 +11,8 @@ namespace hosting::telnet
     class host
     {
     public:
-        host(std::function<bool()> quit) {
+        using handler_t = std::function<std::string(std::string_view)>;
+        host(std::function<bool()> quit, handler_t handler) {
             // bind to telnet port
             WSADATA wsaData;
             if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
@@ -32,7 +33,7 @@ namespace hosting::telnet
                 closesocket(socket_);
                 throw std::runtime_error("bind failed");
             }
-            thread_ = std::jthread([this, quit]() {
+            thread_ = std::jthread([this, quit, handler]() {
                 listen(socket_, 5);
                 while (!quit())
                 {
@@ -42,7 +43,7 @@ namespace hosting::telnet
                         if (INVALID_SOCKET != socket_)
                             closesocket(socket_);
                     }
-                    std::thread([acceptSocket]() {
+                    std::thread([acceptSocket, handler]() {
                         std::string line;
                         for (;;) {
                             char buffer[1024];
@@ -57,10 +58,14 @@ namespace hosting::telnet
                             if (line.back() == '\n')
                             {
                                 line.pop_back();
+                                if (line.back() == '\r')
+                                {
+                                    line.pop_back();
+                                }
                                 break;
                             }
                         }
-                        std::string message = std::format("Hello, World!\nYou said {}", line);
+                        std::string message = handler(line);
                         send(acceptSocket, message.c_str(), static_cast<int>(message.size()), 0);
                         closesocket(acceptSocket);
                     }).detach();
