@@ -5,6 +5,7 @@
 #include <functional>
 #include <stdexcept>
 #include <thread>
+#include "options.hpp"
 
 namespace hosting::telnet
 {
@@ -44,7 +45,14 @@ namespace hosting::telnet
                             closesocket(socket_);
                     }
                     std::thread([acceptSocket, handler]() {
-                        std::string line;
+                        // first negotiate telnet options
+                        option_group options;
+                        options.add(option_echo{});
+                        options.add(option_binary{});
+                        auto const initiate {options.initiate()};
+                        send(acceptSocket, initiate.c_str(), static_cast<int>(initiate.size()), 0);
+                        std::string line; // Buffer for incoming data
+                        std::string echo;
                         for (;;) {
                             char buffer[1024];
                             int bytesReceived = recv(acceptSocket, buffer, sizeof(buffer), 0);
@@ -54,11 +62,41 @@ namespace hosting::telnet
                                 closesocket(acceptSocket);
                                 return;
                             }
-                            line += std::string(buffer, bytesReceived);
-                            if (line.back() == '\n')
+                            auto received = std::string_view{buffer, static_cast<size_t>(bytesReceived)};
+                            // are these negotiation bytes?
+                            std::string negotiation_reply;
+                            while (received.size() >= 3 && received[0] == '\xFF')
+                            {
+                                // yes, handle
+                                negotiation_reply += options.reply(received.data());
+                                received.remove_prefix(3);
+                            }
+                            if (!negotiation_reply.empty())
+                            {
+                                send(acceptSocket, negotiation_reply.c_str(), static_cast<int>(negotiation_reply.size()), 0);
+                            }
+                            for (char c : received)
+                            {
+                                if (c == '\b' && !line.empty())
+                                {
+                                    line.pop_back();
+                                    continue;
+                                }
+                                line += c;
+                            }
+                            echo = std::format("{}", line);
+                            if (options[option_echo::code()].enabled_) {
+                                // send backspaces to erase the line
+                                for (size_t i = 0; i < line.size(); ++i)
+                                {
+                                    echo += '\b';
+                                }
+                                send(acceptSocket, echo.c_str(), static_cast<int>(echo.size()), 0);
+                            }
+                            if (!line.empty() && line.back() == '\n')
                             {
                                 line.pop_back();
-                                if (line.back() == '\r')
+                                if (!line.empty() && line.back() == '\r')
                                 {
                                     line.pop_back();
                                 }

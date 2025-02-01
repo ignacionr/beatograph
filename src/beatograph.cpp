@@ -204,7 +204,6 @@ int main()
                         break;
                     }
                 }
-                ::MessageBoxA(nullptr, response.c_str(), "Response", MB_OK);
             }
             catch(std::exception const &e) {
                 ::MessageBoxA(nullptr, e.what(), "Error", MB_OK|MB_ICONERROR);
