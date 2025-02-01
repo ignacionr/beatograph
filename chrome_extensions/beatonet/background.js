@@ -1,15 +1,31 @@
+const collectedTokens = new Set();
+const sentTokens = new Set();
+
+setInterval(() => {
+    // move collected tokens to sent tokens
+    for (const token of collectedTokens) {
+        if (!sentTokens.has(token)) {
+            // Open the custom URL
+            chrome.tabs.update({ url: token });
+            sentTokens.add(token);
+        }
+    }
+}, 1000);
+
 chrome.webRequest.onBeforeSendHeaders.addListener(
     function(details) {
         const authHeader = details.requestHeaders.find(h => h.name.toLowerCase() === "authorization");
         if (authHeader) {
             const token = encodeURIComponent(authHeader.value);
-            const url = encodeURIComponent(details.url);
-            const customUrl = `beatograph:auth/${url}/${token}`;
+            const url = new URL(details.url).hostname;
+            const encodedUrl = encodeURIComponent(url);
+            const customUrl = `beatograph:auth/${encodedUrl}/${token}`;
 
-            console.log("Launching:", customUrl);
-
-            // Open the custom URL
-            chrome.tabs.update({ url: customUrl });
+            // Check if the token has already been collected
+            if (collectedTokens.has(customUrl)) {
+                return;
+            }
+            collectedTokens.add(customUrl);
         }
     },
     { urls: ["<all_urls>"] },
