@@ -233,7 +233,24 @@ int main()
         auto text_command_host = std::make_shared<structural::text_command::host>();
         registrar::add({}, text_command_host);
 
-        
+        text_command_host->add_source({
+            [](std::string const &, std::function<void(std::string const &)> callback) {
+            },
+            [](std::string const &command) -> bool {
+                if (command.starts_with("auth/")) {
+                    auto const &auth = command.substr(5);
+                    if (auto const pos = auth.find('/'); pos != std::string::npos) {
+                        auto const &service = auth.substr(0, pos);
+                        auto const &token = auth.substr(pos + 1);
+                        auto env_variable = std::format("{}_TOKEN", service);
+                        auto localhost = registrar::get<hosting::local::host>({});
+                        localhost->set_env_variable(env_variable, token);
+                    }
+                    return true;
+                }
+                return false;
+            }
+        });
 
         // get the Groq API key from GROQ_API_KEY
         auto grok_api_key = localhost->get_env_variable("GROK_API_KEY");
