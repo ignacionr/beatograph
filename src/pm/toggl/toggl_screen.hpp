@@ -43,12 +43,20 @@ namespace toggl
                 return lhs->at("start").get<std::string>() < rhs->at("start").get<std::string>();
             });
             for (auto const &entry : entries) {
-                auto duration = std::chrono::seconds(entry->at("duration").get<long long>());
-                auto formatted_duration = std::chrono::hh_mm_ss(duration);
-                oss << std::format("GMT@{} ({}): {}\n", 
-                    entry->at("start").get<std::string>().substr(11, 5),
-                    formatted_duration,
-                    entry->at("description").get<std::string>());
+                auto secs = entry->at("duration").get<long long>();
+                if (secs > 0) {
+                    auto duration = std::chrono::seconds(secs);
+                    auto formatted_duration = std::chrono::hh_mm_ss(duration);
+                    oss << std::format("GMT@{} ({}): {}\n", 
+                        entry->at("start").get<std::string>().substr(11, 5),
+                        formatted_duration,
+                        entry->at("description").get<std::string>());
+                }
+                else {
+                    oss << std::format("GMT@{} (ongoing): {}\n", 
+                        entry->at("start").get<std::string>().substr(11, 5),
+                        entry->at("description").get<std::string>());
+                }
             }
             auto whatsapp {registrar::get<cloud::whatsapp::host>({})};
             whatsapp->send_message(whatsapp_report_chat_id_, oss.str());

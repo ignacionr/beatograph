@@ -98,5 +98,12 @@
             "type": "project-panels",
             "path": "panels"
         }
+    ],
+    "mappings": [
+        {
+            "name": "whatsapp",
+            "port": 3000,
+            "host": "wa.ignacio"
+        }
     ]
 }
