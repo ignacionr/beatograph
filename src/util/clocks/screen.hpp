@@ -65,7 +65,7 @@ namespace clocks
             {
                 constexpr int width = 500;
                 constexpr int height = 500;
-                std::array<unsigned char, width * height * 4> pixels;
+                std::vector<unsigned char> pixels(width * height * 4);
 
                 constexpr auto sqr_radius = (width / 2) * (width / 2);
                 constexpr auto sqr_radius_low = (width * 9 / 20) * (width * 9 / 20);
@@ -100,11 +100,31 @@ namespace clocks
 
                 GLuint texture;
                 glGenTextures(1, &texture);
+                GLenum err;
+                while ((err = glGetError()) != GL_NO_ERROR) {
+                    throw std::runtime_error(std::format("OpenGL error: {}", err));
+                }
+                
                 glBindTexture(GL_TEXTURE_2D, texture);
+                while ((err = glGetError()) != GL_NO_ERROR) {
+                    throw std::runtime_error(std::format("OpenGL error: {}", err));
+                }
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+                while ((err = glGetError()) != GL_NO_ERROR) {
+                    throw std::runtime_error(std::format("OpenGL error: {}", err));
+                }
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                while ((err = glGetError()) != GL_NO_ERROR) {
+                    throw std::runtime_error(std::format("OpenGL error: {}", err));
+                }
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                while ((err = glGetError()) != GL_NO_ERROR) {
+                    throw std::runtime_error(std::format("OpenGL error: {}", err));
+                }
                 glBindTexture(GL_TEXTURE_2D, 0);
+                while ((err = glGetError()) != GL_NO_ERROR) {
+                    throw std::runtime_error(std::format("OpenGL error: {}", err));
+                }
 
                 texture_id = (ImTextureID)(intptr_t)texture;
             }
