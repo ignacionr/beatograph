@@ -60,6 +60,8 @@
 #include "structural/text_command/host.hpp"
 #include "structural/text_command/screen.hpp"
 #include "hosting/telnet/host.hpp"
+#include "cloud/whatsapp/screen.hpp"
+#include "cloud/whatsapp/host.hpp"
 
 void setup_fonts()
 {
@@ -212,6 +214,7 @@ int main()
         }
 
         auto fconfig{std::make_shared<config::file_config>("./beatograph.ini")};
+        registrar::add({}, fconfig);
 
         // load toggl_logins
         static std::string_view constexpr toggl_login_base{"toggl_login."};
@@ -428,9 +431,12 @@ int main()
              {
                     auto toggle_client {std::make_shared<toggl::client>(
                             [&notify_host](std::string_view text) { notify_host(text, "Toggl"); })};
-                    toggle_client->set_login(registrar::get<toggl::login::host>(node.at("login_name")));
-                    auto ts {std::make_shared<toggl::screen>(toggle_client, 
-                            static_cast<int>(node.at("daily_goal").get<float>() * 3600))};
+                    std::string const &login_name = node.at("login_name");
+                    toggle_client->set_login(registrar::get<toggl::login::host>(login_name));
+                    auto ts {
+                        std::make_shared<toggl::screen>(toggle_client, 
+                        static_cast<int>(node.at("daily_goal").get<float>() * 3600),
+                        login_name)};
                     if (node.contains("id")) {
                         toggl_screens_by_id[node.at("id")] = ts;
                     }
@@ -488,6 +494,16 @@ int main()
                             radio_screen->render();
                             rss_screen->render(); },
                                 menu_tabs, ImVec4(0.05f, 0.5f, 0.05f, 1.0f)};
+             }},
+             {"whatsapp", [&](nlohmann::json::object_t const &) {
+                 auto host = std::make_shared<cloud::whatsapp::host>();
+                 registrar::add({}, host);
+                 auto screen = std::make_shared<cloud::whatsapp::screen>();
+                 return group_t{ICON_MD_CHAT_BUBBLE " WhatsApp",
+                                [host, screen] {
+                                    screen->render(*host);
+                                },
+                                menu_tabs};
              }},
             {"world-clocks",
              [&menu_tabs_and, localhost, &notify_host, gpt](nlohmann::json::object_t const &node)

@@ -10,7 +10,7 @@
             "id": "toggl-betmavrik",
             "title": "\uf075 Toggl Betmavrik",
             "login_name": "Personal",
-            "daily_goal": 9
+            "daily_goal": 8.5
         },
         {
             "type": "toggl",
@@ -90,6 +90,9 @@
         },
         {
             "type": "notifications"
+        },
+        {
+            "type": "whatsapp"
         },
         {
             "type": "project-panels",

@@ -1,4 +1,5 @@
 #pragma once
+#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <ctime>
@@ -17,15 +18,43 @@
 #include "../external/IconsMaterialDesign.h"
 #include "../../registrar.hpp"
 #include "login/screen.hpp"
+#include "../../structural/config/file_config.hpp"
+#include "../../cloud/whatsapp/host.hpp"
 
 namespace toggl
 {
     struct screen
     {
-        screen(std::shared_ptr<client> client_ptr, int daily_second_target) 
-        : client_{client_ptr}, seconds_daily_target_{daily_second_target} {}
+        screen(std::shared_ptr<client> client_ptr, int daily_second_target, std::string const &login_name) 
+        : client_{client_ptr}, seconds_daily_target_{daily_second_target}, login_name_{login_name} {}
 
-        void render_entry(auto const &entry, auto &current_day, auto &current_day_seconds)
+        void report(std::string_view event, std::vector<nlohmann::json const *> &entries) {
+            if (whatsapp_report_chat_id_.empty()) {
+                whatsapp_report_chat_id_ = registrar::get<config::file_config>({})->get(report_key()).value_or(std::string{});
+            }
+            if (whatsapp_report_chat_id_.empty()) {
+                config_mode_ = true;
+                return;
+            }
+            std::ostringstream oss;
+            oss << event << "\n";
+            // sort the entries by start time
+            std::sort(entries.begin(), entries.end(), [](nlohmann::json const *lhs, nlohmann::json const *rhs) {
+                return lhs->at("start").get<std::string>() < rhs->at("start").get<std::string>();
+            });
+            for (auto const &entry : entries) {
+                auto duration = std::chrono::seconds(entry->at("duration").get<long long>());
+                auto formatted_duration = std::chrono::hh_mm_ss(duration);
+                oss << std::format("GMT@{} ({}): {}\n", 
+                    entry->at("start").get<std::string>().substr(11, 5),
+                    formatted_duration,
+                    entry->at("description").get<std::string>());
+            }
+            auto whatsapp {registrar::get<cloud::whatsapp::host>({})};
+            whatsapp->send_message(whatsapp_report_chat_id_, oss.str());
+        }
+
+        void render_entry(auto const &entry, auto &current_day, auto &current_day_seconds, auto &todays_entries)
         {
             ImGui::PushID(&entry);
             struct std::tm tm = {};
@@ -36,6 +65,11 @@ namespace toggl
             auto start_utc = std::chrono::system_clock::from_time_t(std::mktime(&tm));
             auto start = start_utc + std::chrono::seconds(utc_offset_seconds);
             auto day_start = std::chrono::floor<std::chrono::days>(start);
+            auto const today {std::chrono::floor<std::chrono::days>(std::chrono::system_clock::now())};
+            bool const its_today{day_start == today};
+            if (its_today) {
+                todays_entries.push_back(&entry);
+            }
             if (current_day != day_start)
             {
                 if (current_day_seconds != 0) // only days with at least one entry
@@ -53,19 +87,36 @@ namespace toggl
                     }
                     ImGui::TableNextColumn();
                     ImGui::Text("Achieved: %.2f%%", percentage);
-
                     ImGui::TableNextColumn();
                     ImGui::Text("Total: %s", duration_formatted.c_str());
                     if (percentage < 100.0)
                     {
                         ImGui::PopStyleColor();
                     }
+                    if (current_day == today) {
+                        if (ImGui::SameLine(); ImGui::SmallButton("Report Start of Day")) {
+                            try {
+                            report("Start of Day", todays_entries);
+                            }
+                            catch(...){}
+                        }
+                        if (ImGui::SameLine(); ImGui::SmallButton("Report End of Day")) {
+                            try {
+                            report("End of Day", todays_entries);
+                            }
+                            catch(...) {}
+                        }
+                    }
                     current_day_seconds = 0;
                 }
                 current_day = day_start;
                 ImGui::TableNextRow();
+                if (its_today) {
+                    ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, IM_COL32(255, 255, 0, 50));
+                }
                 ImGui::TableNextColumn();
-                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 0.0f, 1.0f, 1.0f)); // Light blue color
+                ImGui::PushStyleColor(ImGuiCol_Text, 
+                    its_today? ImVec4(0.9f, 0.9f, 1.0f, 1.0f) : ImVec4(0.2f, 0.2f, 1.0f, 1.0f));
                 ImGui::TextUnformatted(std::format("{:%A, %Y-%m-%d}", current_day).c_str());
                 ImGui::PopStyleColor();
                 ImGui::TableNextColumn();
@@ -90,6 +141,9 @@ namespace toggl
 
             // show the entry on a table with two columns
             ImGui::TableNextRow();
+            if (its_today) {
+                ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, IM_COL32(255, 255, 0, 50));
+            }
             ImGui::TableNextColumn();
             ImGui::Text("%s", start_formatted.c_str());
             ImGui::TableNextColumn();
@@ -152,6 +206,10 @@ namespace toggl
             query();
         }
 
+        std::string report_key() const {
+            return std::format("toggl.{}.whatsapp_report_chat_id", login_name_);
+        }
+
         void render() {
             if (config_mode_) {
                 if (new_login_) {
@@ -175,6 +233,12 @@ namespace toggl
                         }
                         ImGui::EndCombo();
                     }
+                }
+                if (whatsapp_report_chat_id_.reserve(200); ImGui::InputText("Whatsapp Report Chat ID", whatsapp_report_chat_id_.data(), whatsapp_report_chat_id_.capacity())) {
+                    whatsapp_report_chat_id_ = whatsapp_report_chat_id_.data();
+                    registrar::get<config::file_config>({})->set(
+                        report_key(), 
+                        whatsapp_report_chat_id_);
                 }
                 if (ImGui::SmallButton(ICON_MD_SAVE " Save")) {
                     if (new_login_) {
@@ -231,9 +295,11 @@ namespace toggl
                         ImGui::TableSetupColumn("Duration", ImGuiTableColumnFlags_WidthFixed, 200.0f);
                         std::chrono::time_point<std::chrono::system_clock, std::chrono::days> current_day;
                         time_t current_day_seconds = 0;
+                        ImGui::TableHeadersRow();
+                        std::vector<const nlohmann::json *> todays_entries;
                         for (const auto &entry : *entries)
                         {
-                            render_entry(entry, current_day, current_day_seconds);
+                            render_entry(entry, current_day, current_day_seconds, todays_entries);
                         }
                         ImGui::EndTable();
                     }
@@ -297,6 +363,7 @@ namespace toggl
         bool config_mode_{};
         bool new_login_{};
         std::string login_name_;
+        std::string whatsapp_report_chat_id_;
         std::unique_ptr<login::screen> login_screen_;
     };
 }
