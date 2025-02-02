@@ -91,7 +91,8 @@ namespace toggl
                         ImGui::TableNextRow();
                         ImGui::TableNextColumn();
                         ImGui::ProgressBar(percentage / 100.0f, ImVec2(100.0, 20.0));
-                        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.0f, 0.0f, 1.0f)); // Red color
+                        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
+                        ImGui::TableNextRow();
                     }
                     ImGui::TableNextColumn();
                     ImGui::Text("Achieved: %.2f%%", percentage);
@@ -102,7 +103,7 @@ namespace toggl
                         ImGui::PopStyleColor();
                     }
                     if (current_day == today) {
-                        if (ImGui::SameLine(); ImGui::SmallButton("Report Start of Day")) {
+                        if (ImGui::SmallButton("Report Start of Day")) {
                             try {
                             report("Start of Day", todays_entries);
                             }
