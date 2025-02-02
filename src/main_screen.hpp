@@ -104,13 +104,13 @@ struct main_screen
         // run the main loop
         SDL_Event event;
         running = true;
-        while (running)
+        while (running.load())
         {
             while (SDL_PollEvent(&event))
             {
                 if (event.type == SDL_QUIT)
                 {
-                    running = false;
+                    running.store(false);
                 }
                 ImGui_ImplSDL2_ProcessEvent(&event);
             }
@@ -136,6 +136,10 @@ struct main_screen
 
             SDL_GL_SwapWindow(window);
         }
+    }
+
+    void quit() {
+        running.store(false);
     }
 
     auto renderer() const
@@ -175,7 +179,7 @@ private:
                 {
                     if (ImGui::MenuItem("Exit"))
                     {
-                        running = false;
+                        running.store(false);
                     }
                     screen->render_menu("File");
                     ImGui::EndMenu();
@@ -224,6 +228,6 @@ private:
     SDL_GLContext gl_context;
     SDL_Renderer *sdl_renderer;
     std::shared_ptr<screen_t> screen;
-    bool running{false};
+    std::atomic<bool> running{false};
     bool show_stats{false};
 };
