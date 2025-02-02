@@ -242,6 +242,12 @@ namespace toggl
                     {
                         ShellExecuteA(nullptr, "open", "https://track.toggl.com/", nullptr, nullptr, SW_SHOW);
                     }
+                    if (ImGui::SameLine(); ImGui::Button("Report: Last Month")) {
+                        ShellExecuteA(nullptr, "open", "https://track.toggl.com/reports/detailed/8957518/period/prevMonth", nullptr, nullptr, SW_SHOW);
+                    }
+                    if (ImGui::SameLine(); ImGui::Button("Report: Current Month")) {
+                        ShellExecuteA(nullptr, "open", "https://track.toggl.com/reports/detailed/8957518/period/thisMonth", nullptr, nullptr, SW_SHOW);
+                    }
                     ImGui::NextColumn();
                     if (new_description.reserve(256); ImGui::InputText("New Task", new_description.data(), new_description.capacity(), ImGuiInputTextFlags_EnterReturnsTrue))
                     {
