@@ -4,6 +4,9 @@
 
 #include <string>
 #include <unordered_map>
+#include <memory>
+
+#include "ansi.hpp"
 
 using namespace std::string_literals;
 
@@ -11,6 +14,7 @@ namespace hosting::telnet {
     struct option {
         option(char code) : code_{code} {
         }
+        virtual ~option() = default;
 
         std::string DO() const {
             return "\xFF\xFD"s + code_;
@@ -28,7 +32,7 @@ namespace hosting::telnet {
             return "\xFF\xFC"s + code_;
         }
 
-        std::string reply_DO() {
+        virtual std::string reply_DO() {
             if (do_replied_) {
                 return {};
             }
@@ -42,7 +46,11 @@ namespace hosting::telnet {
             }
         }
 
-        std::string reply_DONT() {
+        virtual std::string reply_SUB(std::string_view) {
+            return {};
+        }
+
+        virtual std::string reply_DONT() {
             if (do_replied_) {
                 return {};
             }
@@ -56,7 +64,7 @@ namespace hosting::telnet {
             }
         }
 
-        std::string reply_WILL() {
+        virtual std::string reply_WILL() {
             if (will_replied_) {
                 return {};
             }
@@ -70,7 +78,7 @@ namespace hosting::telnet {
             }
         }
 
-        std::string reply_WONT() {
+        virtual std::string reply_WONT() {
             if (will_replied_) {
                 return {};
             }
@@ -103,6 +111,37 @@ namespace hosting::telnet {
         }
         static char code() {return '\x01';}
     };
+
+    struct option_terminal_type : option {
+        option_terminal_type() : option{code()} {
+            enabled_ = true;
+            forced_ = true;
+        }
+        static char code() { return '\x18'; }
+
+        std::string reply_DO() override {
+            return "\xFF\xFA"s + code_ + "\x01\xFF\xF0"s;
+        }
+
+        std::string reply_SUB(std::string_view sub_command) override {
+            if (sub_command[0] == 0) {
+                terminal_type_ = sub_command.substr(1);
+                return {};
+            }
+            throw std::runtime_error("unknown sub-command");
+        }
+
+        std::string terminal_type_;
+    };
+
+    struct option_environment : option {
+        option_environment() : option{code()} {
+            enabled_ = true;
+            forced_ = true;
+        }
+        static char code() { return '\x24'; }
+    };
+
     struct option_unknown : option {
         option_unknown(char code) : option{code} {
             allowed_ = false;
@@ -110,43 +149,58 @@ namespace hosting::telnet {
     };
 
     struct option_group {
-        void add(option&& opt) {
-            options.emplace(opt.code_, std::move(opt));
+        void add(std::unique_ptr<option>&& opt) {
+            options.emplace(opt->code_, std::move(opt));
         }
-        option& operator[](char code) {
+        std::unique_ptr<option>& operator[](char code) {
             if (auto it = options.find(code); it != options.end()) {
                 return it->second;
             }
-            return options.emplace(code, option_unknown{code}).first->second;
+            return options.emplace(code, std::make_unique<option_unknown>(code)).first->second;
         }
-        std::string reply(const char* buffer) {
+        std::string reply(const char* buffer, size_t &skip) {
             auto &option = (*this)[buffer[2]];
+            skip = 3;
             switch (buffer[1]) {
+            case '\xFA':
+            {
+                // this is a sub-command, they end is marked by \xFF\xF0
+                auto end = std::find(buffer + 3, buffer + 1024, '\xFF');
+                if (end == buffer + 1024) {
+                    throw std::runtime_error("sub-command too long");
+                }
+                if (end + 1 == buffer + 1024 || end[1] != '\xF0') {
+                    throw std::runtime_error("sub-command not terminated");
+                }
+                skip = end - buffer + 2;
+                std::string_view sub_command{buffer + 3, static_cast<size_t>(end - buffer - 3)};
+                return option->reply_SUB(sub_command);
+            }
             case '\xFB':
-                return option.reply_DO();
+                return option->reply_DO();
             case '\xFC':
-                return option.reply_DONT();
+                return option->reply_DONT();
             case '\xFD':
-                return option.reply_WILL();
+                return option->reply_WILL();
             case '\xFE':
-                return option.reply_WONT();
+                return option->reply_WONT();
             default:
-                return "";
+                return {};
             }
         }
         std::string initiate() const {
             std::string result;
             for (auto const &[_, option] : options) {
-                if (option.forced_) {
-                    result += option.DO();
+                if (option->forced_) {
+                    result += option->DO();
                 }
-                else if (option.enabled_) {
-                    result += option.WILL();
+                else if (option->enabled_) {
+                    result += option->WILL();
                 }
             }
             return result;
         }
 
-        std::unordered_map<char, option> options;
+        std::unordered_map<char, std::unique_ptr<option>> options;
     };
 }

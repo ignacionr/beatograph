@@ -47,12 +47,14 @@ namespace hosting::telnet
                     std::thread([acceptSocket, handler]() {
                         // first negotiate telnet options
                         option_group options;
-                        options.add(option_echo{});
-                        options.add(option_binary{});
+                        options.add(std::make_unique<option_echo>());
+                        options.add(std::make_unique<option_binary>());
+                        options.add(std::make_unique<option_terminal_type>());
                         auto const initiate {options.initiate()};
                         send(acceptSocket, initiate.c_str(), static_cast<int>(initiate.size()), 0);
                         std::string line; // Buffer for incoming data
                         std::string echo;
+                        option_terminal_type& terminal_type = *static_cast<option_terminal_type*>(options[option_terminal_type::code()].get());
                         for (;;) {
                             char buffer[1024];
                             int bytesReceived = recv(acceptSocket, buffer, sizeof(buffer), 0);
@@ -68,8 +70,9 @@ namespace hosting::telnet
                             while (received.size() >= 3 && received[0] == '\xFF')
                             {
                                 // yes, handle
-                                negotiation_reply += options.reply(received.data());
-                                received.remove_prefix(3);
+                                size_t skip;
+                                negotiation_reply += options.reply(received.data(), skip);
+                                received.remove_prefix(skip);
                             }
                             if (!negotiation_reply.empty())
                             {
@@ -84,8 +87,16 @@ namespace hosting::telnet
                                 }
                                 line += c;
                             }
-                            echo = std::format("{}", line);
-                            if (options[option_echo::code()].enabled_) {
+                            if (terminal_type.terminal_type_ == "ANSI")
+                            {
+                                echo = std::format("{}{}{}>", 
+                                    ansi::clear_line(),
+                                    ansi::cursor_position(1, 1),
+                                    line);
+                                send(acceptSocket, echo.c_str(), static_cast<int>(echo.size()), 0);
+                            }
+                            else if (options[option_echo::code()]->enabled_) {
+                                echo = std::format("{}", line);
                                 // send backspaces to erase the line
                                 for (size_t i = 0; i < line.size(); ++i)
                                 {
