@@ -631,6 +631,9 @@ int main()
 
         setup_fonts();
 
+        text_command_host->add_command("Quit", [screen]
+                            { screen->quit(); });
+
         screen->run(
             [&notify_host](std::string_view text)
             { notify_host(text, "Main"); },
