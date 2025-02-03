@@ -55,6 +55,8 @@ namespace hosting::local
         }
         unsigned short mapped_port() const { return mapped_port_; }
         unsigned short local_port() const { return local_port_; }
+        auto localhost() const { return localhost_; }
+        auto hostname() const { return hostname_; }
 
     private:
         unsigned short mapped_port_;

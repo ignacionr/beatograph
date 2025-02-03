@@ -25,7 +25,6 @@
         "utf8h",
         "tinyfiledialogs",
         "libssh",
-        "librsvg",
         "zlib",
         "libpng",
         "sqlite3",

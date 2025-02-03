@@ -61,9 +61,6 @@ target_link_libraries(beatograph PRIVATE
   tinyfiledialogs::tinyfiledialogs
   tinyxml2
   sqlite3
-  rsvg-2
-  cairo
-  gobject-2.0
   # Td::TdStatic
 )
 

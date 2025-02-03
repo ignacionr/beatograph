@@ -391,12 +391,12 @@ int main()
         });
 
         // set up port mappings, if there are any
-        std::unordered_map<std::string, std::unique_ptr<hosting::local::mapping>> mappings;
+        std::unordered_map<std::string, std::shared_ptr<hosting::local::mapping>> mappings;
         if (all_tabs_json.contains("mappings")) {
             for (auto const &mapping : all_tabs_json.at("mappings")) {
                 auto const port = mapping.at("port").get<u_short>();
                 auto const host = mapping.at("host").get_ref<std::string const &>();
-                mappings.emplace(mapping.at("name").get<std::string>(), std::make_unique<hosting::local::mapping>(port, host, localhost));
+                mappings.emplace(mapping.at("name").get<std::string>(), std::make_shared<hosting::local::mapping>(port, host, localhost));
             }
         }
 
@@ -507,7 +507,7 @@ int main()
                                 menu_tabs, ImVec4(0.05f, 0.5f, 0.05f, 1.0f)};
              }},
              {"whatsapp", [&](nlohmann::json::object_t const &) {
-                 auto host = std::make_shared<cloud::whatsapp::host>(mappings.at("whatsapp")->local_port());
+                 auto host = std::make_shared<cloud::whatsapp::host>(mappings.at("whatsapp"));
                  registrar::add({}, host);
                  auto screen = std::make_shared<cloud::whatsapp::screen>();
                  return group_t{ICON_MD_CHAT_BUBBLE " WhatsApp",

@@ -11,10 +11,13 @@
 #include <SDL2/SDL_image.h>
 #include <curl/curl.h>
 #include <GL/glew.h>
+
+#if defined (SUPPORT_SVG)
 extern "C"
 {
 #include <librsvg/rsvg.h>
 }
+#endif
 
 #include "hosting/http/fetch.hpp"
 
@@ -78,6 +81,7 @@ struct img_cache
             return pos->second;
         }
         SDL_Surface *surface = nullptr;
+#if defined (SUPPORT_SVG)
         if (file_path.ends_with(".SVG") || file_path.ends_with(".svg"))
         {
             // Initialize librsvg
@@ -113,6 +117,7 @@ struct img_cache
             g_object_unref(handle);
         }
         else
+#endif // SUPPORT_SVG
         {
             surface = IMG_Load(file_path.c_str());
             if (!surface)
