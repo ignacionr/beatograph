@@ -12,6 +12,7 @@
 #include "../../hosting/local_mapping.hpp"
 
 using namespace std::string_literals;
+using namespace std::chrono_literals;
 
 namespace cloud::whatsapp
 {
@@ -27,12 +28,14 @@ namespace cloud::whatsapp
             {
                 result = fn();
             }
-            catch (std::exception const &e)
+            catch (std::runtime_error const &e)
             {
-                if (e.what() == "Couldn't connect to server"s)
+                if (e.what() == "Error: Couldn't connect to server"s)
                 {
                     // try to reconnect
                     mapping_ = std::make_shared<hosting::local::mapping>(mapping_->mapped_port(), mapping_->hostname(), mapping_->localhost());
+                    // give it one second before retrying
+                    std::this_thread::sleep_for(1s);
                     result = fn();
                 }
                 throw;
