@@ -46,7 +46,7 @@ jobs:
         xcopy ${{github.workspace}}/build\Release\* ${{github.workspace}}/release /s /e /y
 
     - name: Upload Release
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: beatograph-win64
         path: ${{github.workspace}}/release
