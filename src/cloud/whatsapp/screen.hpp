@@ -7,6 +7,7 @@
 #include "host.hpp"
 
 #include "../../structural/views/cached_view.hpp"
+#include "classifier.hpp"
 
 namespace cloud::whatsapp
 {
@@ -20,7 +21,7 @@ namespace cloud::whatsapp
                 if (status_string == "CONNECTED") {
                     views::cached_view<nlohmann::json>("Chats", [&] {
                         return h.get_chats();
-                    }, [&h](nlohmann::json const &chats) {
+                    }, [&h, this](nlohmann::json const &chats) {
                         static std::string filter;
                         if (filter.reserve(256); ImGui::InputText("Filter", filter.data(), filter.capacity())) {
                             filter = filter.data();
@@ -29,9 +30,22 @@ namespace cloud::whatsapp
                             auto const &name {chat.at("name").get_ref<const std::string&>()};
                             auto const &id_serialized {chat.at("id").at("_serialized").get_ref<const std::string&>()};
                             if (filter.empty() || name.find(filter) != std::string::npos) {
-                                views::cached_view<nlohmann::json>(name, [&h, &id_serialized] {
+                                auto const classification {classifier_.classify(id_serialized)};
+                                if (classification == "work") {
+                                    ImGui::PushStyleColor(ImGuiCol_Header, ImVec4{1.0f, 0.5f, 0.0f, 0.5f});
+                                }
+                                else if (classification == "personal") {
+                                    ImGui::PushStyleColor(ImGuiCol_Header, ImVec4{1.0f, 1.0f, 0.0f, 0.5f});
+                                }
+                                else {
+                                    ImGui::PushStyleColor(ImGuiCol_Header, ImVec4{0.0f, 0.0f, 1.0f, 0.5f});
+                                }
+                                views::cached_view<nlohmann::json>(std::format("{}##{}", name, id_serialized), [&h, &id_serialized] {
                                     return h.fetch_messages(id_serialized);
-                                }, [id_serialized, &h](nlohmann::json const &messages) {
+                                }, [id_serialized, &h, this, classification](nlohmann::json const &messages) {
+                                    if (!classification.has_value()) {
+                                        classifier_.classify(id_serialized, messages);
+                                    }
                                     if (ImGui::BeginTable("Messages", 2)) {
                                         ImGui::TableSetupColumn("From", ImGuiTableColumnFlags_WidthFixed, 93.0f);
                                         ImGui::TableSetupColumn("Body", ImGuiTableColumnFlags_WidthStretch);
@@ -52,20 +66,35 @@ namespace cloud::whatsapp
                                         new_message.clear();
                                     }
                                     ImGui::EndTable();
-                                    if (ImGui::SmallButton("Copy Chat ID")) {
+                                    if (ImGui::BeginCombo("##Classification", classification.value_or("unclassified").c_str(), ImGuiComboFlags_WidthFitPreview)) {
+                                        if (ImGui::Selectable("work")) {
+                                            classifier_.set(id_serialized, "work");
+                                        }
+                                        if (ImGui::Selectable("personal")) {
+                                            classifier_.set(id_serialized, "personal");
+                                        }
+                                        if (ImGui::Selectable("unclassified")) {
+                                            classifier_.set(id_serialized, "unclassified");
+                                        }
+                                        ImGui::EndCombo();
+                                    }
+                                    if (ImGui::SameLine(); ImGui::SmallButton("Copy Chat ID")) {
                                         ImGui::SetClipboardText(id_serialized.c_str());
                                     }
                                     ImGui::SameLine();
                                 });
+                                ImGui::PopStyleColor();
                             }
                         }
                         ImGui::Columns();
-                    });
+                    }, true);
                 }
                 else {
                     ImGui::Text("Status: %s", status_string.c_str());
                 }
-            });
+            }, true);
         }
+    private:
+        classifier classifier_;
     };
 }

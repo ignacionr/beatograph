@@ -48,14 +48,19 @@ namespace config
             return {};
         }
 
-        void scan_level(std::string_view name_base, auto sink) {
+        void scan_level(std::string_view name_base, auto sink, bool greedy = false) const {
             std::string last_level;
             for (auto const &kv: properties_) {
                 if (kv.first.starts_with(name_base)) {
                     auto v = kv.first.substr(name_base.size());
-                    v = v.substr(0, v.find('.'));
-                    if (last_level != v) {
+                    if (greedy) {
                         sink(v);
+                    }
+                    else {
+                        v = v.substr(0, v.find('.'));
+                        if (last_level != v) {
+                            sink(v);
+                        }
                     }
                 }
             }

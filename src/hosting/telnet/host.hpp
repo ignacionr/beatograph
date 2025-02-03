@@ -14,7 +14,7 @@ namespace hosting::telnet
     {
     public:
         using handler_t = std::function<std::string(std::string_view)>;
-        host(std::function<bool()> quit, handler_t handler)
+        void run(std::function<bool()> quit, handler_t handler)
         {
             // bind to telnet port
             WSADATA wsaData;

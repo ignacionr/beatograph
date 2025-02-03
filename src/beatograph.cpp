@@ -377,18 +377,24 @@ int main()
         auto quitting = std::make_shared<std::function<bool()>>([]{ return views::quitting(); });
         registrar::add("quitting", quitting);
 
-        auto telnet_host = std::make_shared<hosting::telnet::host>(*quitting, [text_command_host](std::string_view command) -> std::string
-        {
-            std::string response;
-            try {
-                (*text_command_host)(std::string{command});
-                response = "OK";
-            }
-            catch (std::exception const &e) {
-                response = std::format("Error: {}", e.what());
-            }
-            return response;
-        });
+        auto telnet_host = std::make_shared<hosting::telnet::host>();
+        try {
+            telnet_host->run(*quitting, [text_command_host](std::string_view command) -> std::string
+            {
+                std::string response;
+                try {
+                    (*text_command_host)(std::string{command});
+                    response = "OK";
+                }
+                catch (std::exception const &e) {
+                    response = std::format("Error: {}", e.what());
+                }
+                return response;
+            });
+        }
+        catch(std::exception const &e) {
+            notify_host(std::format("Telnet Host: {}", e.what()));
+        }
 
         // set up port mappings, if there are any
         std::unordered_map<std::string, std::shared_ptr<hosting::local::mapping>> mappings;
