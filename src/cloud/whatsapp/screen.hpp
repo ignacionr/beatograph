@@ -8,6 +8,7 @@
 
 #include "../../structural/views/cached_view.hpp"
 #include "classifier.hpp"
+#include "autotext.hpp"
 
 namespace cloud::whatsapp
 {
@@ -38,7 +39,7 @@ namespace cloud::whatsapp
                                     ImGui::PushStyleColor(ImGuiCol_Header, ImVec4{1.0f, 1.0f, 0.0f, 0.5f});
                                 }
                                 else {
-                                    ImGui::PushStyleColor(ImGuiCol_Header, ImVec4{0.0f, 0.0f, 1.0f, 0.5f});
+                                    ImGui::PushStyleColor(ImGuiCol_Header, ImVec4{0.5f, 0.5f, 1.5f, 0.5f});
                                 }
                                 views::cached_view<nlohmann::json>(std::format("{}##{}", name, id_serialized), [&h, &id_serialized] {
                                     return h.fetch_messages(id_serialized);
@@ -77,6 +78,33 @@ namespace cloud::whatsapp
                                             classifier_.set(id_serialized, "unclassified");
                                         }
                                         ImGui::EndCombo();
+                                    }
+                                    if (ImGui::SameLine(); ImGui::SmallButton("Say hello")) {
+                                        try {
+                                            auto msg = autotext().say_hello(messages);
+                                            h.send_message(id_serialized, msg);
+                                        }
+                                        catch(const std::exception &e) {
+                                            ::MessageBoxA(nullptr, e.what(), "Error", MB_ICONERROR);
+                                        }
+                                    }
+                                    if (ImGui::SameLine(); ImGui::SmallButton("Reply last")) {
+                                        try {
+                                            auto msg = autotext().reply_last(messages);
+                                            h.send_message(id_serialized, msg);
+                                        }
+                                        catch(const std::exception &e) {
+                                            ::MessageBoxA(nullptr, e.what(), "Error", MB_ICONERROR);
+                                        }
+                                    }
+                                    if (ImGui::SameLine(); ImGui::SmallButton("Reply from Clipboard")) {
+                                        try {
+                                            auto msg = autotext().reply_last(messages, true);
+                                            h.send_message(id_serialized, msg);
+                                        }
+                                        catch(const std::exception &e) {
+                                            ::MessageBoxA(nullptr, e.what(), "Error", MB_ICONERROR);
+                                        }
                                     }
                                     if (ImGui::SameLine(); ImGui::SmallButton("Copy Chat ID")) {
                                         ImGui::SetClipboardText(id_serialized.c_str());
