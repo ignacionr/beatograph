@@ -14,7 +14,8 @@ namespace hosting::telnet
     {
     public:
         using handler_t = std::function<std::string(std::string_view)>;
-        host(std::function<bool()> quit, handler_t handler) {
+        host(std::function<bool()> quit, handler_t handler)
+        {
             // bind to telnet port
             WSADATA wsaData;
             if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
@@ -30,7 +31,7 @@ namespace hosting::telnet
             service.sin_family = AF_INET;
             service.sin_addr.s_addr = INADDR_ANY;
             service.sin_port = htons(23);
-            if (bind(socket_, (SOCKADDR*)&service, sizeof(service)) == SOCKET_ERROR)
+            if (bind(socket_, (SOCKADDR *)&service, sizeof(service)) == SOCKET_ERROR)
             {
                 // obtain the error description
                 int error = WSAGetLastError();
@@ -39,16 +40,24 @@ namespace hosting::telnet
                 closesocket(socket_);
                 throw std::runtime_error(std::format("bind failed: {}", buffer));
             }
-            thread_ = std::jthread([this, quit, handler]() {
+            thread_ = std::jthread([this, quit, handler]()
+                                   {
                 listen(socket_, 5);
                 while (!quit())
                 {
-                    SOCKET acceptSocket = accept(socket_, NULL, NULL);
-                    if (acceptSocket == INVALID_SOCKET)
-                    {
-                        if (INVALID_SOCKET != socket_)
-                            closesocket(socket_);
+                    fd_set readfds;
+                    FD_ZERO(&readfds);
+                    FD_SET(socket_, &readfds);
+                    timeval timeout;
+                    timeout.tv_sec = 2; // 2 seconds timeout
+                    timeout.tv_usec = 0;
+                    int result = select(0, &readfds, NULL, NULL, &timeout);
+                    if (result == SOCKET_ERROR || result == 0) {
+                        continue; // timeout or error, continue to next iteration
                     }
+                    SOCKET acceptSocket = accept(socket_, NULL, NULL);
+                    if (acceptSocket != INVALID_SOCKET)
+                    {
                     std::thread([acceptSocket, handler]() {
                         // first negotiate telnet options
                         option_group options;
@@ -123,16 +132,19 @@ namespace hosting::telnet
                         send(acceptSocket, message.c_str(), static_cast<int>(message.size()), 0);
                         closesocket(acceptSocket);
                     }).detach();
-                }
-            });
+                    }
+                } });
         }
-        ~host(){
-            if (INVALID_SOCKET != socket_) {
+        ~host()
+        {
+            if (INVALID_SOCKET != socket_)
+            {
                 closesocket(socket_);
                 socket_ = INVALID_SOCKET;
             }
             WSACleanup();
         }
+
     private:
         SOCKET socket_;
         std::function<bool()> quit_;
