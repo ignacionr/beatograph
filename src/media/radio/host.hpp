@@ -99,6 +99,7 @@ namespace radio
 
         void stop()
         {
+            std::lock_guard<std::mutex> lock(audio_device_mutex_);
             if (dev != 0)
             {
                 SDL_PauseAudioDevice(dev, 1);
@@ -322,6 +323,7 @@ namespace radio
 
             if (dev == 0)
             {
+                std::lock_guard<std::mutex> lock(audio_device_mutex_);
                 // Set up SDL audio specs
                 SDL_AudioSpec wanted_spec{};
                 wanted_spec.freq = codec_ctx->sample_rate;
@@ -395,6 +397,7 @@ namespace radio
             {
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
             }
+            std::lock_guard<std::mutex> lock(audio_device_mutex_);
             SDL_CloseAudioDevice(dev);
             dev = 0;
             playing = false;
@@ -476,6 +479,7 @@ namespace radio
     private:
         std::map<std::string, std::string> presets_;
 
+        std::mutex audio_device_mutex_;
         SDL_AudioDeviceID dev{};
         SDL_AudioSpec obtained_spec{};
         std::atomic<bool> playing{false};
