@@ -2,6 +2,7 @@
 
 #include "pch.h"
 
+#include <format>
 #include <functional>
 #include <stdexcept>
 #include <thread>
@@ -31,8 +32,12 @@ namespace hosting::telnet
             service.sin_port = htons(23);
             if (bind(socket_, (SOCKADDR*)&service, sizeof(service)) == SOCKET_ERROR)
             {
+                // obtain the error description
+                int error = WSAGetLastError();
+                char buffer[256];
+                FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, 0, buffer, sizeof(buffer), NULL);
                 closesocket(socket_);
-                throw std::runtime_error("bind failed");
+                throw std::runtime_error(std::format("bind failed: {}", buffer));
             }
             thread_ = std::jthread([this, quit, handler]() {
                 listen(socket_, 5);
