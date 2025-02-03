@@ -60,9 +60,10 @@ namespace cloud::whatsapp
                                         }
                                     }
                                     static std::string new_message;
-                                    if (new_message.reserve(256); ImGui::InputText("New Message", new_message.data(), new_message.capacity(), ImGuiInputTextFlags_EnterReturnsTrue)) {
+                                    if (new_message.reserve(256); ImGui::InputText("New Message", new_message.data(), new_message.capacity())) {
                                         new_message = new_message.data();
-                                        // send the message
+                                    }
+                                    if (ImGui::SameLine(); ImGui::Button("Send")) {
                                         h.send_message(id_serialized, new_message);
                                         new_message.clear();
                                     }
@@ -81,8 +82,9 @@ namespace cloud::whatsapp
                                     }
                                     if (ImGui::SameLine(); ImGui::SmallButton("Say hello")) {
                                         try {
-                                            auto msg = autotext().say_hello(messages);
+                                            auto msg = autotext().say_hello(messages, new_message);
                                             h.send_message(id_serialized, msg);
+                                            new_message.clear();
                                         }
                                         catch(const std::exception &e) {
                                             ::MessageBoxA(nullptr, e.what(), "Error", MB_ICONERROR);
@@ -90,8 +92,9 @@ namespace cloud::whatsapp
                                     }
                                     if (ImGui::SameLine(); ImGui::SmallButton("Reply last")) {
                                         try {
-                                            auto msg = autotext().reply_last(messages);
+                                            auto msg = autotext().reply_last(messages, new_message);
                                             h.send_message(id_serialized, msg);
+                                            new_message.clear();
                                         }
                                         catch(const std::exception &e) {
                                             ::MessageBoxA(nullptr, e.what(), "Error", MB_ICONERROR);
@@ -99,8 +102,9 @@ namespace cloud::whatsapp
                                     }
                                     if (ImGui::SameLine(); ImGui::SmallButton("Reply from Clipboard")) {
                                         try {
-                                            auto msg = autotext().reply_last(messages, true);
+                                            auto msg = autotext().reply_last(messages, new_message, true);
                                             h.send_message(id_serialized, msg);
+                                            new_message.clear();
                                         }
                                         catch(const std::exception &e) {
                                             ::MessageBoxA(nullptr, e.what(), "Error", MB_ICONERROR);

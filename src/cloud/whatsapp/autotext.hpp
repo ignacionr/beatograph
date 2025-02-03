@@ -35,12 +35,25 @@ namespace cloud::whatsapp {
             return utf8Str;
         }
 
-        std::string say_hello(nlohmann::json const &sample) const {
+        nlohmann::json reduce_sample(nlohmann::json const &sample, int count = 20) const {
+            nlohmann::json reduced_sample = sample;
+            auto &messages = reduced_sample.at("messages").get_ref<nlohmann::json::array_t &>();
+            if (messages.size() > count) {
+                messages.erase(messages.begin(), messages.end() - count);
+            }
+            return reduced_sample;
+        }
+
+        std::string say_hello(nlohmann::json const &sample, const std::string &new_message) const {
             auto gpt = registrar::get<ignacionr::cppgpt>({})->new_conversation();
             gpt.add_instructions("You are a professional of Public Relations. Create a witty short greeting that adjusts to the language, style and tone of the conversation that the user gives you. Reply with the greeting only.");
-            return gpt.sendMessage(sample.dump(), [](auto a, auto b, auto c) { return http::fetch().post(a, b, c); }).at("choices").at(0).at("message").at("content").get<std::string>();
+            if (!new_message.empty()) {
+                gpt.add_instructions(std::format("Use the following instructions (copy or adapt the message): {}", new_message));
+            }
+            return gpt.sendMessage(reduce_sample(sample).dump(), [](auto a, auto b, auto c) { return http::fetch().post(a, b, c); }).at("choices").at(0).at("message").at("content").get<std::string>();
         }
-        std::string reply_last(nlohmann::json const &sample, bool consume_clipboard = false) const {
+
+        std::string reply_last(nlohmann::json const &sample, const std::string &new_message, bool consume_clipboard = false) const {
             auto gpt = registrar::get<ignacionr::cppgpt>({})->new_conversation();
             gpt.add_instructions("You are a friendly chat user. Create a fresh short reply to the last message of the conversation that the user gives you, that adjusts to the language, style and tone, and the contents of the conversation; never repeat previous messages. Reply with the text only.");
             std::string clipboard;
@@ -58,7 +71,10 @@ namespace cloud::whatsapp {
                     CloseClipboard();
                 }
             }
-            return gpt.sendMessage(sample.dump(), [](auto a, auto b, auto c) { return http::fetch().post(a, b, c); }).at("choices").at(0).at("message").at("content").get<std::string>();
+            if (!new_message.empty()) {
+                gpt.add_instructions(std::format("Use the following instructions (copy or adapt the message): {}", new_message));
+            }
+            return gpt.sendMessage(reduce_sample(sample).dump(), [](auto a, auto b, auto c) { return http::fetch().post(a, b, c); }).at("choices").at(0).at("message").at("content").get<std::string>();
         }
     };
 }
