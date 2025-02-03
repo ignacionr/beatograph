@@ -43,7 +43,7 @@ jobs:
       if: github.ref == 'refs/heads/main'
       run: |
         mkdir ${{github.workspace}}/release
-        xcopy ${{github.workspace}}/build\Release\* ${{github.workspace}}/release /s /e /y
+        xcopy ${{github.workspace}}/build/Release/* ${{github.workspace}}/release /s /e /y
 
     - name: Upload Release
       uses: actions/upload-artifact@v4
