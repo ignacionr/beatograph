@@ -14,6 +14,10 @@ namespace http {
         // typedef for the shape of the fwrite function
         typedef size_t (*write_callback_t)(void *, size_t, size_t, void *);
 
+        fetch(long timeout = 30): timeout_{timeout} {
+            curl_global_init(CURL_GLOBAL_ALL);
+        }
+
         std::string operator()(std::string const &url, 
             header_client_t header_client = {},
             write_callback_t write_callback = fetch::write_string,
@@ -25,7 +29,7 @@ namespace http {
                 curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
                 curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
                 curl_easy_setopt(curl, CURLOPT_USERAGENT, "beat-o-graph/1.0");
-                curl_easy_setopt(curl, CURLOPT_TIMEOUT, 15L);
+                curl_easy_setopt(curl, CURLOPT_TIMEOUT, timeout_);
                 curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 15L);
                 char *pproxy_str = nullptr;
                 size_t len = 0;
@@ -77,7 +81,7 @@ namespace http {
                 curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
                 curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
                 curl_easy_setopt(curl, CURLOPT_USERAGENT, "beat-o-graph/1.0");
-                curl_easy_setopt(curl, CURLOPT_TIMEOUT, 15L);
+                curl_easy_setopt(curl, CURLOPT_TIMEOUT, timeout_);
                 curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 15L);
                 curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data.c_str());
                 curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, data.size());
@@ -123,5 +127,6 @@ namespace http {
             pdata->append(static_cast<char *>(ptr), size * nmemb);
             return size * nmemb;
         }
+        long timeout_;
     };
 }

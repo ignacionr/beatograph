@@ -57,7 +57,7 @@ namespace cloud::whatsapp
             return with_policy([this]
                                {
                 auto const url {std::format("http://localhost:{}/client/getChats/{}", port(), session_id_)};
-                auto const response {http::fetch{}(url)};
+                auto const response {http::fetch{160}(url)};
                 return nlohmann::json::parse(response); });
         }
         nlohmann::json fetch_messages(std::string_view chat_id)
