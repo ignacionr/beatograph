@@ -1,7 +1,11 @@
 #pragma once
+
+#include <chrono>
 #include <format>
+#include <mutex>
 #include <string>
 #include <vector>
+
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
@@ -28,6 +32,7 @@ namespace ignacionr
         // Function to send a message to GPT and receive the reply
         json sendMessage(std::string_view message, auto do_post, std::string_view role = "user", std::string_view model = "grok-2-latest", float temperature = 0.45)
         {
+            wait_min_time();
             // Append the new message to the conversation history
             conversation.push_back({{"role", role}, {"content", message}});
 
@@ -71,5 +76,21 @@ namespace ignacionr
         std::string api_key_;            // Your OpenAI API key
         std::vector<json> conversation; // To keep track of the conversation history
         std::string const base_url_;
+
+        static std::chrono::system_clock::duration min_time_between_requests() {
+            return std::chrono::seconds(1);
+        }
+
+        static void wait_min_time() {
+            static std::mutex mutex;
+            std::lock_guard lock(mutex);
+            static auto last_request = std::chrono::system_clock::now();
+            auto now = std::chrono::system_clock::now();
+            auto elapsed = now - last_request;
+            if (elapsed < min_time_between_requests()) {
+                std::this_thread::sleep_for(min_time_between_requests() - elapsed);
+            }
+            last_request = std::chrono::system_clock::now();
+        }
     };
 }

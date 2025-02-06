@@ -55,6 +55,9 @@
             "type": "radio"
         },
         {
+            "type": "file-selection"
+        },
+        {
             "type": "world-clocks",
             "openweather_key": "${OPENWEATHER_KEY}",
             "cities": [

@@ -45,6 +45,7 @@
 #include "hosting/notify/screen.hpp"
 #include "structural/panel/config.hpp"
 #include "cloud/cppgpt/screen.hpp"
+#include "cloud/cppgpt/command.hpp"
 #include "cloud/gtts/host.hpp"
 #include "report/host.hpp"
 #include "group_t.hpp"
@@ -62,6 +63,7 @@
 #include "hosting/telnet/host.hpp"
 #include "cloud/whatsapp/screen.hpp"
 #include "cloud/whatsapp/host.hpp"
+#include "file_selection/screen.hpp"
 
 void setup_fonts()
 {
@@ -239,7 +241,7 @@ int main()
         text_command_host->add_source({
             [](std::string const &, std::function<void(std::string const &)> callback) {
             },
-            [](std::string const &command) -> bool {
+            [](std::string const &command) -> std::optional<std::string> {
                 if (command.starts_with("auth/")) {
                     auto const &auth = command.substr(5);
                     if (auto const pos = auth.find('/'); pos != std::string::npos) {
@@ -248,10 +250,10 @@ int main()
                         auto env_variable = std::format("{}_TOKEN", service);
                         auto localhost = registrar::get<hosting::local::host>({});
                         localhost->set_env_variable(env_variable, token);
+                        return env_variable;
                     }
-                    return true;
                 }
-                return false;
+                return std::nullopt;
             }
         });
 
@@ -283,6 +285,8 @@ int main()
                                .detach(); });
 
         notify::screen notify_screen{notify_host};
+
+        text_command_host->add_source(cloud::cppgpt::command::create_source(gpt, *notify_service));
 
         radio::host radio_host;
         constexpr std::string_view lastplayed_key{"radio.last_played"};
@@ -522,6 +526,16 @@ int main()
                                 },
                                 menu_tabs};
              }},
+             {
+                "file-selection", [&](nlohmann::json::object_t const&) {
+                    auto screen = std::make_shared<file_selection::Screen>();
+                    return group_t{ICON_MD_FOLDER " File Selection",
+                                   [screen] {
+                                       screen->render();
+                                   },
+                                   menu_tabs};
+                }
+             },
             {"world-clocks",
              [&menu_tabs_and, localhost, &notify_host, gpt](nlohmann::json::object_t const &node)
              {
@@ -595,17 +609,17 @@ int main()
                     });
                 }
             },
-            [&tabs](std::string const &command) -> bool {
-                bool found{false};
-                tabs->tab_names([&command, &found, &tabs](std::string_view name) {
+            [&tabs](std::string const &command) -> std::optional<std::string> {
+                std::optional<std::string> result{};
+                tabs->tab_names([&command, &result, &tabs](std::string_view name) {
                     if (command == std::format("Focus on {}", name)) {
                         tabs->select(name);
-                        found = true;
+                        result = name;
                         return false;
                     }
                     return true;
                 });
-                return found;
+                return result;
             }
         });
 

@@ -34,7 +34,7 @@ namespace ssh
                         }
                     }
                 },
-                [this](std::string_view command) -> bool {
+                [this](std::string_view command) -> std::optional<std::string> {
                     if (command.starts_with("ssh ")) {
                         auto name = command.substr(4);
                         if (auto it = std::find_if(hosts.begin(), hosts.end(), [name](auto const &entry) -> bool {return name == entry.first;}); 
@@ -44,10 +44,10 @@ namespace ssh
                             {
                                 throw std::runtime_error(std::format("ShellExecute failed with error code {}", result));
                             }
-                            return true;
+                            return "OK";
                         }
                     }
-                    return false;
+                    return std::nullopt;
                 }
             });
         }

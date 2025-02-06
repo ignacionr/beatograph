@@ -1,26 +1,30 @@
 #pragma once
 
-#include "pch.h"
+#include "../../pch.h"
 
 #include <algorithm>
 #include <functional>
 #include <map>
 #include <mutex>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <vector>
+
+#include "base_commands.hpp"
 
 namespace structural::text_command {
 
     struct command_source {
         std::function<void(std::string const &partial, std::function<void(std::string const &)> callback)> partial_list;
-        std::function<bool(std::string const &name)> execute;
+        std::function<std::optional<std::string>(std::string const &name)> execute;
     };
 
     struct host {
         using action_t = std::function<void()>;
 
         host() {
+            add_source(base_commands<command_source>::echo());
             try {
                 register_custom_url_protocol();
             }
@@ -39,14 +43,16 @@ namespace structural::text_command {
             sources.push_back(std::move(source));
         }
 
-        void operator()(std::string const &name) {
+        std::string operator()(std::string const &name) {
             if (auto it = commands.find(name); it != commands.end()) {
                 it->second();
+                return "OK";
             }
             else {
                 for (auto const &source : sources) {
-                    if (source.execute(name)) {
-                        return;
+                    auto result = source.execute(name);
+                    if (result.has_value()) {
+                        return result.value();
                     }
                 }
                 throw std::runtime_error("Unknown command");

@@ -30,15 +30,15 @@ struct host
                     }
                 }
             },
-            [](std::string const &name) -> bool {
+            [](std::string const &name) -> std::optional<std::string> {
                 if (name.starts_with("open ") && name.ends_with(" with VSCode"))
                 {
                     auto const repo = name.substr(5, name.size() - 5 - 12);
                     auto const command = std::format("code \"{}\"", repo);
                     std::system(command.c_str());
-                    return true;
+                    return "OK";
                 }
-                return false;
+                return std::nullopt;
             }
         });
     }
