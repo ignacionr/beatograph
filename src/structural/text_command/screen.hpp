@@ -16,7 +16,7 @@ namespace structural::text_command {
             }
             if (ImGui::IsItemDeactivatedAfterEdit() && selected_index_ == -1) {
                 try {
-                    host_(search_text_);
+                    result_ = host_(search_text_);
                     search_text_.clear();
                 }
                 catch (std::exception const &e) {
