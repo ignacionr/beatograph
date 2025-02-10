@@ -172,6 +172,10 @@ namespace github::repo
                         } });
             }
             ImGui::EndTable();
+            if (ImGui::SmallButton(ICON_MD_OPEN_IN_BROWSER " Open in Browser")) {
+                auto local_host = registrar::get<hosting::local::host>({});
+                local_host->open_content(repo_.at("html_url").get<std::string>());
+            }
             ImGui::PopID();
         }
 
