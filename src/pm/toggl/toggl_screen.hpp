@@ -67,7 +67,7 @@ namespace toggl
             ImGui::PushID(&entry);
             struct std::tm tm = {};
             {
-                std::istringstream ss(entry["start"].get<std::string>());
+                std::istringstream ss(entry["start"].get_ref<std::string const&>());
                 ss >> std::get_time(&tm, "%Y-%m-%dT%H:%M:%S");
             }
             auto start_utc = std::chrono::system_clock::from_time_t(std::mktime(&tm));
