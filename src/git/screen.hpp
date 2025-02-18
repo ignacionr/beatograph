@@ -22,23 +22,30 @@ namespace git{
                     for (auto const &repo : *repos)
                     {
                         ImGui::TableNextRow();
+                        ImGui::PushID(repo.c_str());
                         ImGui::TableNextColumn();
                         ImGui::TextUnformatted(repo.c_str());
                         ImGui::TableNextColumn();
-                        ImGui::PushID(repo.c_str());
                         if (ImGui::SmallButton(ICON_MD_FOLDER_OPEN " Open"))
                         {
                             system(std::format("explorer \"{}\"", repo).c_str());
                         }
+                        bool any_item_hovered {ImGui::IsItemHovered()};
                         if (ImGui::SameLine(); ImGui::SmallButton(ICON_MD_DOWNLOAD_FOR_OFFLINE " Checkout"))
                         {
                             host_->checkout(repo);
                         }
+                        any_item_hovered |= ImGui::IsItemHovered();
                         if (ImGui::SameLine(); ImGui::SmallButton(ICON_MD_CODE " Open in VS Code"))
                         {
                             system(std::format("code \"{}\"", repo).c_str());
                         }
+                        any_item_hovered |= ImGui::IsItemHovered();
+                        if (any_item_hovered) {
+                            ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, IM_COL32(255, 255, 0, 64));
+                        }
                         ImGui::PopID();
+                        // No need to pop style color
                     }
                     ImGui::EndTable();
                 }
