@@ -11,8 +11,15 @@ namespace jira{
     struct content {
         static void render(nlohmann::json::object_t const &element) {
             static auto render_subcontent = [](nlohmann::json::object_t const &container) {
-                for (auto const &subcontent : container.at("content").get_ref<const nlohmann::json::array_t&>()) {
-                    render(subcontent);
+                if (container.contains("content")) {
+                    try {
+                        for (auto const &subcontent : container.at("content").get_ref<const nlohmann::json::array_t&>()) {
+                            render(subcontent);
+                        }
+                    }
+                    catch (std::exception const &e) {
+                        ImGui::TextUnformatted(e.what());
+                    }
                 }
             };
             static const std::unordered_map<std::string_view, std::function<void(nlohmann::json::object_t const &)>> renderers {
