@@ -1,12 +1,13 @@
 #pragma once
 
+#include <atomic>
+#include <expected>
 #include <functional>
+#include <memory>
 #include <optional>
 #include <string>
-#include <atomic>
-#include <memory>
-#include <expected>
 #include <unordered_map>
+
 #include <imgui.h>
 
 #pragma execution_character_set("utf-8")
@@ -18,7 +19,8 @@ namespace views {
         std::string const &name, std::function<cached_t()> const &factory, 
         std::function<void(cached_t const &)> const &renderer,
         bool no_title = false,
-        std::optional<std::chrono::system_clock::duration> autorefresh_seconds = std::nullopt)
+        std::optional<std::chrono::system_clock::duration> autorefresh_seconds = std::nullopt,
+        std::function<void(std::string_view)> const &on_error = {})
     {
         using cached_item_t = std::expected<cached_t, std::string>;
         using ptr_t = std::shared_ptr<cached_item_t>;
@@ -27,16 +29,17 @@ namespace views {
         static std::unordered_map<int, envelope_t> cache;
 
         auto const item_id {ImGui::GetID(name.c_str())};
-        auto reload = [&name, &factory, item_id] {
+        auto reload = [&name, &factory, item_id, on_error] {
                 cache[item_id].second = std::chrono::system_clock::now();
                 cache[item_id].first.store(std::make_shared<cached_item_t>(std::unexpected("Loading...")));
-                std::thread([factory, item_id] {
+                std::thread([factory, item_id, on_error] {
                     ptr_t contents;
                     try {
                         contents = std::make_shared<cached_item_t>(factory());
                     }
                     catch(std::exception const &ex) {
                         contents = std::make_shared<cached_item_t>(std::unexpected(ex.what()));
+                        if (on_error) on_error(ex.what());
                     }
                     cache[item_id].first.store(contents);
                 }).detach();

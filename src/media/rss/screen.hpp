@@ -144,7 +144,7 @@ namespace media::rss
                         if (!feed->image_url().empty())
                         {
                             ImGui::PushID(feed->feed_link.c_str());
-                            unsigned int texture;
+                            long long texture;
                             static std::set<std::string> failed_urls;
                             if (failed_urls.find(feed->image_url()) != failed_urls.end())
                             {

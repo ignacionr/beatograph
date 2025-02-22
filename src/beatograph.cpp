@@ -264,7 +264,9 @@ int main()
 
         gtts::host gtts_host{"./gtts_cache"};
         notify::host notify_host;
-        auto notify_service = std::make_shared<std::function<void(std::string_view)>>([&notify_host](std::string_view text){ notify_host(text); });
+        auto notify_service = std::make_shared<std::function<void(std::string_view)>>([&notify_host](std::string_view text){ 
+            notify_host(text); 
+        });
         registrar::add("notify", notify_service);
         radio::host::init();
         bool quiet{fconfig->get("quiet").value_or("false") == "true"};
@@ -521,8 +523,8 @@ int main()
                  registrar::add({}, host);
                  auto screen = std::make_shared<cloud::whatsapp::screen>();
                  return group_t{ICON_MD_CHAT_BUBBLE " WhatsApp",
-                                [host, screen] {
-                                    screen->render(*host);
+                                [host, screen, &cache] {
+                                    screen->render(*host, *cache);
                                 },
                                 menu_tabs};
              }},

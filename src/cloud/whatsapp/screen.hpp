@@ -14,12 +14,22 @@ namespace cloud::whatsapp
 {
     struct screen
     {
-        void render(host &h) {
+        void render(host &h, auto &img_cache) {
+            if (try_connect_) {
+                try {
+                    long long const texture_id {img_cache.load_texture_from_url(h.get_qr_image_url(), {}, ".png", std::chrono::minutes{1})};
+                    ImGui::Image(reinterpret_cast<ImTextureID>(texture_id), ImVec2{345.0f, 345.0f});
+                }
+                catch(const std::exception &e) {
+                    ::MessageBoxA(nullptr, e.what(), "Error", MB_ICONERROR);
+                }
+            }
             views::cached_view<nlohmann::json>("whatsapp", [&h] {
                 return h.status();
             }, [&](nlohmann::json const &status) {
                 auto const &status_string {status.at("state").get_ref<const std::string&>()};
                 if (status_string == "CONNECTED") {
+                    try_connect_ = false;
                     views::cached_view<nlohmann::json>("Chats", [&] {
                         return h.get_chats();
                     }, [&h, this](nlohmann::json const &chats) {
@@ -28,8 +38,13 @@ namespace cloud::whatsapp
                             filter = filter.data();
                         }
                         for (auto const &chat : chats.at("chats")) {
-                            auto const &name {chat.at("name").get_ref<const std::string&>()};
+                            std::optional<unsigned int> const unread_count {
+                                chat.contains("unread_count") ? std::optional<unsigned int>{chat.at("unread_count").get<unsigned int>()} : std::nullopt
+                            };
                             auto const &id_serialized {chat.at("id").at("_serialized").get_ref<const std::string&>()};
+                            auto const &name {chat.contains("name") ? 
+                                chat.at("name").get_ref<const std::string&>() :
+                                id_serialized};
                             if (filter.empty() || name.find(filter) != std::string::npos) {
                                 auto const classification {classifier_.classify(id_serialized)};
                                 if (classification == "work") {
@@ -41,7 +56,9 @@ namespace cloud::whatsapp
                                 else {
                                     ImGui::PushStyleColor(ImGuiCol_Header, ImVec4{0.5f, 0.5f, 1.5f, 0.5f});
                                 }
-                                views::cached_view<nlohmann::json>(std::format("{}##{}", name, id_serialized), [&h, &id_serialized] {
+                                views::cached_view<nlohmann::json>(std::format("{}{}##{}", name, 
+                                    unread_count.has_value() ? std::format(" ({})", unread_count.value()) : "",
+                                    id_serialized), [&h, &id_serialized] {
                                     return h.fetch_messages(id_serialized);
                                 }, [id_serialized, &h, this, classification](nlohmann::json const &messages) {
                                     if (!classification.has_value()) {
@@ -124,9 +141,17 @@ namespace cloud::whatsapp
                 else {
                     ImGui::Text("Status: %s", status_string.c_str());
                 }
-            }, true);
+            }, 
+            true,
+            std::nullopt,
+            [this](std::string_view error) {
+                if (error == "session_not_connected") {
+                    try_connect_ = true;
+                }
+            });
         }
     private:
         classifier classifier_;
+        bool try_connect_{false};
     };
 }

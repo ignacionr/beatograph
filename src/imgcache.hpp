@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <filesystem>
 #include <fstream>
 #include <map>
@@ -74,7 +75,7 @@ struct img_cache
         return size * nmemb;
     }
 
-    unsigned int load_texture_from_file(std::string const &file_path)
+    long long load_texture_from_file(std::string const &file_path)
     {
         if (auto const pos{textures_.find(file_path)}; pos != textures_.end())
         {
@@ -124,13 +125,21 @@ struct img_cache
             {
                 throw std::runtime_error(std::format("Failed to load image: {}", IMG_GetError()));
             }
+            // Convert the surface to a standard format
+            SDL_Surface *converted_surface = SDL_ConvertSurfaceFormat(surface, SDL_PIXELFORMAT_RGBA32, 0);
+            SDL_FreeSurface(surface);
+            if (!converted_surface)
+            {
+                throw std::runtime_error(std::format("Failed to convert surface: {}", SDL_GetError()));
+            }
+            surface = converted_surface;
         }
 
         unsigned int texture{0};
         glGenTextures(1, &texture);
         glBindTexture(GL_TEXTURE_2D, texture);
-        GLint internal_format{surface->format->BytesPerPixel == 4 ? GL_RGBA : GL_RGB};
-        GLenum format{surface->format->BytesPerPixel == 4 ? static_cast<GLenum>(GL_RGBA) : static_cast<GLenum>(GL_RGB)};
+        GLint internal_format{GL_RGBA};
+        GLenum format{GL_RGBA};
         GLenum type{GL_UNSIGNED_BYTE};
         glTexImage2D(GL_TEXTURE_2D, 0, internal_format, surface->w, surface->h, 0, format, type, surface->pixels);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -140,7 +149,10 @@ struct img_cache
         return texture;
     }
 
-    unsigned int load_texture_from_url(std::string const &url, http::fetch::header_client_t header_client = {})
+    long long load_texture_from_url(std::string const &url, 
+        http::fetch::header_client_t header_client = {}, 
+        std::string const &default_extension = ".png",
+        std::optional<std::chrono::minutes> max_age = std::nullopt)
     {
         std::lock_guard lock{index_mutex_};
         auto it = index_.find(url);
@@ -154,11 +166,11 @@ struct img_cache
         {
             // create one
             loader_threads_[url] = std::jthread{
-                [this, url, header_client]
+                [this, url, header_client, default_extension, max_age]
                 {
                     try
                     {
-                        load_into_cache(url, header_client);
+                        load_into_cache(url, header_client, default_extension, max_age);
                     }
                     catch (std::exception const &e)
                     {
@@ -171,11 +183,11 @@ struct img_cache
         return default_texture();
     }
 
-    unsigned int default_texture() {
+    long long default_texture() {
         return load_texture_from_file("assets/b6a9d081425dd6a.png");
     }
 
-    void load_into_cache(std::string const &url, http::fetch::header_client_t header_client)
+    void load_into_cache(std::string const &url, http::fetch::header_client_t header_client, std::string_view default_extension, std::optional<std::chrono::minutes> max_age)
     {
         // obtain the url path plus filename part only (exclude querystring or hash)
         auto const pos_qs = url.find('?');
@@ -194,12 +206,17 @@ struct img_cache
         {
             extension.clear();
         }
+        if (extension.empty())
+        {
+            extension = default_extension;
+        }
         // make the extension uppercase
         std::transform(extension.begin(), extension.end(), extension.begin(), [](unsigned char c)
                        { return std::toupper(c); });
         auto file_path = cache_path_ / std::format("{}{}", std::hash<std::string>{}(url), extension);
 
-        if (!std::filesystem::exists(file_path))
+        if (!std::filesystem::exists(file_path) || 
+            (max_age.has_value() && std::filesystem::last_write_time(file_path) < std::filesystem::file_time_type::clock::now() - *max_age))
         {
             // download the image into file_path
             try {
@@ -224,5 +241,5 @@ private:
     std::map<std::string, std::string> index_;
     std::mutex index_mutex_;
     std::map<std::string, std::jthread> loader_threads_;
-    std::map<std::string, unsigned int> textures_;
+    std::map<std::string, long long> textures_;
 };

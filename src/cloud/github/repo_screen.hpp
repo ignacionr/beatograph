@@ -66,7 +66,7 @@ namespace github::repo
                                 auto const badge_url = workflow.at("badge_url").get_ref<const std::string&>();
                                 auto const texture_id = cache->load_texture_from_url(badge_url, host_->header_client());
                                 if (texture_id != cache->default_texture()) {
-                                    ImGui::Image(reinterpret_cast<ImTextureID>(static_cast<long long>(texture_id)), ImVec2(170, 17));
+                                    ImGui::Image(reinterpret_cast<ImTextureID>(texture_id), ImVec2(170, 17));
                                     badge_painted = true;
                                 }
                             }

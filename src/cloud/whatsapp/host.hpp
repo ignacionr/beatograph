@@ -43,13 +43,24 @@ namespace cloud::whatsapp
             return result;
         }
 
+        void check_response(nlohmann::json const &response)
+        {
+            if (!response.at("success").get<bool>())
+            {
+                throw std::runtime_error{response.at("message").get<std::string>()};
+            }
+        }
+
         nlohmann::json status()
         {
             return with_policy([this]
                                {
                 auto const url {std::format("http://localhost:{}/session/status/{}", port(), session_id_)};
                 auto const response {http::fetch{}(url)};
-                return nlohmann::json::parse(response); });
+                auto response_json {nlohmann::json::parse(response)};
+                check_response(response_json);
+                return response_json;
+            });
         }
 
         nlohmann::json get_chats()
@@ -58,7 +69,10 @@ namespace cloud::whatsapp
                                {
                 auto const url {std::format("http://localhost:{}/client/getChats/{}", port(), session_id_)};
                 auto const response {http::fetch{160}(url)};
-                return nlohmann::json::parse(response); });
+                auto response_json {nlohmann::json::parse(response)};
+                check_response(response_json);
+                return response_json;
+            });
         }
         nlohmann::json fetch_messages(std::string_view chat_id)
         {
@@ -69,8 +83,12 @@ namespace cloud::whatsapp
                 auto const response {http::fetch{}.post(url,payload, [](auto setheader) {
                     setheader("Content-Type: application/json");
                 })};
-                return nlohmann::json::parse(response); });
+                auto response_json {nlohmann::json::parse(response)};
+                check_response(response_json);
+                return response_json;
+            });
         }
+
         nlohmann::json send_message(std::string_view chat_id, std::string_view text)
         {
             return with_policy([this, chat_id, text]
@@ -80,8 +98,17 @@ namespace cloud::whatsapp
                 auto const response {http::fetch{}.post(url, payload.dump(), [](auto setheader) {
                     setheader("Content-Type: application/json");
                 })};
-                return nlohmann::json::parse(response); });
+                auto response_json {nlohmann::json::parse(response)};
+                check_response(response_json);
+                return response_json;
+            });
         }
+
+        std::string const get_qr_image_url() const
+        {
+            return std::format("http://localhost:{}/session/qr/{}/image", port(), session_id_);
+        }
+
         std::string session_id_{"ignacio"};
 
         unsigned short port() const { return mapping_->local_port(); };
