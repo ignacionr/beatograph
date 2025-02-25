@@ -115,6 +115,12 @@ namespace toggl
                             }
                             catch(...) {}
                         }
+                        if (ImGui::SmallButton("Report Day Status")) {
+                            try {
+                            report("Day Status (so far)", todays_entries);
+                            }
+                            catch(...){}
+                        }
                     }
                     current_day_seconds = 0;
                 }
