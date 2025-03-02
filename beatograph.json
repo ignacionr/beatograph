@@ -7,27 +7,10 @@
         },
         {
             "type": "toggl",
-            "id": "toggl-betmavrik",
-            "title": "\uf075 Toggl Betmavrik",
-            "login_name": "Personal",
-            "daily_goal": 8.5
-        },
-        {
-            "type": "toggl",
             "id": "toggl-eyecu",
             "title":"\uf075 Toggl EyeCU",
             "login_name": "EyeCU",
             "daily_goal": 3
-        },
-        {
-            "type": "jira",
-            "title": "\ue2e6 Jira Betmavrik",
-            "endpoint": "${JIRA_API_URL}",
-            "username": "${JIRA_USER}",
-            "token": "${JIRA_TOKEN}",
-            "integrate": [
-                "toggl-betmavrik"
-            ]
         },
         {
             "type": "jira",
