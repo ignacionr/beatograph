@@ -6,6 +6,10 @@
             "login_name": "Personal"
         },
         {
+            "type": "git-repositories",
+            "root": "C:\\src"
+        },
+        {
             "type": "toggl",
             "id": "toggl-eyecu",
             "title":"\uf075 Toggl EyeCU",
@@ -29,10 +33,6 @@
         },
         {
             "type": "ssh-hosts"
-        },
-        {
-            "type": "git-repositories",
-            "root": "C:\\src"
         },
         {
             "type": "radio"
