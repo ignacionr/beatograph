@@ -316,6 +316,10 @@ int main()
         {
             if (key == "Main")
             {
+                if (ImGui::GetIO().KeyAlt && ImGui::IsKeyPressed(ImGuiKey_T))
+                {
+                    ImGui::OpenPopup("Tabs");
+                }
                 if (ImGui::BeginMenu("Tabs"))
                 {
                     for (auto const &tab : all_tabs)
