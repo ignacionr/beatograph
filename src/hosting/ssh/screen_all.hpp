@@ -51,27 +51,40 @@ namespace ssh
                 }
             });
         }
-        
-        void read_hosts() {
+
+        static const std::string configure_file_path() {
             // get the Windows user home directory
             char home[MAX_PATH];
             if (SUCCEEDED(SHGetFolderPathA(NULL, CSIDL_PROFILE, NULL, 0, home)))
             {
-                std::ifstream file(std::format("{}/.ssh/config", home));
-                if (file.is_open())
+                return std::format("{}/.ssh/config", home);
+            }
+            // obtain the error description
+            LPSTR messageBuffer = nullptr;
+            auto error = GetLastError();
+            FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&messageBuffer, 0, NULL);
+            std::string message(messageBuffer);
+            LocalFree(messageBuffer);
+            throw std::runtime_error(std::format("SHGetFolderPath failed with error code {}: {}", error, message));
+        }
+        
+        void read_hosts() {
+            std::ifstream file(configure_file_path());
+            if (file.is_open())
+            {
+                std::string line;
+                while (std::getline(file, line))
                 {
-                    std::string line;
-                    while (std::getline(file, line))
+                    if (line.starts_with("Host "))
                     {
-                        if (line.starts_with("Host "))
-                        {
-                            auto name = line.substr(5);
-                            hosts.emplace(name, hosting::ssh::host::by_name(name));
-                        }
+                        auto name = line.substr(5);
+                        hosts.emplace(name, hosting::ssh::host::by_name(name));
                     }
                 }
             }
         }
+
         void render(std::shared_ptr<hosting::local::host> localhost)
         {
             for (auto const &[name, host] : hosts)
@@ -84,6 +97,14 @@ namespace ssh
             if (ImGui::SmallButton(ICON_MD_REFRESH " Refresh"))
             {
                 read_hosts();
+            }
+            if (ImGui::SameLine(); ImGui::SmallButton(ICON_MD_EDIT " Edit"))
+            {
+                // use the Windows API with a simple shell command
+                if (auto result = reinterpret_cast<long long>(ShellExecuteA(NULL, "open", "code", configure_file_path().c_str(), NULL, SW_SHOW)); result <= 32)
+                {
+                    throw std::runtime_error(std::format("ShellExecute failed with error code {}", result));
+                }
             }
         }
 
