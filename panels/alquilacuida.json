@@ -1,0 +1,11 @@
+{
+    "title": "AlquilaCuida.com",
+    "contents" : [
+        {
+            "type": "shell-execute",
+            "title": "Open backend in VSCode",
+            "command": "cmd.exe",
+            "args": "/c code --remote ssh-remote+dev.alquilacuida /root/src/backend"
+        }
+    ]
+}
