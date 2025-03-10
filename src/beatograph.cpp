@@ -458,8 +458,13 @@ int main()
              {
                     auto toggle_client {std::make_shared<toggl::client>(
                             [&notify_host](std::string_view text) { notify_host(text, "Toggl"); })};
-                    std::string const &login_name = node.at("login_name");
-                    toggle_client->set_login(registrar::get<toggl::login::host>(login_name));
+                    std::string login_name = node.contains("login_name") ? node.at("login_name").get<std::string>() : std::string{};
+                    try {
+                        toggle_client->set_login(registrar::get<toggl::login::host>(login_name));
+                    }
+                    catch(std::exception const &e) {
+                        notify_host(std::format("Toggl: {}", e.what()));
+                    }
                     auto ts {
                         std::make_shared<toggl::screen>(toggle_client, 
                         static_cast<int>(node.at("daily_goal").get<float>() * 3600),

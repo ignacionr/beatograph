@@ -17,6 +17,13 @@
             "daily_goal": 3
         },
         {
+            "type": "toggl",
+            "id": "toggl-visualblasters",
+            "title":"\uf075 Toggl VisualBlasters",
+            "login_name": "VisualBlasters",
+            "daily_goal": 4
+        },
+        {
             "type": "jira",
             "title": "\ue2e6 Jira EyeCU",
             "endpoint": "${EYECU_JIRA_URL}",
