@@ -62,7 +62,65 @@ namespace toggl
             whatsapp->send_message(whatsapp_report_chat_id_, oss.str());
         }
 
-        void render_entry(auto const &entry, auto &current_day, auto &current_day_seconds, auto &todays_entries)
+        void render_day_summary(auto& current_day_seconds, auto &current_day, bool its_today, auto &todays_entries) {
+            if (current_day_seconds > 0) // only days with at least one entry
+            {
+                auto duration = std::chrono::seconds(current_day_seconds);
+                auto duration_formatted = std::format("{:%H:%M:%S}", duration);
+                float percentage = 100.0f * current_day_seconds / (seconds_daily_target_);
+                // paint the percentage in red if it's less than 100%
+                if (percentage < 100.0)
+                {
+                    ImGui::TableNextRow();
+                    ImGui::TableNextColumn();
+                    ImGui::ProgressBar(percentage / 100.0f, ImVec2(100.0, 20.0));
+                    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
+                    ImGui::TableNextRow();
+                }
+                ImGui::TableNextColumn();
+                ImGui::Text("Achieved: %.2f%%", percentage);
+                ImGui::TableNextColumn();
+                ImGui::Text("Total: %s", duration_formatted.c_str());
+                if (percentage < 100.0)
+                {
+                    ImGui::PopStyleColor();
+                }
+                if (its_today) {
+                    if (ImGui::SmallButton("Report Start of Day")) {
+                        try {
+                        report("Start of Day", todays_entries);
+                        }
+                        catch(...){}
+                    }
+                    if (ImGui::SameLine(); ImGui::SmallButton("Report End of Day")) {
+                        try {
+                        report("End of Day", todays_entries);
+                        }
+                        catch(...) {}
+                    }
+                    if (ImGui::SmallButton("Report Day Status")) {
+                        try {
+                        report("Day Status (so far)", todays_entries);
+                        }
+                        catch(...){}
+                    }
+                }
+                current_day_seconds = 0;
+            }
+            ImGui::TableNextRow();
+            if (its_today) {
+                ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, IM_COL32(255, 255, 0, 50));
+            }
+            ImGui::TableNextColumn();
+            ImGui::PushStyleColor(ImGuiCol_Text, 
+                its_today? ImVec4(0.9f, 0.9f, 1.0f, 1.0f) : ImVec4(0.2f, 0.2f, 1.0f, 1.0f));
+            ImGui::TextUnformatted(std::format("{:%A, %Y-%m-%d}", current_day).c_str());
+            ImGui::PopStyleColor();
+            ImGui::TableNextColumn();
+            ImGui::TableNextColumn();
+        }
+
+        void render_entry(auto const &entry, auto &current_day, auto &current_day_seconds, auto &todays_entries, auto const today)
         {
             ImGui::PushID(&entry);
             struct std::tm tm = {};
@@ -73,69 +131,15 @@ namespace toggl
             auto start_utc = std::chrono::system_clock::from_time_t(std::mktime(&tm));
             auto start = start_utc + std::chrono::seconds(utc_offset_seconds);
             auto day_start = std::chrono::floor<std::chrono::days>(start);
-            auto const today {std::chrono::floor<std::chrono::days>(std::chrono::system_clock::now())};
-            bool const its_today{day_start == today};
-            if (its_today) {
+            bool const entry_today{day_start == today};
+            if (entry_today) {
                 todays_entries.push_back(&entry);
             }
+            bool its_today = current_day == today;
             if (current_day != day_start)
             {
-                if (current_day_seconds != 0) // only days with at least one entry
-                {
-                    auto duration = std::chrono::seconds(current_day_seconds);
-                    auto duration_formatted = std::format("{:%H:%M:%S}", duration);
-                    float percentage = 100.0f * current_day_seconds / (seconds_daily_target_);
-                    // paint the percentage in red if it's less than 100%
-                    if (percentage < 100.0)
-                    {
-                        ImGui::TableNextRow();
-                        ImGui::TableNextColumn();
-                        ImGui::ProgressBar(percentage / 100.0f, ImVec2(100.0, 20.0));
-                        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
-                        ImGui::TableNextRow();
-                    }
-                    ImGui::TableNextColumn();
-                    ImGui::Text("Achieved: %.2f%%", percentage);
-                    ImGui::TableNextColumn();
-                    ImGui::Text("Total: %s", duration_formatted.c_str());
-                    if (percentage < 100.0)
-                    {
-                        ImGui::PopStyleColor();
-                    }
-                    if (current_day == today) {
-                        if (ImGui::SmallButton("Report Start of Day")) {
-                            try {
-                            report("Start of Day", todays_entries);
-                            }
-                            catch(...){}
-                        }
-                        if (ImGui::SameLine(); ImGui::SmallButton("Report End of Day")) {
-                            try {
-                            report("End of Day", todays_entries);
-                            }
-                            catch(...) {}
-                        }
-                        if (ImGui::SmallButton("Report Day Status")) {
-                            try {
-                            report("Day Status (so far)", todays_entries);
-                            }
-                            catch(...){}
-                        }
-                    }
-                    current_day_seconds = 0;
-                }
                 current_day = day_start;
-                ImGui::TableNextRow();
-                if (its_today) {
-                    ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, IM_COL32(255, 255, 0, 50));
-                }
-                ImGui::TableNextColumn();
-                ImGui::PushStyleColor(ImGuiCol_Text, 
-                    its_today? ImVec4(0.9f, 0.9f, 1.0f, 1.0f) : ImVec4(0.2f, 0.2f, 1.0f, 1.0f));
-                ImGui::TextUnformatted(std::format("{:%A, %Y-%m-%d}", current_day).c_str());
-                ImGui::PopStyleColor();
-                ImGui::TableNextColumn();
-                ImGui::TableNextColumn();
+                render_day_summary(current_day_seconds, current_day, its_today, todays_entries);
             }
             auto description = entry["description"].get<std::string>();
             auto local_start = std::chrono::current_zone()->to_local(start);
@@ -172,6 +176,7 @@ namespace toggl
                     try
                     {
                         client_->stopTimeEntry(entry);
+                        query();
                     }
                     catch (std::exception const &e)
                     {
@@ -312,10 +317,12 @@ namespace toggl
                         time_t current_day_seconds = 0;
                         ImGui::TableHeadersRow();
                         std::vector<const nlohmann::json *> todays_entries;
+                        auto const today {std::chrono::floor<std::chrono::days>(std::chrono::system_clock::now())};
                         for (const auto &entry : *entries)
                         {
-                            render_entry(entry, current_day, current_day_seconds, todays_entries);
+                            render_entry(entry, current_day, current_day_seconds, todays_entries, today);
                         }
+                        render_day_summary(current_day_seconds, current_day, current_day == today, todays_entries);
                         ImGui::EndTable();
                     }
                     ImGui::Columns(2);
