@@ -164,11 +164,11 @@ namespace toggl
                 ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, IM_COL32(255, 255, 0, 50));
             }
             ImGui::TableNextColumn();
-            ImGui::Text("%s", start_formatted.c_str());
+            ImGui::TextUnformatted(start_formatted.c_str());
             ImGui::TableNextColumn();
-            ImGui::Text("%s", description.c_str());
+            ImGui::TextUnformatted(description.c_str());
             ImGui::TableNextColumn();
-            ImGui::Text("%s", duration_formatted.c_str());
+            ImGui::TextUnformatted(duration_formatted.c_str());
             if (is_running)
             {
                 if (ImGui::SameLine(); ImGui::SmallButton(ICON_MD_STOP))
@@ -356,7 +356,7 @@ namespace toggl
                 else
                 {
                     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.0f, 0.0f, 1.0f)); // Red color
-                    ImGui::Text(time_entries.load()->dump().c_str());
+                    ImGui::TextUnformatted(time_entries.load()->dump().c_str());
                     ImGui::PopStyleColor();
                 }
             }
