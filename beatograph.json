@@ -34,6 +34,16 @@
             ]
         },
         {
+            "type": "jira",
+            "title": "\ue2e6 Jira VisualBlasters",
+            "endpoint": "${VISUALBLASTERS_JIRA_URL}",
+            "username": "${VISUALBLASTERS_JIRA_USER}",
+            "token": "${VISUALBLASTERS_JIRA_TOKEN}",
+            "integrate": [
+                "toggl-visualblasters"
+            ]
+        },
+        {
             "type": "calendar",
             "title": "\uebcc Personal",
             "endpoint": "${CALENDAR_DELEGATE_URL}"
