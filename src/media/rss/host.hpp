@@ -58,7 +58,7 @@ namespace media::rss
 
         void add_feeds(std::vector<std::string> urls)
         {
-            std::thread([this, urls] {
+            fetch_thread_ = std::jthread([this, urls] {
                 auto quit_job = registrar::get<std::function<bool()>>({"quitting"});
                 auto error_sink = registrar::get<std::function<void(std::string_view)>>({"notify"});
                 for (auto const &url_str : urls) {
@@ -73,8 +73,7 @@ namespace media::rss
                     }
                     if ((*quit_job)()) break;
                 }
-                })
-                .detach();
+                });
         }
 
         std::shared_ptr<media::rss::feed> add_feed_sync(std::string_view url)
@@ -167,6 +166,7 @@ namespace media::rss
     private:
         std::atomic<std::shared_ptr<std::vector<std::shared_ptr<rss::feed>>>> feeds_ = std::make_shared<std::vector<std::shared_ptr<rss::feed>>>();
         std::function<std::string(std::string_view)> system_runner_;
+        std::jthread fetch_thread_;
 
         static feed get_feed(std::string_view url, std::function<std::string(std::string_view)> system_runner)
         {
