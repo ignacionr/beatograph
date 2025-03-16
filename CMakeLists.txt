@@ -14,8 +14,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # Set default char type to unsigned
 add_compile_definitions(CHAR_UNSIGNED)
-
-# add_subdirectory(external/td)
+# add_compile_definitions(IMGUI_USE_WCHAR32)
 
 # Add the main executable target
 add_executable(beatograph 
@@ -37,7 +36,7 @@ if (MSVC)
 endif()
 
 # Include directories
-target_include_directories(beatograph PRIVATE "src" ${UTF8H_INCLUDE_DIRS} external)
+target_include_directories(beatograph PRIVATE "src" external)
 target_include_directories(beatograph PRIVATE "build\\vcpkg_installed\\x64-windows\\include\\cairo")
 target_include_directories(beatograph PRIVATE "build\\vcpkg_installed\\x64-windows\\include\\gdk-pixbuf-2.0")
 target_include_directories(beatograph PRIVATE "build\\vcpkg_installed\\x64-windows\\include\\glib-2.0")
@@ -45,8 +44,38 @@ target_include_directories(beatograph PRIVATE "build\\vcpkg_installed\\x64-windo
 target_include_directories(beatograph PRIVATE "build\\vcpkg_installed\\x64-windows\\lib\\glib-2.0\\include")
 
 target_link_directories(beatograph PRIVATE "build\\vcpkg_installed\\x64-windows\\lib\\")
+target_link_directories(beatograph PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg_installed/x64-windows/lib")
 
-find_package(FFmpeg REQUIRED)
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg_installed/vcpkg/pkgs/ffmpeg_x64-windows/share/ffmpeg")
+find_package(FFMPEG REQUIRED)
+
+# Enable Unity builds
+set_target_properties(beatograph PROPERTIES UNITY_BUILD ON)
+
+# Find and link required packages
+list(APPEND CMAKE_PREFIX_PATH "vcpkg_installed/x64-windows/share")
+find_package(GTest CONFIG REQUIRED)
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg_installed/vcpkg/pkgs/zlib_x64-windows/share/zlib")
+# Before find_package(ZLIB REQUIRED)
+set(ZLIB_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg_installed/x64-windows/include")
+set(ZLIB_LIBRARY "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg_installed/x64-windows/lib/zlib.lib")
+find_package(ZLIB REQUIRED)
+# Before find_package(PNG REQUIRED)
+set(PNG_PNG_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg_installed/x64-windows/include")
+set(PNG_LIBRARY "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg_installed/x64-windows/lib/libpng16.lib")
+find_package(PNG REQUIRED)
+find_package(SDL2 REQUIRED)
+# Add these before find_package(SDL2_image REQUIRED)
+set(JPEG_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg_installed/x64-windows/include")
+set(JPEG_LIBRARY "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg_installed/x64-windows/lib/jpeg.lib")
+find_package(SDL2_image REQUIRED)
+find_package(CURL CONFIG REQUIRED)
+find_package(imgui REQUIRED)
+find_package(nlohmann_json CONFIG REQUIRED)
+find_package(GLEW REQUIRED)
+find_package(libssh CONFIG REQUIRED)
+find_package(tinyfiledialogs CONFIG REQUIRED)
+find_package(TinyXML2 REQUIRED)
 
 # Link external libraries to beatograph
 target_link_libraries(beatograph PRIVATE 
@@ -55,30 +84,11 @@ target_link_libraries(beatograph PRIVATE
   GLEW::GLEW
   imgui::imgui
   nlohmann_json::nlohmann_json
-  PNG::PNG
+  ${PNG_LIBRARY}
   ssh
   ${FFMPEG_LIBRARIES} avformat
   tinyfiledialogs::tinyfiledialogs
   tinyxml2
   sqlite3
-  # Td::TdStatic
+  ZLIB::ZLIB
 )
-
-# Enable Unity builds
-set_target_properties(beatograph PROPERTIES UNITY_BUILD ON)
-
-# Find and link required packages
-list(APPEND CMAKE_PREFIX_PATH "vcpkg_installed/x64-windows/share")
-find_package(GTest CONFIG REQUIRED)
-find_package(PNG REQUIRED)
-find_package(SDL2 REQUIRED)
-find_package(SDL2_image REQUIRED)
-find_package(CURL CONFIG REQUIRED)
-find_package(imgui REQUIRED)
-find_package(nlohmann_json CONFIG REQUIRED)
-find_package(GLEW REQUIRED)
-find_package(libssh CONFIG REQUIRED)
-find_package(FFMPEG REQUIRED)
-find_package(tinyfiledialogs CONFIG REQUIRED)
-find_path(UTF8H_INCLUDE_DIRS "utf8h/utf8.h")
-find_package(TinyXML2 REQUIRED)
