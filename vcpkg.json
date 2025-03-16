@@ -30,9 +30,11 @@
         "sqlite3",
         {
             "name": "ffmpeg",
+            "default-features": false,
             "features": [
                 "avcodec",
-                "avformat"
+                "avformat",
+                "swresample"
             ]
         },
         "tinyxml2"
