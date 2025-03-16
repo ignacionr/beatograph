@@ -44,6 +44,13 @@
             ]
         },
         {
+            "type": "email",
+            "title": "\uf0e0 Personal",
+            "host": "imaps://imap.gmail.com:993",
+            "username": "ignacionr@gmail.com",
+            "password": "${GOOGLE_APP}"
+        },
+        {
             "type": "calendar",
             "title": "\uebcc Personal",
             "endpoint": "${CALENDAR_DELEGATE_URL}"

@@ -17,7 +17,7 @@ extern "C"
 #include <libavutil/opt.h>
 #include <libavutil/mathematics.h>
 #include <libavformat/avformat.h>
-#include <libswscale/swscale.h>
+// #include <libswscale/swscale.h>
 #include <libswresample/swresample.h>
 
 #include <libavcodec/avcodec.h>

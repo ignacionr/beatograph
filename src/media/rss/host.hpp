@@ -122,7 +122,7 @@ namespace media::rss
                 for (auto const &item : feed_ptr->items)
                 {
                     // format the date time
-                    auto const pub_date = std::format("{:%F %T}", item.updated);
+                    auto const pub_date = std::format("{:%F %T}", item.updated, item.updated);
                     repo_.upsert_item(feed_ptr->repo_id, 
                         item.title, 
                         item.enclosure,

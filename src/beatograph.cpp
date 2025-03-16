@@ -12,7 +12,6 @@
 #include <stdexcept>
 #include <unordered_map>
 
-#define IMGUI_USE_WCHAR32
 #include <imgui.h>
 
 #include "main_screen.hpp"
@@ -63,13 +62,24 @@
 #include "hosting/telnet/host.hpp"
 #include "cloud/whatsapp/screen.hpp"
 #include "cloud/whatsapp/host.hpp"
+#include "cloud/mail/imap_host.hpp"
+#include "cloud/mail/mail_screen.hpp"
 #include "file_selection/screen.hpp"
 
 void setup_fonts()
 {
     auto &io{ImGui::GetIO()};
     float baseFontSize = 13.5f;
-    io.Fonts->AddFontFromFileTTF("assets/fonts/LiberationMono-Regular.ttf", baseFontSize, nullptr, io.Fonts->GetGlyphRangesCyrillic());
+    ImFontGlyphRangesBuilder builder;
+    builder.AddRanges(io.Fonts->GetGlyphRangesDefault());   // Default ASCII
+    builder.AddRanges(io.Fonts->GetGlyphRangesCyrillic());  // Cyrillic
+    builder.AddChar(static_cast<ImWchar>(0x1F4C5));  // Unicode Calendar 📅 (U+1F4C5)
+    builder.AddChar(static_cast<ImWchar>(0x2019));   // Special apostrophe (Right Single Quotation Mark ’ U+2019)
+    builder.AddChar(static_cast<ImWchar>(0x2603));   // Unicode Snowman ☃ (U+2603)
+
+    static ImVector<ImWchar> glyphRanges;
+    builder.BuildRanges(&glyphRanges);
+    io.Fonts->AddFontFromFileTTF("assets/fonts/NotoSansMono-Regular.ttf", baseFontSize, nullptr, glyphRanges.Data);
 
     float iconFontSize = baseFontSize * 3.0f / 3.0f;
 
@@ -543,6 +553,20 @@ int main()
                     return group_t{ICON_MD_FOLDER " File Selection",
                                    [screen] {
                                        screen->render();
+                                   },
+                                   menu_tabs};
+                }
+             },
+             {
+                "email", [&](nlohmann::json::object_t const& node) {
+                    auto host = std::make_shared<cloud::mail::imap_host>(
+                        localhost->resolve_environment(node.at("host")),
+                        localhost->resolve_environment(node.at("username")),
+                        localhost->resolve_environment(node.at("password")));
+                    auto screen = std::make_shared<cloud::mail::screen>(host);
+                    return group_t{ICON_MD_EMAIL " Email",
+                                   [screen] {
+                                        screen->render();
                                    },
                                    menu_tabs};
                 }

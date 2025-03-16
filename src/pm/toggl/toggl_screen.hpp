@@ -104,6 +104,13 @@ namespace toggl
                         }
                         catch(...){}
                     }
+                    if (ImGui::SmallButton(ICON_MD_COPY_ALL)) {
+                        std::ostringstream oss;
+                        for (auto const &entry : todays_entries) {
+                            oss << "- " << entry->at("description").get<std::string>() << std::endl;
+                        }
+                        ImGui::SetClipboardText(oss.str().c_str());
+                    }
                 }
                 current_day_seconds = 0;
             }
