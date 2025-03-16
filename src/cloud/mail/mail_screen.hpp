@@ -1,5 +1,7 @@
 #pragma once
 
+#include <chrono>
+#include <format>
 #include <string>
 
 #include "../../util/conversions/rfc2047.hpp"
@@ -12,17 +14,34 @@ namespace cloud::mail {
         class message {
         public:
             message(std::string_view header): header_{std::string{header}} {
-                auto start = header.find("\r\nSubject: ") + 11;
-                auto end = header.find("\r\n", start);
-                title_ = conversions::decode_rfc2047(header.substr(start, end - start));
+                title_ = conversions::decode_rfc2047(get_header_field(header, "Subject"));
+                from_ = conversions::decode_rfc2047(get_header_field(header, "From"));
+                auto date_str = get_header_field(header, "Date");
+                std::tm tm = {};
+                std::istringstream ss{date_str};
+                ss >> std::get_time(&tm, "%a, %d %b %Y %H:%M %z");
+                date_ = std::chrono::system_clock::from_time_t(std::mktime(&tm));
             }
 
-            void render() const {
-                ImGui::TextUnformatted(title_.data(), title_.data() + title_.size());
+            static std::string get_header_field(std::string_view header, std::string_view field) {
+                auto marker = std::format("\r\n{}: ", field);
+                auto start {header.find(marker)};
+                if (start == std::string_view::npos) {
+                    return {};
+                }
+                start += marker.size();
+                auto end = header.find("\r\n", start);
+                return std::string{header.substr(start, end - start)};
             }
+
+            std::string const &title() const { return title_; }
+            std::string const &from() const { return from_; }
+            std::chrono::system_clock::time_point date() const { return date_; }
         private:
             std::string header_;
             std::string title_;
+            std::string from_;
+            std::chrono::system_clock::time_point date_;
         };
     public:
         screen(std::shared_ptr<imap_host> host): host(host) {}
@@ -31,10 +50,6 @@ namespace cloud::mail {
                 "Messages",
                 [this] {
                     host->connect();
-                    // host->list_mailboxes([&mailboxes](std::string_view mailbox) {
-                    //     mailboxes.push_back(std::string{mailbox});
-                    // });
-                    // host->select_mailbox("INBOX");
                     std::vector<message> mails;
                     for (auto uid : host->get_mail_uids()) {
                         mails.push_back(message{host->get_mail_header(uid)});
@@ -42,10 +57,25 @@ namespace cloud::mail {
                     return mails;
                 },
                 [](std::vector<message> const& mails) {
-                    for (auto const& msg : mails) {
-                        msg.render();
+                    if (ImGui::BeginTable("Messages", 3, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable)) {
+                        ImGui::TableSetupColumn("From", ImGuiTableColumnFlags_WidthStretch);
+                        ImGui::TableSetupColumn("Title", ImGuiTableColumnFlags_WidthStretch);
+                        ImGui::TableSetupColumn("Date", ImGuiTableColumnFlags_WidthFixed, 100);
+                        ImGui::TableHeadersRow();
+                        for (auto const& msg : mails) {
+                            ImGui::TableNextRow();
+                            ImGui::TableNextColumn();
+                            ImGui::TextUnformatted(msg.from().data(), msg.from().data() + msg.from().size());
+                            ImGui::TableNextColumn();
+                            ImGui::TextUnformatted(msg.title().data(), msg.title().data() + msg.title().size());
+                            ImGui::TableNextColumn();
+                            auto date_str = std::format("{:%Y-%m-%d %H:%M}", msg.date());
+                            ImGui::TextUnformatted(date_str.data(), date_str.data() + date_str.size());
+                        }
+                        ImGui::EndTable();
                     }
-                }
+                },
+                true
             );
         }
     private:
