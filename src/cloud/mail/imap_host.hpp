@@ -1,9 +1,11 @@
 #pragma once
 
 #include <format>
+#include <mutex>
 #include <stdexcept>
 #include <string>
 #include <vector>
+
 #include <curl/curl.h>
 
 namespace cloud::mail {
@@ -18,9 +20,12 @@ namespace cloud::mail {
             }
         }
 
-        ~imap_host() { disconnect(); }
+        ~imap_host() { 
+            disconnect();
+        }
         
         std::vector<long long> get_mail_uids() {
+            std::lock_guard lock(mutex_);
             std::vector<long long> result;
             std::string single_buffer;
             auto url = std::format("{}{}/", host_, mailbox_);
@@ -51,6 +56,7 @@ namespace cloud::mail {
         }
 
         std::string get_mail_header(long long uid) {
+            std::lock_guard lock(mutex_);
             std::string single_buffer;
             auto url = std::format("{}{}/;UID={};SECTION=HEADER", host_, mailbox_, uid);
             curl_easy_setopt(curl_, CURLOPT_URL, url.c_str());
@@ -64,7 +70,23 @@ namespace cloud::mail {
             return single_buffer;
         }
 
+        std::string get_mail_body(long long uid) {
+            std::lock_guard lock(mutex_);
+            std::string single_buffer;
+            auto url = std::format("{}{}/;UID={};SECTION=TEXT", host_, mailbox_, uid);
+            curl_easy_setopt(curl_, CURLOPT_URL, url.c_str());
+            curl_easy_setopt(curl_, CURLOPT_CUSTOMREQUEST, nullptr);
+            curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, WriteToString);
+            curl_easy_setopt(curl_, CURLOPT_WRITEDATA, &single_buffer);
+            auto res = curl_easy_perform(curl_);
+            if(res != CURLE_OK) {
+                throw std::runtime_error("get mail body failed");
+            }
+            return single_buffer;
+        }
+
         void list_mailboxes(auto callback) {
+            std::lock_guard lock(mutex_);
             curl_easy_setopt(curl_, CURLOPT_URL, host_.c_str());
             curl_easy_setopt(curl_, CURLOPT_CUSTOMREQUEST, "LIST \"\" \"*\"");
             curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, WriteToString);
@@ -87,6 +109,7 @@ namespace cloud::mail {
         }
 
         void connect() {
+            std::lock_guard lock(mutex_);
             if (curl_ == nullptr) {
                 curl_ = curl_easy_init();
                 if(curl_) {
@@ -100,14 +123,47 @@ namespace cloud::mail {
                 }
             }
         }
+
         void disconnect() {
+            std::lock_guard lock(mutex_);
             if(curl_) {
                 curl_easy_cleanup(curl_);
                 curl_ = nullptr;
             }
         }
+
+        void delete_message(long long uid) 
+        {
+            std::lock_guard lock(mutex_);
+            // Construct the IMAP URL for the DELETE operation
+            auto url = std::format("{}{}/;UID={}", host_, mailbox_, uid);
+            curl_easy_setopt(curl_, CURLOPT_URL, url.c_str());
+    
+            // First, mark the email as \Deleted
+            curl_easy_setopt(curl_, CURLOPT_CUSTOMREQUEST, std::format("UID STORE {} +FLAGS (\\Deleted)", uid).c_str());
+    
+            // Prepare response handling
+            std::string response;
+            curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, WriteToString);
+            curl_easy_setopt(curl_, CURLOPT_WRITEDATA, &response);
+    
+            // Execute the request
+            auto res = curl_easy_perform(curl_);
+            if (res != CURLE_OK) {
+                throw std::runtime_error(std::format("Delete message failed: {}", curl_easy_strerror(res)));
+            }
+    
+            // Now expunge the mailbox to permanently remove deleted messages
+            curl_easy_setopt(curl_, CURLOPT_CUSTOMREQUEST, "EXPUNGE");
+    
+            res = curl_easy_perform(curl_);
+            if (res != CURLE_OK) {
+                throw std::runtime_error(std::format("Expunge failed: {}", curl_easy_strerror(res)));
+            }
+        }
         
         void select_mailbox(const std::string_view mailbox) {
+            std::lock_guard lock(mutex_);
             mailbox_ = mailbox;
             curl_easy_setopt(curl_, CURLOPT_URL, host_.c_str());
             std::string cmd = std::format("SELECT {}", mailbox_);
@@ -139,5 +195,7 @@ namespace cloud::mail {
         std::string password_;
         CURL* curl_ {};
         std::string mailbox_ {"INBOX"};
+
+        std::mutex mutex_;
     };
 }

@@ -17,7 +17,7 @@ namespace views {
     template<typename cached_t>
     void cached_view(
         std::string const &name, std::function<cached_t()> const &factory, 
-        std::function<void(cached_t const &)> const &renderer,
+        std::function<void(cached_t &)> const &renderer,
         bool no_title = false,
         std::optional<std::chrono::system_clock::duration> autorefresh_seconds = std::nullopt,
         std::function<void(std::string_view)> const &on_error = {})
