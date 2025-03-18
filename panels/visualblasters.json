@@ -8,6 +8,12 @@
             "args": "--session C:\\Users\\inz\\Documents\\NoMachine\\inz-dev.nxs"
         },
         {
+            "type": "shell-execute",
+            "title": "Open flipaclip-core in VSCode",
+            "command": "cmd.exe",
+            "args": "/c code --remote ssh-remote+dev.ignacio /Users/administrator/src/flipaclip-core"
+        },
+        {
             "type": "ssh-host",
             "name": "dev.ignacio"
         }
