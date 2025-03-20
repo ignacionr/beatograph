@@ -24,6 +24,7 @@
 #include "pm/jira/host.hpp"
 #include "pm/jira/screen.hpp"
 #include "pm/calendar/screen.hpp"
+#include "pm/calendar/uni_notice.hpp"
 #include "hosting/host.hpp"
 #include "hosting/host_local.hpp"
 #include "hosting/local_screen.hpp"
@@ -440,8 +441,11 @@ int main()
                         menu_tabs}; }},
             {"calendar",
              [&menu_tabs, localhost](nlohmann::json::object_t const &cal)
-             { return group_t{cal.at("title"),
-                              [cs = calendar::screen{std::make_shared<calendar::host>(localhost->resolve_environment(cal.at("endpoint")))}]() mutable
+             { 
+                auto calendar_host {std::make_shared<calendar::host>(localhost->resolve_environment(cal.at("endpoint")))};
+                registrar::add(cal.at("title"), calendar_host);
+                return group_t{cal.at("title"),
+                              [cs = calendar::screen{calendar_host}]() mutable
                               { cs.render(); },
                               menu_tabs}; }},
             {"pomodoro",
@@ -661,6 +665,7 @@ int main()
         structural::text_command::screen text_command_screen{*text_command_host};
 
         auto tools = std::make_shared<tool_screen>(std::vector<group_t>{
+            {ICON_MD_CALENDAR_TODAY " Current Events", [uni_notice = std::make_shared<calendar::uni_notice>()]{ uni_notice->render(); }, menu_tabs},
             {ICON_MD_CURRENCY_EXCHANGE " Conversions", [&conv_screen]
              { conv_screen.render(); }, menu_tabs},
             {ICON_MD_CHAT_BUBBLE " AI", [&gpt_screen, gpt, &notify_host]

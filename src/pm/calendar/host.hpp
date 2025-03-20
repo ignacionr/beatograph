@@ -25,11 +25,20 @@ namespace calendar {
         using entries_t = std::vector<entry>;
         entries_t entries;
 
-        auto in_range(std::chrono::system_clock::time_point const start, std::chrono::system_clock::time_point const end) const {
-            return entries | std::ranges::views::filter([start,end](auto const &entry) {
-                return 
-                    (entry.start <= end && entry.end >= start);
-            });
+        auto in_range(std::chrono::system_clock::time_point start, std::chrono::system_clock::time_point end) const {
+            auto txt = std::format("range between {} and {}", start, end);
+            std::cerr << __FILE__ << ":" << __LINE__ << " " << __func__ << txt << std::endl;
+            entries_t result;
+            for (auto const &entry: entries) {
+                txt = std::format("considering {} {} to {}", entry.summary, entry.start, entry.end);
+                std::cerr << __FILE__ << ":" << __LINE__ << " " << __func__ << txt << std::endl;
+                if (entry.start <= end && entry.end >= start) {
+                    txt = std::format("result: true");
+                    std::cerr << __FILE__ << ":" << __LINE__ << " " << __func__ << txt << std::endl;
+                    result.push_back(entry);
+                }
+            }
+            return result;
         }
     };
 

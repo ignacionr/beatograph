@@ -1,0 +1,11 @@
+{
+    "title": "ACX Digital LLC",
+    "contents": [
+        {
+            "type": "shell-execute",
+            "title": "Connect to Mac Mini",
+            "command": "cmd.exe",
+            "args": "/c \"C:\\Users\\inz\\AppData\\Local\\Jump Desktop\\Client\\Servers\\Computer - administrators-Mac-mini - a2358312-4bfe-473f-b228-cbecee97b0fb.jump\""
+        }
+    ]
+}
