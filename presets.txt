@@ -1,7 +1,4 @@
 AM 750 AR=https://26513.live.streamtheworld.com/AM750_SC
-BBC Radio 3=http://as-hls-ww-live.akamaized.net/pool_904/live/ww/bbc_radio_three/bbc_radio_three.isml/bbc_radio_three-audio%3d96000.norewind.m3u8
-BBC Radio 4=http://as-hls-ww-live.akamaized.net/pool_904/live/ww/bbc_radio_fourfm/bbc_radio_fourfm.isml/bbc_radio_fourfm-audio%3d96000.norewind.m3u8
-BBC World Service=http://a.files.bbci.co.uk/media/live/manifesto/audio/simulcast/hls/nonuk/sbr_low/ak/bbc_world_service.m3u8
 Cadena Ser=https://25653.live.streamtheworld.com:443/CADENASERAAC_SC
 Classic FM=http://media-ice.musicradio.com/ClassicFM
 France Inter=http://direct.franceinter.fr/live/franceinter-midfi.mp3
