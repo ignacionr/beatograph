@@ -106,6 +106,7 @@ namespace radio
                 SDL_ClearQueuedAudio(dev);
             }
             stream_metadata_.clear();
+            update_stream_name();
             keep_playing = false;
         }
 
@@ -271,6 +272,7 @@ namespace radio
                     stream_metadata_[e->key] = e->value;
                 }
             }
+            update_stream_name();
 
             // Get the audio stream
             AVStream *audio_stream = nullptr;
@@ -436,22 +438,29 @@ namespace radio
             return last_played_;
         }
 
-        std::string const &stream_name() const
+        std::string const &stream_name() const {
+            return *current_stream_name_.load();
+        }
+
+        void update_stream_name()
         {
             if (stream_metadata_.find("title") != stream_metadata_.end())
             {
-                return stream_metadata_.at("title");
+                current_stream_name_.store(std::make_shared<std::string>(stream_metadata_.at("title")));
             }
             else if (stream_metadata_.find("icy-name") != stream_metadata_.end())
             {
-                return stream_metadata_.at("icy-name");
+                current_stream_name_.store(std::make_shared<std::string>(stream_metadata_.at("icy-name")));
             }
             else if (!stream_metadata_.empty())
             {
-                return stream_metadata_.begin()->second;
+                auto it = stream_metadata_.begin();
+                current_stream_name_.store(std::make_shared<std::string>(std::format("{}: {}", it->first, it->second)));
             }
-            static std::string empty{};
-            return empty;
+            else
+            {
+                current_stream_name_.store(std::make_shared<std::string>());
+            }
         }
 
         std::chrono::milliseconds total_run() const
@@ -480,6 +489,7 @@ namespace radio
         std::map<std::string, std::string> presets_;
 
         std::mutex audio_device_mutex_;
+        std::atomic<std::shared_ptr<std::string>> current_stream_name_{std::make_shared<std::string>()};
         SDL_AudioDeviceID dev{};
         SDL_AudioSpec obtained_spec{};
         std::atomic<bool> playing{false};
