@@ -90,7 +90,7 @@ namespace structural::text_command {
             std::string description_;
         };
 
-        void register_custom_url_protocol() {
+        bool register_custom_url_protocol() {
             // request elevation
             
             // use the Windows Registry to register a beatograph: protocol schema
@@ -98,13 +98,14 @@ namespace structural::text_command {
             auto ret = ::RegCreateKey(HKEY_CLASSES_ROOT, TEXT("beatograph"), &hkey_beatograph);
             if (ret != ERROR_SUCCESS) {
                 // get the error code and text
-                throw win_error{"RegCreateKey failed", ret};
+                return false;
             }
             // create a default value
             ret = ::RegSetValueEx(hkey_beatograph, nullptr, 0, REG_SZ, (const BYTE*)"URL:beatograph Protocol", 24);
             if (ret != ERROR_SUCCESS) {
                 // get the error code and text
-                throw win_error{"RegSetValueEx failed", ret};
+                ::RegCloseKey(hkey_beatograph);
+                return false;
             }
             // an empty string value "URL Protocol"
             ret = ::RegSetValueEx(hkey_beatograph, TEXT("URL Protocol"), 0, REG_SZ, (const BYTE*)"", 0);
@@ -143,6 +144,7 @@ namespace structural::text_command {
                 // get the error code and text
                 throw win_error{"RegSetValueEx failed", ret};
             }
+            return true;
         }
     private:
         std::map<std::string, action_t> commands;

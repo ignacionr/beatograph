@@ -19,7 +19,7 @@ namespace file_selection
     class Screen
     {
     public:
-        Screen() { set_filter(filter_); }
+        Screen(auto const &base_path): base_path_{base_path} { set_filter(filter_); }
         void render() {
             bool filter_dirty = false;
             if (base_path_.reserve(MAX_PATH); ImGui::InputText("Base Path", base_path_.data(), base_path_.capacity()))
@@ -177,7 +177,7 @@ namespace file_selection
             }
         }
     private:
-        std::string base_path_ {"C:\\src\\DEVOPS-MONITORINGLOGGING\\_arangobench\\2161"};
+        std::string base_path_;
         std::string filter_ {"base.txt"};
         std::string command_format_ {
             "ai \n"

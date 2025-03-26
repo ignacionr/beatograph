@@ -25,16 +25,6 @@
         },
         {
             "type": "jira",
-            "title": "\ue2e6 Jira EyeCU",
-            "endpoint": "${EYECU_JIRA_URL}",
-            "username": "${EYECU_JIRA_USER}",
-            "token": "${EYECU_JIRA_TOKEN}",
-            "integrate": [
-                "toggl-eyecu"
-            ]
-        },
-        {
-            "type": "jira",
             "title": "\ue2e6 Jira VisualBlasters",
             "endpoint": "${VISUALBLASTERS_JIRA_URL}",
             "username": "${VISUALBLASTERS_JIRA_USER}",
@@ -62,7 +52,8 @@
             "type": "radio"
         },
         {
-            "type": "file-selection"
+            "type": "file-selection",
+            "start_path": "C:\\src"
         },
         {
             "type": "world-clocks",

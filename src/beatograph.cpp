@@ -552,8 +552,12 @@ int main()
                                 menu_tabs};
              }},
              {
-                "file-selection", [&](nlohmann::json::object_t const&) {
-                    auto screen = std::make_shared<file_selection::Screen>();
+                "file-selection", [&](nlohmann::json::object_t const &config) {
+                    std::string start_path;
+                    if (config.contains("start_path")) {
+                        start_path = config.at("start_path").get_ref<std::string const &>();
+                    }
+                    auto screen = std::make_shared<file_selection::Screen>(start_path);
                     return group_t{ICON_MD_FOLDER " File Selection",
                                    [screen] {
                                        screen->render();

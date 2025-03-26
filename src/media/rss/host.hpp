@@ -49,6 +49,11 @@ namespace media::rss
             add_feeds(std::move(urls));
         }
 
+        ~host() {
+            // make sure the thread ends before the repo is destroyed
+            fetch_thread_.request_stop();
+        }
+
         static size_t writeCallback(void *contents, size_t size, size_t nmemb, void *userp)
         {
             auto parser = static_cast<rss::feed *>(userp);
