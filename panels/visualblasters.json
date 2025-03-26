@@ -3,6 +3,12 @@
     "contents" : [
         {
             "type": "shell-execute",
+            "title": "Chrome",
+            "command": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+            "args": "--profile-directory=\"Profile 4\""
+        },
+        {
+            "type": "shell-execute",
             "title": "Connect to MacOS",
             "command": "C:\\Program Files\\NoMachine\\bin\\nxplayer.exe",
             "args": "--session C:\\Users\\inz\\Documents\\NoMachine\\inz-dev.nxs"
@@ -16,6 +22,11 @@
         {
             "type": "ssh-host",
             "name": "dev.ignacio"
+        },
+        {
+            "type": "shell-execute",
+            "title": "Open Slack",
+            "command": "slack://open?team=TA92778SE"
         }
     ]
 }

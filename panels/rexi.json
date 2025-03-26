@@ -1,0 +1,16 @@
+{
+    "title": "Rexi",
+    "contents" : [
+        {
+            "type": "shell-execute",
+            "title": "Chrome",
+            "command": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+            "args": "--profile-directory=\"Profile 5\""
+        },
+        {
+            "type": "shell-execute",
+            "title": "Open Slack",
+            "command": "slack://open?team=T18FNARL7"
+        }
+    ]
+}

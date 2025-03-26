@@ -222,7 +222,7 @@ namespace panel {
                 {"shell-execute", [](nlohmann::json const &element) {
                     // execute locally
                     auto command = element.at("command").get<std::string>();
-                    auto args = element.at("args").get<std::string>();
+                    auto args = element.contains("args") ? element.at("args").get<std::string>() : std::string{};
                     return [command, args, title = element.at("title").get<std::string>()]{
                         if (ImGui::Button(title.c_str())) {
                             ShellExecuteA(nullptr, nullptr, command.c_str(), args.c_str(), nullptr, SW_SHOW);
