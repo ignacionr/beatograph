@@ -10,6 +10,9 @@ struct tool_screen {
 
     void render()
     {
+        if (!visible_) {
+            return;
+        }
         for (const auto &tab : tabs)
         {
             bool selected = tab.name == select_tab_;
@@ -47,8 +50,14 @@ struct tool_screen {
             return tab.name == name;
         }), tabs.end());
     }
+
+    bool& visible() {
+        return visible_;
+    }
+
 private:
     std::vector<group_t> tabs;
     std::function<void(std::string_view)> current_menu{};
     std::string select_tab_{};
+    bool visible_;
 };

@@ -16,7 +16,7 @@
 template <typename screen_t>
 struct main_screen
 {
-    main_screen(std::shared_ptr<screen_t> contained_screen) : screen{contained_screen}
+    main_screen(std::shared_ptr<screen_t> contained_screen) : screen_{contained_screen}
     {
 #if defined(IMGUI_IMPL_OPENGL_ES2)
         // GL ES 2.0 + GLSL 100
@@ -102,6 +102,11 @@ struct main_screen
         SDL_SetWindowTitle(window, std::format("{} - Beatograph", title).c_str());
     }
 
+    auto &contents()
+    {
+        return screen_;
+    }
+
     void run(std::function<void(std::string_view)> notifier, std::function<void()> pre_frame = []{})
     {
         // run the main loop
@@ -184,7 +189,7 @@ private:
                     {
                         running.store(false);
                     }
-                    screen->render_menu("File");
+                    screen_->render_menu("File");
                     ImGui::EndMenu();
                 }
                 if (ImGui::BeginMenu("View")) {
@@ -203,10 +208,10 @@ private:
                     {
                         toggle_fullscreen();
                     }
-                    screen->render_menu("View");
+                    screen_->render_menu("View");
                     ImGui::EndMenu();
                 }
-                screen->render_menu("Main");
+                screen_->render_menu("Main");
                 ImGui::EndMenuBar();
             }
 
@@ -221,7 +226,7 @@ private:
                 ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
                             1000.0f / io.Framerate, io.Framerate);
             }
-            screen->render();
+            screen_->render();
             ImGui::End();
         }
 
@@ -230,7 +235,7 @@ private:
     SDL_Window *window;
     SDL_GLContext gl_context;
     SDL_Renderer *sdl_renderer;
-    std::shared_ptr<screen_t> screen;
+    std::shared_ptr<screen_t> screen_;
     std::atomic<bool> running{false};
     bool show_stats{false};
 };
