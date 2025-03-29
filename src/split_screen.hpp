@@ -17,7 +17,7 @@ struct split_screen
             bool full_width = !show_right_;
             if (ImGui::BeginChild("Left",
                 ImVec2{
-                    full_width ? ImGui::GetWindowWidth()
+                    full_width ? ImGui::GetWindowWidth() - 13
                         : ImGui::GetWindowWidth() * 3 / 4 - 20
                     , 0}
             )) {

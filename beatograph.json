@@ -11,13 +11,6 @@
         },
         {
             "type": "toggl",
-            "id": "toggl-eyecu",
-            "title":"\uf075 Toggl EyeCU",
-            "login_name": "EyeCU",
-            "daily_goal": 3
-        },
-        {
-            "type": "toggl",
             "id": "toggl-visualblasters",
             "title":"\uf075 Toggl VisualBlasters",
             "login_name": "VisualBlasters",
@@ -70,11 +63,6 @@
                 "Rosario, AR",
                 "London",
                 "Rome, IT",
-                "Riga, LV",
-                {
-                    "place": "Tel Aviv",
-                    "background_color": "#e0e000"
-                },
                 "Saint Petersburg, RU",
                 "Antalya, TR",
                 "Dubai, AE",

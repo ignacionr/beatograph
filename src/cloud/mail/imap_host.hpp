@@ -38,19 +38,21 @@ namespace cloud::mail {
                 throw std::runtime_error("get mails failed");
             }
             // the response will look like * SEARCH 1 2 3 4 5
-            if (!single_buffer.starts_with("* SEARCH")) {
+            if (!single_buffer.starts_with("* SEARCH") || !single_buffer.ends_with("\r\n")) {
                 throw std::runtime_error(std::format("get mails failed: {}", single_buffer));
             }
-            std::string_view view(single_buffer);
-            auto start = view.find("SEARCH") + 7;
-            for (bool done = false; !done;) {
-                auto end = view.find(" ", start);
-                if (end == std::string_view::npos) {
-                    end = view.size();
-                    done = true;
+            std::string_view view(single_buffer.data() + 8, single_buffer.size() - 10); // skip * SEARCH and \r\n
+            if (!view.empty()) { // skip empty results
+                size_t start = 1;
+                for (bool done = false; !done;) {
+                    auto end = view.find(" ", start);
+                    if (end == std::string_view::npos) {
+                        end = view.size();
+                        done = true;
+                    }
+                    result.push_back(std::stoll(std::string(view.substr(start, end - start))));
+                    start = end + 1;
                 }
-                result.push_back(std::stoll(std::string(view.substr(start, end - start))));
-                start = end + 1;
             }
             return result;
         }
