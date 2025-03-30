@@ -7,11 +7,14 @@
 
 #include <nlohmann/json.hpp>
 #include <imgui.h>
+#include <cppgpt/cppgpt.hpp>
 #include "../../structural/views/json.hpp"
 #include "../../structural/views/cached_view.hpp"
 #include "colors.hpp"
 #include "user_screen.hpp"
 #include "jira_content_render.hpp"
+#include "../../registrar.hpp"
+#include "../../hosting/http/fetch.hpp"
 
 namespace jira
 {
@@ -19,99 +22,126 @@ namespace jira
     {
         using context_actions_t = std::unordered_map<std::string, std::function<void(nlohmann::json::object_t const &)>>;
 
-        issue_screen() {
+        issue_screen()
+        {
         }
 
-        void do_async(std::function<void()> fn) {
+        void do_async(std::function<void()> fn)
+        {
             // std::thread([fn]{
-                try {
-                    fn();
-                }
-                catch(std::exception const &e) {
-                    std::cerr << "Error in async function: " << e.what() << "\n";
-                }
-                catch(...) {
-                    std::cerr << "Error in async function\n";
-                }
+            try
+            {
+                fn();
+            }
+            catch (std::exception const &e)
+            {
+                std::cerr << "Error in async function: " << e.what() << "\n";
+            }
+            catch (...)
+            {
+                std::cerr << "Error in async function\n";
+            }
             //}).detach();
         }
 
-        bool render(nlohmann::json const &json, host& h, bool expanded = false, context_actions_t const &actions = {}, bool show_json_details = false, bool show_assignee = false)
+        bool render(nlohmann::json const &json, host &h, bool expanded = false, context_actions_t const &actions = {}, bool show_json_details = false, bool show_assignee = false)
         {
             bool request_requery = false;
-            auto const &key{json.at("key").get_ref<const std::string&>()};
+            auto const &key{json.at("key").get_ref<const std::string &>()};
             ImGui::PushID(key.c_str());
-            std::string color_name {"unknown"};
-            static const nlohmann::json::json_pointer status_color_ptr {"/fields/status/statusCategory/colorName"};
-            if (json.contains(status_color_ptr)) {
+            std::string color_name{"unknown"};
+            static const nlohmann::json::json_pointer status_color_ptr{"/fields/status/statusCategory/colorName"};
+            if (json.contains(status_color_ptr))
+            {
                 color_name = json.at(status_color_ptr).get<std::string>();
             }
             ImGui::PushStyleColor(ImGuiCol_Header, color(color_name));
-            static const nlohmann::json::json_pointer issue_type_name_ptr {"/fields/issuetype/name"};
-            if (ImGui::CollapsingHeader(std::format("{} - {}", key, json.at(issue_type_name_ptr).get_ref<const std::string&>()).c_str(),
-                expanded ? ImGuiTreeNodeFlags_DefaultOpen : 0)) 
+            static const nlohmann::json::json_pointer issue_type_name_ptr{"/fields/issuetype/name"};
+            if (ImGui::CollapsingHeader(std::format("{} - {}", key, json.at(issue_type_name_ptr).get_ref<const std::string &>()).c_str(),
+                                        expanded ? ImGuiTreeNodeFlags_DefaultOpen : 0))
             {
-                nlohmann::json::object_t const &fields {json.at("fields").get_ref<const nlohmann::json::object_t &>()};
+                nlohmann::json::object_t const &fields{json.at("fields").get_ref<const nlohmann::json::object_t &>()};
                 ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, {20, 20});
                 ImGui::PushStyleColor(ImGuiCol_FrameBg, IM_COL32(0, 0, 0, 255));
                 ImGui::BeginChild(std::format("summary-{}", key).c_str(), {ImGui::GetColumnWidth(), 0}, ImGuiChildFlags_FrameStyle | ImGuiChildFlags_AutoResizeY);
                 ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[1]);
-                ImGui::TextWrapped("%s\n \n", fields.at("summary").get_ref<const std::string&>().c_str());
+                ImGui::TextWrapped("%s\n \n", fields.at("summary").get_ref<const std::string &>().c_str());
                 ImGui::PopFont();
-                if (show_assignee) {
+                if (show_assignee)
+                {
                     ImGui::SeparatorText("Asignee");
-                    if (fields.find("assignee") != fields.end() && fields.at("assignee").is_object()) {
+                    if (fields.find("assignee") != fields.end() && fields.at("assignee").is_object())
+                    {
                         user_screen_.render(fields.at("assignee"));
                     }
-                    else {
+                    else
+                    {
                         ImGui::Text("Unassigned");
                     }
                 }
-                if (ImGui::SmallButton(ICON_MD_PERSON ICON_MD_JOIN_LEFT)) {
-                    do_async([&h, key] { h.assign_issue_to_me(key); });
+                if (ImGui::SmallButton(ICON_MD_PERSON ICON_MD_JOIN_LEFT))
+                {
+                    do_async([&h, key]
+                             { h.assign_issue_to_me(key); });
                     request_requery = true;
                 }
-                if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip)) {
+                if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip))
+                {
                     ImGui::SetTooltip("Assign to me");
                 }
-                if (ImGui::SameLine(); ImGui::SmallButton(ICON_MD_NO_ACCOUNTS)) {
-                    do_async([&h, key] { h.unassign_issue(key); });
+                if (ImGui::SameLine(); ImGui::SmallButton(ICON_MD_NO_ACCOUNTS))
+                {
+                    do_async([&h, key]
+                             { h.unassign_issue(key); });
                     request_requery = true;
                 }
-                if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip)) {
+                if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip))
+                {
                     ImGui::SetTooltip("Unassign");
                 }
-                if (ImGui::SameLine(); ImGui::SmallButton(ICON_MD_DONE)) {
-                    do_async([&h, key]{ h.transition_issue(key, "31");});
+                if (ImGui::SameLine(); ImGui::SmallButton(ICON_MD_DONE))
+                {
+                    do_async([&h, key]
+                             { h.transition_issue(key, "31"); });
                     request_requery = true;
                 }
-                if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip)) {
+                if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip))
+                {
                     ImGui::SetTooltip("Resolve");
                 }
-                if (ImGui::SameLine(); ImGui::SmallButton(ICON_MD_WORK)) {
-                    do_async([&h, key]{ h.transition_issue(key, "21");});
+                if (ImGui::SameLine(); ImGui::SmallButton(ICON_MD_WORK))
+                {
+                    do_async([&h, key]
+                             { h.transition_issue(key, "21"); });
                     request_requery = true;
                 }
-                if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip)) {
+                if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip))
+                {
                     ImGui::SetTooltip("Start Progress");
                 }
-                if (ImGui::SmallButton(ICON_MD_WEB)) {
+                if (ImGui::SmallButton(ICON_MD_WEB))
+                {
                     auto const url = h.get_browse_url(key);
                     ShellExecuteA(nullptr, "open", url.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
                 }
-                if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip)) {
+                if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip))
+                {
                     ImGui::SetTooltip("Open in browser");
                 }
-                if (ImGui::SameLine(); ImGui::SmallButton(ICON_MD_CONTENT_COPY)) {
+                if (ImGui::SameLine(); ImGui::SmallButton(ICON_MD_CONTENT_COPY))
+                {
                     auto const url = h.get_browse_url(key);
                     ImGui::SetClipboardText(url.c_str());
                 }
-                if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip)) {
+                if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip))
+                {
                     ImGui::SetTooltip("Copy URL to clipboard");
                 }
                 ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(255, 90, 90, 255));
-                for (auto const &[action_name, action_fn] : actions) {
-                    if (ImGui::SameLine(); ImGui::SmallButton(action_name.c_str())) {
+                for (auto const &[action_name, action_fn] : actions)
+                {
+                    if (ImGui::SameLine(); ImGui::SmallButton(action_name.c_str()))
+                    {
                         action_fn(json);
                         request_requery = true;
                     }
@@ -124,7 +154,7 @@ namespace jira
                 if (fields.find("subtasks") != fields.end())
                 {
                     ImGui::Indent();
-                    nlohmann::json::array_t const &subtasks {fields.at("subtasks").get_ref<const nlohmann::json::array_t&>()};
+                    nlohmann::json::array_t const &subtasks{fields.at("subtasks").get_ref<const nlohmann::json::array_t &>()};
                     for (nlohmann::json const &subtask : subtasks)
                     {
                         request_requery |= render(subtask, h, false, actions, show_json_details, show_assignee);
@@ -132,9 +162,9 @@ namespace jira
                     ImGui::Unindent();
                 }
                 ImGui::Indent();
-                views::cached_view<nlohmann::json>("Comments", 
-                    [&h, key] { return h.get_issue_comments(key); }, 
-                    [&h, key, this, show_json_details, &request_requery](nlohmann::json const &comments) {
+                views::cached_view<nlohmann::json>("Comments", [&h, key]
+                                                   { return h.get_issue_comments(key); }, [&h, key, this, show_json_details, &request_requery](nlohmann::json const &comments)
+                                                   {
                     if (!comments.contains("comments")) {
                         return;
                     }
@@ -167,10 +197,26 @@ namespace jira
                         comment_body = comment_body.data();
                         do_async([&h, key, comment_body] { h.add_comment(key, comment_body); });
                         request_requery = true;
-                    }
-                });
+                    } });
+                views::cached_view<std::string>("Summary", [&h, key, json]
+                                                { 
+                        auto gpt = registrar::get<ignacionr::cppgpt>({});
+                        gpt->clear();
+                        gpt->add_instructions("You are a professional Jira analyst and Product Owner. Following is an issue.");
+                        // Compose the context with the issue and the comments
+                        auto full_context = std::format("{}\n{}", json.dump(), h.get_issue_comments(key).dump());
+                        gpt->add_instructions(full_context);
+                        auto reply = gpt->sendMessage("Summarize this issue and its comments. What is the status of the issue? What is the next step?",
+                            [](auto url, auto body, auto header_setter) {
+                                http::fetch fetch;
+                                return fetch.post(url, body, header_setter);
+                            },
+                            "user", "grok-2-latest");
+                        return reply["choices"][0]["message"]["content"].get<std::string>(); }, [](std::string const &summary)
+                                                { ImGui::TextWrapped("%s", summary.c_str()); });
                 ImGui::Unindent();
-                if (show_json_details) {
+                if (show_json_details)
+                {
                     ImGui::Indent();
                     if (ImGui::CollapsingHeader("All Details"))
                     {

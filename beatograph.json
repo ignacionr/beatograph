@@ -15,6 +15,11 @@
             "title":"\uf075 Toggl VisualBlasters",
             "login_name": "VisualBlasters",
             "daily_goal": 4
+        },        {
+            "type": "toggl",
+            "id": "toggl-borderless",
+            "title":"\uf075 Toggl Borderless",
+            "daily_goal": 2
         },
         {
             "type": "jira",
@@ -24,6 +29,16 @@
             "token": "${VISUALBLASTERS_JIRA_TOKEN}",
             "integrate": [
                 "toggl-visualblasters"
+            ]
+        },
+        {
+            "type": "jira",
+            "title": "\ue2e6 Jira Rexi",
+            "endpoint": "${REXI_JIRA_URL}",
+            "username": "${REXI_JIRA_USER}",
+            "token": "${REXI_JIRA_TOKEN}",
+            "integrate": [
+                "toggl-borderless"
             ]
         },
         {
