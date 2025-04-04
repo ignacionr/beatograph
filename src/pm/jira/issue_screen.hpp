@@ -161,7 +161,6 @@ namespace jira
                     }
                     ImGui::Unindent();
                 }
-                ImGui::Indent();
                 views::cached_view<nlohmann::json>("Comments", [&h, key]
                                                    { return h.get_issue_comments(key); }, [&h, key, this, show_json_details, &request_requery](nlohmann::json const &comments)
                                                    {
@@ -214,7 +213,6 @@ namespace jira
                             "user", "grok-2-latest");
                         return reply["choices"][0]["message"]["content"].get<std::string>(); }, [](std::string const &summary)
                                                 { ImGui::TextWrapped("%s", summary.c_str()); });
-                ImGui::Unindent();
                 if (show_json_details)
                 {
                     ImGui::Indent();

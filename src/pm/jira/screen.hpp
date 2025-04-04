@@ -1,5 +1,6 @@
 #pragma once
 
+#include <format>
 #include <functional>
 #include <map>
 #include <memory>
@@ -106,15 +107,26 @@ namespace jira
                     }
                     // show the lanes
                     ImGui::Columns(static_cast<int>(by_status.size()));
+                    constexpr int card_width {350};
+                    constexpr int card_height {500};
+                    auto const col_max {std::max(1, static_cast<int>(ImGui::GetColumnWidth()) / card_width)};
                     for (auto const &[status_id, issues] : by_status) {
                         ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[1]);
                         ImGui::TextUnformatted(status_by_id.at(status_id)->at("name").get_ref<std::string const &>().c_str());
                         ImGui::PopFont();
+                        int i{0};
                         for (auto const &issue : issues) {
-                            if (issue_screen_.render(*issue, h, false, actions, show_json_details_, show_assignee_)) {
-                                query();
+                            if (ImGui::BeginChild(std::format("issue-{}", issue->at("key").get_ref<std::string const &>()).c_str(), {card_width, card_height}, ImGuiChildFlags_FrameStyle | ImGuiChildFlags_AutoResizeY)) {
+                                if (issue_screen_.render(*issue, h, true, actions, show_json_details_, show_assignee_)) {
+                                    query();
+                                }
+                            }
+                            ImGui::EndChild();
+                            if (++i % col_max != 0) {
+                                ImGui::SameLine();
                             }
                         }
+                        ImGui::NewLine();
                         ImGui::NextColumn();
                     }
                 }
