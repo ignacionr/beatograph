@@ -19,6 +19,7 @@
             "type": "toggl",
             "id": "toggl-borderless",
             "title":"\uf075 Toggl Borderless",
+            "login_name": "Borderless",
             "daily_goal": 2
         },
         {
