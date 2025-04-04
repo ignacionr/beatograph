@@ -26,7 +26,7 @@ namespace jira
     {
         using selector_t = std::function<std::vector<nlohmann::json::object_t>()>;
 
-        screen() {
+        screen(std::shared_ptr<host> h) : host_{h} {
             search_text_.reserve(256);
             summary_text_.reserve(256);
         }
@@ -41,52 +41,60 @@ namespace jira
                     show_assignee_ = !show_assignee_;
                 }
             }
-        }
-
-        void selection_tree(host &h) {
-            auto except_done{[&h] { return nlohmann::json::parse(h.get_assigned_issues()).at("issues").get<std::vector<nlohmann::json::object_t>>(); }};
-            if (!selector_) {
-                select (except_done);
-            }
-            // now present the tree of options to select issues from different grouppings
-            if (ImGui::TreeNode("My Assigned Issues"))
-            {
-                views::try_button("Except Done", [&h, this, except_done] {
-                    select(except_done);
-                });
-                views::try_button("All", [&h, this] {
-                    select([&h] { return nlohmann::json::parse(h.get_assigned_issues(true)).at("issues").get<std::vector<nlohmann::json::object_t>>(); });
-                });
-                ImGui::TreePop();
-            }
-            views::cached_view<nlohmann::json::array_t>("Projects",
-                [&h]() {
-                    return nlohmann::json::parse(h.get_projects());
-                },
-                [this, &h](nlohmann::json::array_t const &json_projects) {
-                    for (auto const &project : json_projects)
+            else if (item == "Main") {
+                if (ImGui::BeginMenu("JIRA")) {
+                    auto except_done{[this] { return nlohmann::json::parse(host_->get_assigned_issues()).at("issues").get<std::vector<nlohmann::json::object_t>>(); }};
+                    if (!selector_) {
+                        select (except_done);
+                    }
+                    // now present the tree of options to select issues from different grouppings
+                    if (ImGui::BeginMenu("My Assigned Issues"))
                     {
-                        auto const key {project.at("key").get<std::string>()};
-                        auto const key_and_name = std::format("{} - {}", 
-                            key, 
-                            project.at("name").get<std::string>());
-                        if (ImGui::TreeNode(key_and_name.c_str()))
-                        {
-                            static const std::array<std::string_view, 3> status_categories {"To Do", "In Progress", "Done"};
-                            for (auto const status_category : status_categories)
+                        try {
+                            if (ImGui::MenuItem("Except Done")) {
+                                select(except_done);
+                            }
+                            if (ImGui::MenuItem("All")) {
+                                select([this] { return nlohmann::json::parse(host_->get_assigned_issues(true)).at("issues").get<std::vector<nlohmann::json::object_t>>(); });
+                            }
+                        }
+                        catch (std::exception const &e) {
+                            ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "%s", e.what());
+                        }
+                        ImGui::EndMenu();
+                    }
+                    views::cached_view<nlohmann::json::array_t>("Projects",
+                        [this]() {
+                            return nlohmann::json::parse(host_->get_projects());
+                        },
+                        [this](nlohmann::json::array_t const &json_projects) {
+                            for (auto const &project : json_projects)
                             {
-                                if (ImGui::SmallButton(status_category.data()))
+                                auto const key {project.at("key").get<std::string>()};
+                                auto const key_and_name = std::format("{} - {}", 
+                                    key, 
+                                    project.at("name").get<std::string>());
+                                if (ImGui::BeginMenu(key_and_name.c_str()))
                                 {
-                                    select([&h, key, status_category]{ return nlohmann::json::parse(h.search_by_project(key, status_category)).at("issues").get<std::vector<nlohmann::json::object_t>>();});
+                                    static constexpr std::array<std::string_view, 3> status_categories {"To Do", "In Progress", "Done"};
+                                    for (auto const status_category : status_categories)
+                                    {
+                                        if (ImGui::MenuItem(status_category.data()))
+                                        {
+                                            select([this, key, status_category]{ return nlohmann::json::parse(host_->search_by_project(key, status_category)).at("issues").get<std::vector<nlohmann::json::object_t>>();});
+                                        }
+                                    }
+                                    ImGui::EndMenu();
                                 }
                             }
-                            ImGui::TreePop();
-                        }
-                    }
-                });
+                        });
+        
+                    ImGui::EndMenu();
+                }
+            }
         }
 
-        void render_list(host &h, issue_screen::context_actions_t const &actions = {}) {
+        void render_list(issue_screen::context_actions_t const &actions = {}) {
             if (selected_issues_.empty()) {
                 ImGui::Text("No issues selected.");
                 return;
@@ -117,7 +125,7 @@ namespace jira
                         int i{0};
                         for (auto const &issue : issues) {
                             if (ImGui::BeginChild(std::format("issue-{}", issue->at("key").get_ref<std::string const &>()).c_str(), {card_width, card_height}, ImGuiChildFlags_FrameStyle | ImGuiChildFlags_AutoResizeY)) {
-                                if (issue_screen_.render(*issue, h, true, actions, show_json_details_, show_assignee_)) {
+                                if (issue_screen_.render(*issue, *host_, true, actions, show_json_details_, show_assignee_)) {
                                     query();
                                 }
                             }
@@ -135,24 +143,24 @@ namespace jira
             // present the selected issues
             else for (auto const &issue : selected_issues_)
             {
-                if (issue_screen_.render(issue, h, false, actions, show_json_details_, show_assignee_)) {
+                if (issue_screen_.render(issue, *host_, false, actions, show_json_details_, show_assignee_)) {
                     query();
                     return;
                 }
             }
         }
 
-        void render_new_editor(host &h) {
+        void render_new_editor() {
             ImGui::Text(ICON_MD_CREATE  " New Issue");
             if (ImGui::SameLine(); ImGui::SmallButton(ICON_MD_CANCEL)) {
                 editing_new_ = false;
                 return;
             }
             views::cached_view<nlohmann::json>("Projects",
-                [&h]() {
-                    return nlohmann::json::parse(h.get_projects());
+                [this]() {
+                    return nlohmann::json::parse(host_->get_projects());
                 },
-                [this, &h](nlohmann::json const &all_projects) {
+                [this](nlohmann::json const &all_projects) {
                     if (ImGui::BeginCombo("Project", selected_project_key_.empty() ? "Select Project" : selected_project_key_.c_str())) {
                         for (auto const &project : all_projects) {
                             auto const key {project.at("key").get_ref<std::string const &>()};
@@ -168,8 +176,8 @@ namespace jira
                 summary_text_ = summary_text_.data();
             }
             views::cached_view<nlohmann::json::array_t>("Issue Type",
-                [&h]() {
-                    return h.get_issue_types();
+                [this]() {
+                    return host_->get_issue_types();
                 },
                 [this](nlohmann::json::array_t const &json_issue_types) {
                     if (ImGui::BeginCombo("Issue Type", issuetype_id_.empty() ? "Select Issue Type" : issuetype_name_.c_str())) {
@@ -215,8 +223,8 @@ namespace jira
             }
             if (ImGui::Button("Create and Assign to Me")) {
                 try {
-                    auto issue {h.create_issue(summary_text_, selected_project_key_, issuetype_id_)};
-                    h.assign_issue_to_me(issue.at("key").get<std::string>());
+                    auto issue {host_->create_issue(summary_text_, selected_project_key_, issuetype_id_)};
+                    host_->assign_issue_to_me(issue.at("key").get<std::string>());
                     summary_text_.clear();
                     editing_new_ = false;
                     query();
@@ -231,15 +239,13 @@ namespace jira
             }
         }
 
-        void render(host &h, issue_screen::context_actions_t const &actions = {})
+        void render(issue_screen::context_actions_t const &actions = {})
         {
             // lock the selection_mutex_
             std::lock_guard lock(selection_mutex_);
 
-            ImGui::Columns(2);
-            ImGui::SetColumnWidth(0, ImGui::GetWindowWidth() - 200);
             if (editing_new_) {
-                render_new_editor(h);
+                render_new_editor();
             }
             else {
                 if (ImGui::Button(ICON_MD_CREATE " New Issue")) {
@@ -247,11 +253,8 @@ namespace jira
                 }
                 ImGui::SameLine();
                 ImGui::Checkbox("Show Lanes", &issue_lanes_);
-                render_list(h, actions);
+                render_list(actions);
             }
-            ImGui::NextColumn();
-            selection_tree(h);
-            ImGui::Columns();
         }
 
         void query() {
@@ -275,6 +278,7 @@ namespace jira
             query();
         }
     private:
+        std::shared_ptr<host> host_;
         views::json json;
         issue_screen issue_screen_;
         user_screen user_screen_;

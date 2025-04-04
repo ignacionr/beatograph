@@ -95,6 +95,10 @@ void setup_fonts()
     io.Fonts->AddFontFromFileTTF("assets/fonts/Montserrat-Regular.ttf", 16.0f, nullptr, io.Fonts->GetGlyphRangesCyrillic());
     // font[2] for titles
     io.Fonts->AddFontFromFileTTF("assets/fonts/Montserrat-Bold.ttf", 23.0f, nullptr, io.Fonts->GetGlyphRangesCyrillic());
+    // font[3] for italics
+    io.Fonts->AddFontFromFileTTF("assets/fonts/Montserrat-Italic.ttf", iconFontSize, nullptr, io.Fonts->GetGlyphRangesCyrillic());
+    // font[4] for bold
+    io.Fonts->AddFontFromFileTTF("assets/fonts/Montserrat-Bold.ttf", iconFontSize, nullptr, io.Fonts->GetGlyphRangesCyrillic());
 }
 
 void load_panels(auto tabs, auto &loaded_panels, auto localhost, auto menu_tabs)

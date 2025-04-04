@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.18)
 
 # Set the path to vcpkg toolchain file
 # set(CMAKE_TOOLCHAIN_FILE "E:/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE STRING "Vcpkg toolchain file")
@@ -6,7 +6,7 @@ cmake_minimum_required(VERSION 3.16)
 set(VCPKG_TARGET_TRIPLET "x64-windows" CACHE STRING "Vcpkg target triplet")
 
 # Set the project name and version
-project(Beatograph VERSION 1.0 LANGUAGES CXX)
+project(Beatograph VERSION 1.0 LANGUAGES CXX C)
 
 # Specify the C++ standard
 set(CMAKE_CXX_STANDARD 23)
@@ -28,9 +28,40 @@ add_executable(beatograph
   assets/assets.rc
 )
 
-# Precompiled headers for Windows/MSVC
+# Fetch https://github.com/vmg/sundown.git
+include(FetchContent)
+
+FetchContent_Declare(
+  sundown
+  GIT_REPOSITORY https://github.com/vmg/sundown.git
+  GIT_TAG master
+)
+
+FetchContent_GetProperties(sundown)
+if(NOT sundown_POPULATED)
+  FetchContent_Populate(sundown)
+endif()
+
+add_library(sundown STATIC
+  ${sundown_SOURCE_DIR}/src/autolink.c
+  ${sundown_SOURCE_DIR}/src/buffer.c
+  ${sundown_SOURCE_DIR}/src/markdown.c
+  ${sundown_SOURCE_DIR}/src/stack.c
+  ${sundown_SOURCE_DIR}/html/houdini_href_e.c
+  ${sundown_SOURCE_DIR}/html/houdini_html_e.c
+  ${sundown_SOURCE_DIR}/html/html.c
+  ${sundown_SOURCE_DIR}/html/html_smartypants.c
+)
+
+target_include_directories(sundown PRIVATE 
+  ${sundown_SOURCE_DIR}/src 
+  ${sundown_SOURCE_DIR}/html
+)
+
+target_include_directories(beatograph PRIVATE ${sundown_SOURCE_DIR}/src ${sundown_SOURCE_DIR}/html)
+
 if (MSVC)
-    target_precompile_headers(beatograph PRIVATE "src/pch.h")
+    # target_precompile_headers(beatograph PRIVATE "src/pch.h")
     target_compile_options(beatograph PRIVATE /W4 /WX /MP /Zi /Od /bigobj)
     target_link_options(beatograph PRIVATE /SUBSYSTEM:WINDOWS /INCREMENTAL)
 endif()
@@ -91,4 +122,5 @@ target_link_libraries(beatograph PRIVATE
   tinyxml2
   sqlite3
   ZLIB::ZLIB
+  sundown
 )

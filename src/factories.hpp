@@ -86,7 +86,12 @@ struct screen_factories {
         {"jira",
          [localhost, &menu_tabs_and, &toggl_screens_by_id](nlohmann::json::object_t const &node) mutable
          {
-                auto js = std::make_shared<jira::screen>();
+                auto jh = std::make_shared<jira::host>(
+                        localhost->resolve_environment(node.at("username")),
+                        localhost->resolve_environment(node.at("token")),
+                        localhost->resolve_environment(node.at("endpoint"))
+                    );
+                auto js = std::make_shared<jira::screen>(jh);
                 jira::issue_screen::context_actions_t actions;
                 if (node.contains("integrate")) {
                     for (std::string const &action : node.at("integrate")) {
@@ -98,14 +103,9 @@ struct screen_factories {
                         };
                     }
                 }
-                auto jh = std::make_shared<jira::host>(
-                        localhost->resolve_environment(node.at("username")),
-                        localhost->resolve_environment(node.at("token")),
-                        localhost->resolve_environment(node.at("endpoint"))
-                     );
                 return group_t {
                     node.at("title"), 
-                    [actions, js, jh]() mutable { js->render(*jh, actions); },
+                    [actions, js, jh]() mutable { js->render(actions); },
                     menu_tabs_and([js](std::string_view item)
                        { js->render_menu(item); }),
                      ImVec4(0.5f, 0.5f, 1.0f, 1.0f)}; }},
