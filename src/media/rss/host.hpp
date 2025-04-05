@@ -68,7 +68,7 @@ namespace media::rss
                 auto error_sink = registrar::get<std::function<void(std::string_view)>>({"notify"});
                 for (auto const &url_str : urls) {
                     try {
-                        add_feed_sync(url_str);
+                        add_feed_sync(url_str, quit_job);
                     } 
                     catch(std::exception const &e) {
                         (*error_sink)(std::format("Failed to add feed {}: {}\n", url_str, e.what()));
@@ -81,10 +81,12 @@ namespace media::rss
                 });
         }
 
-        std::shared_ptr<media::rss::feed> add_feed_sync(std::string_view url)
+        std::shared_ptr<media::rss::feed> add_feed_sync(std::string_view url, std::shared_ptr<std::function<bool()>> quitting)
         {
             auto feed_ptr = std::make_shared<media::rss::feed>(get_feed(url, system_runner_));
             {
+                if ((*quitting)()) return nullptr;
+
                 static std::mutex mutex;
                 std::lock_guard<std::mutex> lock(mutex);
                 auto feeds = feeds_.load();

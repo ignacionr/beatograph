@@ -208,6 +208,7 @@ namespace media::rss {
         std::vector<item> items;
         std::function<std::string(std::string_view)> system_runner_;
         long long repo_id;
+        std::set<std::string> tags;
 
     private:
         std::string feed_image_url;

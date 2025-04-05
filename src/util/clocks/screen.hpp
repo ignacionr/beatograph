@@ -51,7 +51,7 @@ namespace clocks
                                                     break;
                                                 }
                                             }
-                                            for (int i = 0; i < 130 && !(*quitting)(); ++i) {
+                                            for (int i = 0; i < 600 && !(*quitting)(); ++i) {
                                                 std::this_thread::sleep_for(std::chrono::seconds(1));
                                             }
                                         }

@@ -141,6 +141,10 @@ namespace media::rss
                     int i{0};
                     for (auto feed : host_->feeds())
                     {
+                        if (!feed)
+                        {
+                            continue;
+                        }
                         if (!feed->image_url().empty())
                         {
                             ImGui::PushID(feed->feed_link.c_str());
