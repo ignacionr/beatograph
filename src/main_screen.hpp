@@ -4,6 +4,7 @@
 #include <memory>
 #include <ranges>
 #include <string>
+#include <thread>
 
 #include <SDL2/SDL.h>
 #include <GL/glew.h>
@@ -122,6 +123,12 @@ struct main_screen
                 }
                 ImGui_ImplSDL2_ProcessEvent(&event);
             }
+            auto &io = ImGui::GetIO();
+            if (io.DeltaTime < (1.0f / 60.0f)) {
+                // If the delta time is too small, we assume that the window is not visible
+                // and we don't want to waste CPU cycles on rendering.
+                std::this_thread::sleep_for(std::chrono::milliseconds(15));
+            }    
             ImGui_ImplOpenGL3_NewFrame();
             ImGui_ImplSDL2_NewFrame();
             ImGui::NewFrame();
@@ -158,7 +165,6 @@ struct main_screen
 private:
     void do_frame(auto pre_frame)
     {
-
         ImGuiIO &io{ImGui::GetIO()};
         auto const &display_size = io.DisplaySize;
         auto size = ImVec2(display_size.x, display_size.y);

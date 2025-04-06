@@ -29,6 +29,7 @@ namespace jira
         screen(std::shared_ptr<host> h) : host_{h} {
             search_text_.reserve(256);
             summary_text_.reserve(256);
+            select(except_done);
         }
 
         void render_menu(std::string_view item) {
@@ -43,10 +44,6 @@ namespace jira
             }
             else if (item == "Main") {
                 if (ImGui::BeginMenu("JIRA")) {
-                    auto except_done{[this] { return nlohmann::json::parse(host_->get_assigned_issues()).at("issues").get<std::vector<nlohmann::json::object_t>>(); }};
-                    if (!selector_) {
-                        select (except_done);
-                    }
                     // now present the tree of options to select issues from different grouppings
                     if (ImGui::BeginMenu("My Assigned Issues"))
                     {
@@ -285,7 +282,6 @@ namespace jira
         std::string search_text_;
         project_screen project_screen_;
         std::vector<nlohmann::json::object_t> selected_issues_;
-        selector_t selector_;
         std::mutex selection_mutex_;
         bool show_json_details_{false};
         bool show_assignee_{false};
@@ -299,5 +295,8 @@ namespace jira
         std::string issuetype_id_;
         std::string issuetype_name_;
         std::string last_error_;
+        selector_t except_done {[this] { 
+            return nlohmann::json::parse(host_->get_assigned_issues()).at("issues").get<std::vector<nlohmann::json::object_t>>(); }};
+        selector_t selector_;
     };
 }
