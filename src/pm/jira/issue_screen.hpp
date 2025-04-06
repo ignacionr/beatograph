@@ -50,24 +50,22 @@ namespace jira
             bool request_requery = false;
             auto const &key{json.at("key").get_ref<const std::string &>()};
             ImGui::PushID(key.c_str());
-            std::string color_name{"unknown"};
+            std::string_view color_name{"unknown"};
             static const nlohmann::json::json_pointer status_color_ptr{"/fields/status/statusCategory/colorName"};
             if (json.contains(status_color_ptr))
             {
-                color_name = json.at(status_color_ptr).get<std::string>();
+                color_name = json.at(status_color_ptr).get_ref<std::string const&>();
             }
             ImGui::PushStyleColor(ImGuiCol_Header, color(color_name));
             static const nlohmann::json::json_pointer issue_type_name_ptr{"/fields/issuetype/name"};
-            if (ImGui::CollapsingHeader(std::format("{} - {}", key, json.at(issue_type_name_ptr).get_ref<const std::string &>()).c_str(),
+            if (ImGui::CollapsingHeader(key.c_str(),
                                         expanded ? ImGuiTreeNodeFlags_DefaultOpen : 0))
             {
                 nlohmann::json::object_t const &fields{json.at("fields").get_ref<const nlohmann::json::object_t &>()};
                 ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, {20, 20});
                 ImGui::PushStyleColor(ImGuiCol_FrameBg, IM_COL32(0, 0, 0, 255));
-                ImGui::BeginChild(std::format("summary-{}", key).c_str(), {ImGui::GetColumnWidth(), 0}, ImGuiChildFlags_FrameStyle | ImGuiChildFlags_AutoResizeY);
-                ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[1]);
+                ImGui::BeginChild("summary", {ImGui::GetColumnWidth(), 0}, ImGuiChildFlags_FrameStyle | ImGuiChildFlags_AutoResizeY);
                 ImGui::TextWrapped("%s\n \n", fields.at("summary").get_ref<const std::string &>().c_str());
-                ImGui::PopFont();
                 if (show_assignee)
                 {
                     ImGui::SeparatorText("Asignee");
@@ -152,7 +150,7 @@ namespace jira
                 ImGui::PopStyleColor();
                 ImGui::PopStyleVar();
                 // are there subtasks?
-                if (fields.find("subtasks") != fields.end())
+                if (fields.contains("subtasks"))
                 {
                     ImGui::Indent();
                     nlohmann::json::array_t const &subtasks{fields.at("subtasks").get_ref<const nlohmann::json::array_t &>()};
@@ -163,7 +161,8 @@ namespace jira
                     ImGui::Unindent();
                 }
                 views::cached_view<nlohmann::json>("Comments", [&h, key]
-                                                   { return h.get_issue_comments(key); }, [&h, key, this, show_json_details, &request_requery](nlohmann::json const &comments)
+                                                   { return h.get_issue_comments(key); }, 
+                                                   [&h, key, this, show_json_details, &request_requery](nlohmann::json const &comments)
                                                    {
                     if (!comments.contains("comments")) {
                         return;

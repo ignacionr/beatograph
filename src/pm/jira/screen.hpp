@@ -99,29 +99,18 @@ namespace jira
 
             if (issue_lanes_) {
                 if (ImGui::BeginChild("by_lane")) {
-                    std::unordered_map<int, nlohmann::json::object_t const *> status_by_id;
-                    // group by status id
-                    std::map<int, std::vector<nlohmann::json::object_t const*>> by_status;
-                    for (nlohmann::json::object_t const &issue : selected_issues_) {
-                        auto const *status = &issue.at("fields").at("status").get_ref<const nlohmann::json::object_t&>();
-                        int const status_id {std::stoi(status->at("id").get_ref<std::string const &>())};
-                        if (status_by_id.find(status_id) == status_by_id.end()) {
-                            status_by_id[status_id] = status;
-                        }
-                        by_status[status_id].push_back(&issue);
-                    }
                     // show the lanes
-                    ImGui::Columns(static_cast<int>(by_status.size()));
+                    ImGui::Columns(static_cast<int>(by_status_.size()));
                     constexpr int card_width {350};
                     constexpr int card_height {500};
                     auto const col_max {std::max(1, static_cast<int>(ImGui::GetColumnWidth()) / card_width)};
-                    for (auto const &[status_id, issues] : by_status) {
+                    for (auto const &[status_name, issues] : by_status_) {
                         ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[1]);
-                        ImGui::TextUnformatted(status_by_id.at(status_id)->at("name").get_ref<std::string const &>().c_str());
+                        ImGui::TextUnformatted(status_name.c_str());
                         ImGui::PopFont();
                         int i{0};
                         for (auto const &issue : issues) {
-                            if (ImGui::BeginChild(std::format("issue-{}", issue->at("key").get_ref<std::string const &>()).c_str(), {card_width, card_height}, ImGuiChildFlags_FrameStyle | ImGuiChildFlags_AutoResizeY)) {
+                            if (ImGui::BeginChild(issue->at("key").get_ref<std::string const &>().c_str(), {card_width, card_height}, ImGuiChildFlags_FrameStyle | ImGuiChildFlags_AutoResizeY)) {
                                 if (issue_screen_.render(*issue, *host_, true, actions, show_json_details_, show_assignee_)) {
                                     query();
                                 }
@@ -254,6 +243,21 @@ namespace jira
             }
         }
 
+        void cache_by_status() {
+            std::unordered_map<int, nlohmann::json::object_t const *> status_by_id;
+            by_status_.clear();
+            // group by status id
+            for (nlohmann::json::object_t const &issue : selected_issues_) {
+                auto const *status = &issue.at("fields").at("status").get_ref<const nlohmann::json::object_t&>();
+                int const status_id {std::stoi(status->at("id").get_ref<std::string const &>())};
+                if (status_by_id.find(status_id) == status_by_id.end()) {
+                    status_by_id[status_id] = status;
+                }
+                auto const & status_name = status->at("name").get_ref<std::string const &>();
+                by_status_[status_name].push_back(&issue);
+            }
+        }
+
         void query() {
             if (!selector_) return;
             std::thread([this] {
@@ -262,6 +266,7 @@ namespace jira
                 {
                     std::lock_guard lock(selection_mutex_);
                     selected_issues_ = result;
+                    cache_by_status();
                 }
                 }
                 catch(...) {
@@ -298,5 +303,6 @@ namespace jira
         selector_t except_done {[this] { 
             return nlohmann::json::parse(host_->get_assigned_issues()).at("issues").get<std::vector<nlohmann::json::object_t>>(); }};
         selector_t selector_;
+        std::map<std::string, std::vector<nlohmann::json::object_t const*>> by_status_;
     };
 }
