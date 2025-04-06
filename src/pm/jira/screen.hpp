@@ -104,9 +104,9 @@ namespace jira
                     constexpr int card_width {350};
                     constexpr int card_height {500};
                     auto const col_max {std::max(1, static_cast<int>(ImGui::GetColumnWidth()) / card_width)};
-                    for (auto const &[status_name, issues] : by_status_) {
+                    for (auto const &[status_key, issues] : by_status_) {
                         ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[1]);
-                        ImGui::TextUnformatted(status_name.c_str());
+                        ImGui::TextUnformatted(status_key.second.c_str());
                         ImGui::PopFont();
                         int i{0};
                         for (auto const &issue : issues) {
@@ -249,12 +249,8 @@ namespace jira
             // group by status id
             for (nlohmann::json::object_t const &issue : selected_issues_) {
                 auto const *status = &issue.at("fields").at("status").get_ref<const nlohmann::json::object_t&>();
-                int const status_id {std::stoi(status->at("id").get_ref<std::string const &>())};
-                if (status_by_id.find(status_id) == status_by_id.end()) {
-                    status_by_id[status_id] = status;
-                }
-                auto const & status_name = status->at("name").get_ref<std::string const &>();
-                by_status_[status_name].push_back(&issue);
+                auto key = std::make_pair(std::stoi(status->at("id").get_ref<std::string const &>()), status->at("name").get_ref<std::string const &>());
+                by_status_[key].push_back(&issue);
             }
         }
 
@@ -303,6 +299,6 @@ namespace jira
         selector_t except_done {[this] { 
             return nlohmann::json::parse(host_->get_assigned_issues()).at("issues").get<std::vector<nlohmann::json::object_t>>(); }};
         selector_t selector_;
-        std::map<std::string, std::vector<nlohmann::json::object_t const*>> by_status_;
+        std::map<std::pair<int, std::string>, std::vector<nlohmann::json::object_t const*>> by_status_;
     };
 }
