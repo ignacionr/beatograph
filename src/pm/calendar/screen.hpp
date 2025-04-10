@@ -109,15 +109,18 @@ namespace calendar
                         }
                         ImGui::Separator();
                         auto const next_day = this_day + std::chrono::days(1);
-                        auto events_this_day = events.in_range(this_day, next_day);
+                        std::vector<calendar::entry const *> events_this_day;
+                        events.in_range(this_day, next_day, [&events_this_day](auto const &entry) {
+                            events_this_day.push_back(&entry);
+                        });
                         if (!events_this_day.empty())
                         {
                             // get all different locations
                             std::set<std::string> locations;
-                            for (auto const &it : events_this_day)
+                            for (auto const it : events_this_day)
                             {
-                                if (!it.location.empty()) {
-                                    locations.emplace(it.location);
+                                if (!it->location.empty()) {
+                                    locations.emplace(it->location);
                                 }
                             }
                             if (!locations.empty())
@@ -129,13 +132,13 @@ namespace calendar
                                     ImGui::TextWrapped(" %s", location.c_str());
                                 }
                             }
-                            for (auto const &it : events_this_day)
+                            for (auto const it : events_this_day)
                             {
                                 std::string const time_range{
-                                    (it.end - it.start) > std::chrono::hours(23) ? "" : std::format("{:%H:%M} - {:%H:%M} ", it.start, it.end)}; 
-                                ImGui::TextUnformatted(time_range.c_str());
+                                    (it->end - it->start) > std::chrono::hours(23) ? "" : std::format("{:%H:%M} - {:%H:%M} ", it->start, it->end)}; 
+                                ImGui::TextUnformatted(time_range.data(), time_range.data() + time_range.size());
                                 ImGui::SameLine();
-                                ImGui::TextWrapped("%s", it.summary.c_str());
+                                ImGui::TextWrapped("%s", it->summary.c_str());
                             }
                         }
                         ImGui::EndChild();
@@ -163,15 +166,18 @@ namespace calendar
                         }
                         ImGui::Separator();
                         auto const next_day {this_day + std::chrono::days(1)};
-                        auto events_this_day = events.in_range(this_day, next_day);
+                        std::vector<calendar::entry const *> events_this_day;
+                        events.in_range(this_day, next_day, [&events_this_day](auto const &entry) {
+                            events_this_day.push_back(&entry);
+                        });
                         if (!events_this_day.empty())
                         {
                             // get all different locations
                             std::set<std::string> locations;
-                            for (auto const &it : events_this_day)
+                            for (auto it : events_this_day)
                             {
-                                if (!it.location.empty()) {
-                                    locations.emplace(it.location);
+                                if (!it->location.empty()) {
+                                    locations.emplace(it->location);
                                 }
                             }
                             if (!locations.empty())
@@ -183,13 +189,13 @@ namespace calendar
                                     ImGui::Text(" %s", location.c_str());
                                 }
                             }
-                            for (auto const &it : events_this_day)
+                            for (auto it : events_this_day)
                             {
                                 std::string const time_range{
-                                    (it.end - it.start) > std::chrono::hours(23) ? "" : std::format("{:%H:%M} - {:%H:%M} ", it.start, it.end)}; 
+                                    (it->end - it->start) > std::chrono::hours(23) ? std::string{} : std::format("{:%H:%M} - {:%H:%M} ", it->start, it->end)}; 
                                 ImGui::TextUnformatted(time_range.c_str());
                                 ImGui::SameLine();
-                                ImGui::TextUnformatted(it.summary.c_str());
+                                ImGui::TextUnformatted(it->summary.c_str());
                             }
                         }
                         ImGui::EndChild();

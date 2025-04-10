@@ -36,11 +36,13 @@ namespace calendar
             // obtain all entries from all calendars, that match the current time
             registrar::all<host>([this](std::string const&, auto host) {
                 auto time_now = std::chrono::system_clock::now();
-                auto events = host->get_events().in_range(time_now, time_now);
                 entries.clear();
-                for (auto const &e : events) {
-                    entries.push_back(e);
-                }
+                host->get_events().in_range(time_now, time_now, [&](auto const &entry) {
+                    entries.push_back(entry);
+                });
+                std::sort(entries.begin(), entries.end(), [](auto const &lhs, auto const &rhs) {
+                    return lhs.start < rhs.start;
+                });
             });
         }
         std::vector<entry> entries;
