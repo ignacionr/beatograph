@@ -44,6 +44,7 @@ namespace media::rss
             ImGui::TextWrapped("%s", current_feed_->feed_description.c_str());
         }
 
+        // Renders the list of items in the current feed
         void render_list()
         {
             auto const tablestart_y {ImGui::GetCursorPosY()};
@@ -82,6 +83,20 @@ namespace media::rss
                             }
                             player_(item.enclosure);
                         }
+                        else {
+                            try {
+                                auto text = item.summary();
+                                auto say = registrar::get<std::function<void(std::string_view)>>("say");
+                                (*say)(text);
+                            }
+                            catch (std::exception const &e)
+                            {
+                                latest_error_ = e.what();
+                            }
+                        }
+                    }
+                    if (ImGui::CollapsingHeader(std::format("Summary##{}", item.title).c_str())) {
+                        ImGui::TextWrapped(item.summary().data());
                     }
                     ImGui::TableNextColumn();
                     auto updated = std::format("{:%Y-%m-%d %H:%M}", item.updated);
@@ -211,5 +226,6 @@ namespace media::rss
         std::string filter_;
         std::function<std::string(std::string_view)> system_runner_;
         bool configure_current_feed_{false};
+        std::string latest_error_;
     };
 }

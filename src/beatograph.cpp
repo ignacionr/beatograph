@@ -64,6 +64,7 @@
 #include "file_selection/screen.hpp"
 #include "factories.hpp"
 #include "names.hpp"
+#include "services/summarize.hpp"
 
 void setup_fonts()
 {
@@ -274,6 +275,10 @@ int main()
         auto gpt = std::make_shared<ignacionr::cppgpt> (grok_api_key, ignacionr::cppgpt::grok_base);
         registrar::add({}, gpt);
 
+        auto summarize_fn = services::summarize{};
+        auto summarize = std::make_shared<std::function<std::string(std::string_view)>>(summarize_fn);
+        registrar::add({}, summarize);
+
         gtts::host gtts_host{"./gtts_cache"};
         notify::host notify_host;
         auto notify_service = std::make_shared<std::function<void(std::string_view)>>([&notify_host](std::string_view text){ 
@@ -281,21 +286,32 @@ int main()
         });
         registrar::add("notify", notify_service);
         radio::host::init();
-        bool quiet{fconfig->get("quiet").value_or("false") == "true"};
-        notify_host.sink([&gtts_host, &quiet](std::string_view text, std::string_view title)
-                         { std::thread([&gtts_host, &quiet, text = std::string{text}, title = std::string{title}]
-                                       {
-            if (!quiet) {
+
+        auto say = [&gtts_host](std::string text) {
             try {
                 radio::host notifications_radio_host{false};
-                gtts_host.tts_job(std::format("{}: {}", title, text), [&notifications_radio_host](std::string_view file_produced) {
+                gtts_host.tts_job(text, [&notifications_radio_host](std::string_view file_produced) {
                     std::string file{file_produced.data(), file_produced.size()};
                     notifications_radio_host.play_sync(file);
                 });
             }
             catch(const std::exception &e) {
                 std::cerr << "Error: " << e.what() << std::endl;
-            }} })
+            }
+        };
+        registrar::add("say", std::make_shared<std::function<void(std::string_view)>>([&gtts_host, &say](std::string_view text) {
+            say(std::string{text});
+        }));
+
+        bool quiet{fconfig->get("quiet").value_or("false") == "true"};
+        notify_host.sink([&gtts_host, &quiet, &say](std::string_view text, std::string_view title)
+                         { std::thread([&gtts_host, &quiet, text = std::string{text}, &say, title = std::string{title}]
+                                       {
+            if (!quiet) {
+                auto full_text = std::format("{}: {}", title, text);
+                say(full_text);
+            }
+        })
                                .detach(); });
 
         notify::screen notify_screen{notify_host};

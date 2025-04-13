@@ -9,17 +9,49 @@
 #include <vector>
 
 #include <tinyxml2.h>
+#include "../../hosting/http/fetch.hpp"
 
 namespace media::rss {
     struct feed {
 
-        struct item {
+        class item {
+        public:
             std::string title;
             std::string link;
             std::string description;
             std::string enclosure;
             std::string image_url;
             std::chrono::system_clock::time_point updated;
+
+            item() = default;
+            item(std::string_view title, std::string_view link, std::string_view description,
+                 std::string_view enclosure, std::string_view image_url,
+                 std::chrono::system_clock::time_point updated)
+                : title(title), link(link), description(description),
+                  enclosure(enclosure), image_url(image_url), updated(updated) {}
+
+            void refresh_summary() noexcept {
+                try {
+                    auto const link_contents = http::fetch{}(link);
+                    auto const summarize = registrar::get<std::function<std::string(std::string_view)>>({});
+                    auto text = (*summarize)(link_contents);
+                    summary_ = text;
+                }
+                catch (std::exception const &e) {
+                    summary_ = e.what();
+                }
+                catch (...) {
+                    summary_ = "Failed to summarize";
+                }
+            }
+            [[nodiscard]] std::string_view summary() noexcept {
+                if (summary_.empty()) {
+                    refresh_summary();
+                }
+                return summary_;
+            }
+        private:
+            std::string summary_;
         };
 
         feed(std::function<std::string(std::string_view)> system_runner) : system_runner_(system_runner) {}
