@@ -237,7 +237,7 @@ namespace toggl
             return std::format("toggl.{}.whatsapp_report_chat_id", login_name_);
         }
 
-        void render() {
+        void render() noexcept {
             if (config_mode_) {
                 if (new_login_) {
                     if (login_name_.reserve(200); ImGui::InputText("New Login Name", login_name_.data(), login_name_.capacity())) {

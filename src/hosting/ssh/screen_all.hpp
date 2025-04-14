@@ -85,7 +85,7 @@ namespace ssh
             }
         }
 
-        void render(std::shared_ptr<hosting::local::host> localhost)
+        void render(std::shared_ptr<hosting::local::host> localhost) noexcept
         {
             for (auto const &[name, host] : hosts)
             {
@@ -100,16 +100,22 @@ namespace ssh
             }
             if (ImGui::SameLine(); ImGui::SmallButton(ICON_MD_EDIT " Edit"))
             {
+                last_error_.clear();
                 // use the Windows API with a simple shell command
                 if (auto result = reinterpret_cast<long long>(ShellExecuteA(NULL, "open", "code", configure_file_path().c_str(), NULL, SW_SHOW)); result <= 32)
                 {
-                    throw std::runtime_error(std::format("ShellExecute failed with error code {}", result));
+                    last_error_ = std::format("ShellExecute failed with error code {}", result);
                 }
+            }
+            if (!last_error_.empty())
+            {
+                ImGui::TextColored(ImVec4(1, 0, 0, 1), "%s", last_error_.c_str());
             }
         }
 
     private:
         std::map<std::string, hosting::ssh::host::ptr> hosts;
         hosting::ssh::screen host_screen_;
+        std::string last_error_;
     };
 }

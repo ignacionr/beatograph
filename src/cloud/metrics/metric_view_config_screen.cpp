@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "metric_view_config_screen.hpp"
 
-void metric_view_config_screen::render()
+void metric_view_config_screen::render() noexcept
 {
     ImGui::InputFloat("Min value", &config.min_value);
     ImGui::InputFloat("Max value", &config.max_value);

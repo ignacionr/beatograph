@@ -30,7 +30,7 @@ namespace notify
                 });
         }
 
-        void render()
+        void render() noexcept
         {
             if (ImGui::BeginTable("Notifications", 3, ImGuiTableFlags_NoBordersInBody | ImGuiTableFlags_RowBg))
             {

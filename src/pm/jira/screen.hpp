@@ -136,7 +136,7 @@ namespace jira
             }
         }
 
-        void render_new_editor() {
+        void render_new_editor() noexcept {
             ImGui::Text(ICON_MD_CREATE  " New Issue");
             if (ImGui::SameLine(); ImGui::SmallButton(ICON_MD_CANCEL)) {
                 editing_new_ = false;

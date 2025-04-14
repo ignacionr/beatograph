@@ -29,7 +29,7 @@ namespace radio
         {
         }
 
-        void render()
+        void render() noexcept
         {
             if (ImGui::BeginChild("Dial", {0, dial_height}, ImGuiChildFlags_None, ImGuiWindowFlags_NoScrollbar))
             {

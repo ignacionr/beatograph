@@ -19,7 +19,7 @@ namespace hosting::ssh
 {
     struct screen
     {
-        void render(host::ptr host, std::shared_ptr<local::host> localhost)
+        void render(host::ptr host, std::shared_ptr<local::host> localhost) noexcept
         {
             if (!host)
             {
@@ -294,13 +294,18 @@ namespace hosting::ssh
                 ImGui::Unindent();
                 if (ImGui::Button("Connect..."))
                 {
+                    last_error_.clear();
                     // just spawn a new process
                     std::string command = std::format("ssh {}", host->name());
                     // use the Windows API with a simple shell command
                     if (auto result = reinterpret_cast<long long>(ShellExecuteA(NULL, "open", "cmd", std::format("/c {}", command).c_str(), NULL, SW_SHOW)); result <= 32)
                     {
-                        throw std::runtime_error(std::format("ShellExecute failed with error code {}", result));
+                        last_error_ = std::format("ShellExecute failed with error code {}", result);
                     }
+                }
+                if (!last_error_.empty())
+                {
+                    ImGui::TextColored(ImVec4(1, 0, 0, 1), "%s", last_error_.c_str());
                 }
                 ImGui::Unindent();
                 ImGui::PopID();
@@ -313,5 +318,6 @@ namespace hosting::ssh
         docker_screen docker_screen_;
         std::string systemctl_filter_;
         std::string process_filter_;
+        std::string last_error_;
     };
 }

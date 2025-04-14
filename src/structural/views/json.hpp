@@ -22,7 +22,7 @@ namespace views
             std::function<void(nlohmann::json const &)> action;
         };
 
-        void render(nlohmann::json const &json, std::vector<additional_action> const &actions = {}, selector_t selector = {}) const
+        void render(nlohmann::json const &json, std::vector<additional_action> const &actions = {}, selector_t selector = {}) const noexcept
         {
             render_internal(json);
             if (ImGui::SmallButton(ICON_MD_CONTENT_COPY " Copy"))
@@ -115,7 +115,7 @@ namespace views
             }
         }
 
-        void render(std::string const &json_src, selector_t selector = {}) const
+        void render(std::string const &json_src, selector_t selector = {}) const noexcept
         {
             if (last_source_ != json_src)
             {

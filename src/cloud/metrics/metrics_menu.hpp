@@ -11,7 +11,7 @@
 struct metrics_menu {
     metrics_menu(metrics_model const &model) : model{model} {}
 
-    void render();
+    void render() noexcept;
 
     metric const *selected_metric = nullptr;
     int max_matches {100};

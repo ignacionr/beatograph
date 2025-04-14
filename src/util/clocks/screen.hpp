@@ -176,7 +176,7 @@ namespace clocks
             }
         }
 
-        void render()
+        void render() noexcept
         {
             constexpr auto side_width{210};
             constexpr auto cell_height{340};

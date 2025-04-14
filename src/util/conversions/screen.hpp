@@ -15,7 +15,7 @@ namespace conversions
 {
     struct screen
     {
-        void render()
+        void render() noexcept
         {
             for (const auto &[name, conversion] : get_conversions())
             {

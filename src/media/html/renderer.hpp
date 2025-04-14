@@ -32,7 +32,7 @@ namespace media::html
             html_element* parent {nullptr};
             html_element_type& type;
 
-            void render() {
+            void render() noexcept {
                 type.render_prolog(*this);
                 for (auto const &child : children) {
                     child->render();
@@ -148,7 +148,7 @@ namespace media::html
                 s = pos->second(c);
             }
         }
-        void render(std::string const &html)
+        void render(std::string const &html) noexcept
         {
             if (html_ != html) {
                 render_ = create_renderer(html);

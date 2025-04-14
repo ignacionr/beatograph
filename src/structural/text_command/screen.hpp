@@ -9,7 +9,7 @@ namespace structural::text_command {
     struct screen {
         screen(host &host) : host_{host} {}
 
-        void render() {
+        void render() noexcept {
             ImGui::PushID("text_command");
             if (search_text_.reserve(256); ImGui::InputText("##text_command", search_text_.data(), search_text_.capacity())) {
                 search_text_ = search_text_.data();

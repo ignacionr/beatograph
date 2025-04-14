@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "metrics_menu.hpp"
 
-void metrics_menu::render()
+void metrics_menu::render() noexcept
 {
     // let's show an autocomplete text box
     static char input[256] = "";

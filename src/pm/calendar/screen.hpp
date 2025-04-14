@@ -20,7 +20,7 @@ namespace calendar
             set_date(today_);
         }
 
-        void render()
+        void render() noexcept
         {
             views::cached_view<event_set>("calendar", 
                 [this] { return host_->get_events(); }, 

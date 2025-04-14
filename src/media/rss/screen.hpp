@@ -107,7 +107,7 @@ namespace media::rss
             ImGui::EndChild();
         }
 
-        void render()
+        void render() noexcept
         {
             if (current_feed_)
             {

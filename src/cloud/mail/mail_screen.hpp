@@ -15,7 +15,8 @@ namespace cloud::mail {
     class screen {
     public:
         screen(std::shared_ptr<imap_host> host): host(host) {}
-        void render() {
+        void render() noexcept
+        {
             views::cached_view<std::vector<std::shared_ptr<message>>>(
                 "Messages",
                 [this] {

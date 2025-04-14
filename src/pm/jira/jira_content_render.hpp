@@ -9,7 +9,7 @@
 
 namespace jira{
     struct content {
-        static void render(nlohmann::json::object_t const &element) {
+        static void render(nlohmann::json::object_t const &element) noexcept {
             static auto render_subcontent = [](nlohmann::json::object_t const &container) {
                 if (container.contains("content")) {
                     try {

@@ -9,7 +9,8 @@
 
 namespace cppgpt {
     struct screen {
-        void render(std::shared_ptr<ignacionr::cppgpt> gpt, std::function<void(std::string_view)> say) {
+        void render(std::shared_ptr<ignacionr::cppgpt> gpt, std::function<void(std::string_view)> say) noexcept 
+        {
             if (prompt.reserve(2500); ImGui::InputTextMultiline("##prompt", prompt.data(), prompt.capacity())) {
                 prompt = prompt.data();
             }

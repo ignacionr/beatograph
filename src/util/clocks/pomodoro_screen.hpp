@@ -14,7 +14,7 @@ namespace clocks {
     struct pomodoro_screen {
         pomodoro_screen(std::shared_ptr<pomodoro> pomodoro) : pomodoro_{pomodoro} {}
 
-        void render()
+        void render() noexcept
         {
             if (ImGui::BeginChild("Pomodoro")) {
                 if (ImGui::SmallButton(ICON_MD_RESET_TV " Reset")) {

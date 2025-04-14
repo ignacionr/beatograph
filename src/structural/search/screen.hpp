@@ -15,7 +15,7 @@ namespace search {
         using match_vector_t = std::vector<std::pair<std::string, action_t>>;
 
         screen(host &host) : host_(host) {}
-        void render() {
+        void render() noexcept {
             if (search_string_.reserve(256); ImGui::InputText("Search", search_string_.data(), search_string_.capacity())) {
                 search_string_ = search_string_.data();
                 auto new_matches = std::make_shared<match_vector_t>();

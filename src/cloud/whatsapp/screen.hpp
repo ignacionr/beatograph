@@ -14,7 +14,7 @@ namespace cloud::whatsapp
 {
     struct screen
     {
-        void render(host &h, auto &img_cache) {
+        void render(host &h, auto &img_cache) noexcept {
             if (try_connect_) {
                 try {
                     long long const texture_id {img_cache.load_texture_from_url(h.get_qr_image_url(), {}, ".png", std::chrono::minutes{1})};

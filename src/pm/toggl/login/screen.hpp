@@ -14,7 +14,7 @@ namespace toggl::login
 
         std::shared_ptr<host> host() const { return host_; }
 
-        void render() {
+        void render() noexcept {
             if (token_.reserve(200); ImGui::InputText("Toggl Personal Token", token_.data(), token_.capacity())) {
                 token_ = token_.data();
                 host_->set_token(token_);

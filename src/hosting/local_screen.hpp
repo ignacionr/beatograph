@@ -10,7 +10,7 @@ namespace hosting::local
     {
         screen(std::shared_ptr<hosting::local::host> host) : host(host) {}
 
-        void render() const
+        void render() const noexcept
         {
             ImGui::Text("Hostname: %s", host->HostName().c_str());
             views::cached_view<nlohmann::json::object_t>("IP and Location", 

@@ -22,7 +22,7 @@ namespace panel {
             render_ = render_to_cache(panel, localhost);
         }
 
-        void render() const {
+        void render() const noexcept {
             render_();
         }
 

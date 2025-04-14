@@ -14,7 +14,7 @@
 namespace calendar
 {
     struct uni_notice {
-        void render() {
+        void render() noexcept {
             static int frame_count = 6000;
             if (++frame_count >= 6000) {
                 frame_count = 0;

@@ -32,7 +32,7 @@ namespace github::repo
             return repo_.at("full_name").get_ref<const std::string &>();
         }
 
-        void render()
+        void render() noexcept
         {
             auto const &repo_name{name()};
             ImGui::PushID(repo_name.c_str());

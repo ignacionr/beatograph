@@ -19,7 +19,7 @@ namespace jira
         {
         }
 
-        void render(nlohmann::json::object_t const &json_project, host& host)
+        void render(nlohmann::json::object_t const &json_project, host& host) noexcept
         {
             auto const key {json_project.at("key").get<std::string>()};
             ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[1]);

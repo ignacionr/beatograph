@@ -8,7 +8,7 @@
 struct tool_screen {
     tool_screen(std::vector<group_t> &&tabs) : tabs{std::move(tabs)} {}
 
-    void render()
+    void render() noexcept
     {
         if (!visible_) {
             return;

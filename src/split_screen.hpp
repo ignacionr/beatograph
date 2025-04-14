@@ -12,7 +12,7 @@ struct split_screen
     split_screen(render_t left, render_t right, menu_t left_menu = {}, menu_t right_menu = {}) : 
     left_{left}, right_{right}, left_menu_{left_menu}, right_menu_{right_menu} {}
 
-    void render() {
+    void render() noexcept {
         if (show_left_) {
             bool full_width = !show_right_;
             if (ImGui::BeginChild("Left",

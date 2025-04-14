@@ -43,7 +43,7 @@ static unsigned int LoadTexture(const char *file_path)
     return texture;
 }
 
-void metric_view::render(metric const &m, metric_view_config &config, std::list<metric_value> const &values)
+void metric_view::render(metric const &m, metric_view_config &config, std::list<metric_value> const &values) noexcept
 {
     ImGui::Text("Name: %s", m.name.c_str());
     ImGui::Text("%s", m.help.c_str());

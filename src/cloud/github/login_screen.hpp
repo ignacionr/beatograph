@@ -10,7 +10,8 @@
 namespace github::login {
     struct screen {
         screen(host& host): host_{host} {}
-        bool render() {
+        bool render() noexcept
+        {
             if (personal_token_.reserve(256); ImGui::InputText("Personal Token", personal_token_.data(), personal_token_.capacity())) {
                 personal_token_ = personal_token_.data();
             }

@@ -57,7 +57,7 @@ namespace git{
             }
         }
 
-        void render() {
+        void render() noexcept {
             render_list();
             if (ImGui::CollapsingHeader("Clone Repository"))
             {

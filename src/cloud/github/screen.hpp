@@ -34,7 +34,7 @@ namespace github
             host_->login_host(login_host_);
         }
 
-        void render()
+        void render() noexcept
         {
             if (config_mode_)
             {

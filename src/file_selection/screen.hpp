@@ -20,7 +20,7 @@ namespace file_selection
     {
     public:
         Screen(auto const &base_path): base_path_{base_path} { set_filter(filter_); }
-        void render() {
+        void render() noexcept {
             bool filter_dirty = false;
             if (base_path_.reserve(MAX_PATH); ImGui::InputText("Base Path", base_path_.data(), base_path_.capacity()))
             {

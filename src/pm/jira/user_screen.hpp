@@ -14,7 +14,7 @@ namespace jira
     {
         user_screen() {}
 
-        void render(nlohmann::json::object_t const &json_user) {
+        void render(nlohmann::json::object_t const &json_user) noexcept {
             // obtain the avatar url
             std::string avatar_url {"https://fakeimg.pl/48x48/cccccc/909090?text=User&font=lobster"};
             if (json_user.contains("avatarUrls")) {

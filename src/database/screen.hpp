@@ -8,7 +8,7 @@ namespace database
 {
     struct screen
     {
-        void render() {
+        void render() noexcept {
             ImGui::Text("Database");
         }
     };

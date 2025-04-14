@@ -14,7 +14,7 @@ struct screen_tabs {
     screen_tabs(std::vector<group_t> tabs, tab_changed_sink_t tab_changed) 
     : tabs{std::move(tabs)}, tab_changed_{tab_changed} {}
 
-    void render()
+    void render() noexcept
     {
         if (ImGui::BeginTabBar("Tabs")) {
             ImGui::PushStyleColor(ImGuiCol_Tab, ImVec4(0.05f, 0.05f, 0.05f, 0.8f));
