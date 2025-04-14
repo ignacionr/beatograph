@@ -6,6 +6,7 @@
 
 #include <imgui.h>
 #include <nlohmann/json.hpp>
+#include <Windows.h>
 
 namespace jira{
     struct content {

@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.18)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Set the path to vcpkg toolchain file
 # set(CMAKE_TOOLCHAIN_FILE "E:/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE STRING "Vcpkg toolchain file")
 # Enable CMake's find_package to use vcpkg

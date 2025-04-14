@@ -96,5 +96,10 @@
     "cmake.automaticReconfigure": false,
     "C_Cpp.default.cppStandard": "c++23",
     "cmake.configureOnEdit": false,
-    "cmake.configureOnOpen": false
+    "cmake.configureOnOpen": false,
+    "clang-tidy.buildPath": "build",
+    "clang-tidy.compilerArgs": [
+        "-Ibuild/vcpkg_installed/x64-windows/include",
+        "-std=c++23"
+    ]
 }

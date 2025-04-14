@@ -1,7 +1,5 @@
 #pragma once
 
-#include "pch.h"
-
 #include <filesystem>
 #include <fstream>
 #include <map>
@@ -61,7 +59,7 @@ namespace file_selection
                 set_filter(filter_);
             }
             if (!error_.empty()) {
-                ImGui::TextColored(ImVec4{1.0f, 0.0f, 0.0f, 1.0f}, error_.c_str());
+                ImGui::TextColored(ImVec4{1.0f, 0.0f, 0.0f, 1.0f}, "%s", error_.c_str());
             }
             std::lock_guard lock(mutex_results_);
             for (auto &[name, selected] : files_) {

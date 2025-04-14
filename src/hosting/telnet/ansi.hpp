@@ -37,7 +37,7 @@ namespace hosting::telnet {
         static std::string_view cursor_forward() { return "\033[C"; }
         static std::string_view cursor_back() { return "\033[D"; }
 
-        static std::string_view cursor_position(int x, int y) {
+        static std::string cursor_position(int x, int y) {
             return "\033[" + std::to_string(y) + ";" + std::to_string(x) + "H";
         }
     };

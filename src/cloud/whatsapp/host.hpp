@@ -1,7 +1,5 @@
 #pragma once
 
-#include "pch.h"
-
 #include <format>
 #include <memory>
 #include <string>

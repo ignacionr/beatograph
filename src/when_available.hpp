@@ -1,9 +1,10 @@
 #pragma once
 
+#include <functional>
 #include <iostream>
 #include <map>
+#include <optional>
 #include <vector>
-#include <functional>
 
 template <typename T>
 class Repository {

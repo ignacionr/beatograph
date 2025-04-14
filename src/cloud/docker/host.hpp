@@ -3,7 +3,7 @@
 #include <format>
 #include <nlohmann/json.hpp>
 
-#include "../hosting/host_local.hpp"
+#include "../../hosting/host_local.hpp"
 namespace docker {
 struct host {
     host(std::string const &host_name) : host_name_{host_name} {}
@@ -104,16 +104,16 @@ struct host {
         return std::any_of(array.begin(), array.end(), [&container_id_or_name](auto const &container) {
             bool found{false};
             if (container.contains("Names")) {
-                auto names = container["Names"].get<std::string>();
+                auto names = container["Names"].template get<std::string>();
                 found = names == container_id_or_name;
             }
             if (!found && container.contains("ID")) {
-                auto id = container["ID"].get<std::string>();
+                auto id = container["ID"].template get<std::string>();
                 found = id.find(container_id_or_name) != std::string::npos;
             }
             if (found) {
                 if (container.contains("State")) {
-                    auto state = container["State"].get<std::string>();
+                    auto state = container["State"].template get<std::string>();
                     found = state == "running";
                 }
                 else {

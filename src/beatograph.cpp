@@ -1,5 +1,5 @@
 #include "pch.h"
-#pragma execution_character_set("utf-8")
+#pragma execution_character_set(push, "utf-8")
 #include "../external/IconsMaterialDesign.h"
 #include <algorithm>
 #include <numeric>
@@ -21,8 +21,6 @@
 #include "cloud/metrics/metrics_screen.hpp"
 #include "pm/toggl/toggl_client.hpp"
 #include "pm/toggl/toggl_screen.hpp"
-#include "pm/jira/host.hpp"
-#include "pm/jira/screen.hpp"
 #include "pm/calendar/uni_notice.hpp"
 #include "hosting/host.hpp"
 #include "hosting/host_local.hpp"

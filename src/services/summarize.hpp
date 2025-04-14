@@ -4,7 +4,8 @@
 #include <string>
 
 #include "../registrar.hpp"
-#include <cppgpt/cppgpt.hpp>
+#include "../../external/cppgpt/cppgpt.hpp"
+#include "../hosting/http/fetch.hpp"
 
 namespace services {
     struct summarize {

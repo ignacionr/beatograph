@@ -4,13 +4,12 @@
 #include <ranges>
 #include <imgui.h>
 #include "host.hpp"
-#include "../hosting/host.hpp"
-#include "../hosting/host_local.hpp"
+#include "../../hosting/host.hpp"
+#include "../../hosting/host_local.hpp"
 
-#pragma execution_character_set("utf-8")
+#pragma execution_character_set(push, "utf-8")
 
-#pragma execution_character_set("utf-8")
-#include "../../external/IconsMaterialDesign.h"
+#include "../../../external/IconsMaterialDesign.h"
 
 struct docker_screen
 {
@@ -22,7 +21,7 @@ struct docker_screen
             auto const &ps = host.ps();
             if (ps)
             {
-                auto const &array{ps->get<nlohmann::json::array_t>()};
+                auto const &array{ps->template get<nlohmann::json::array_t>()};
                 if (array.empty())
                 {
                     ImGui::Text("No containers.");
@@ -59,7 +58,7 @@ struct docker_screen
                         ImGui::TableHeadersRow();
                         for (auto const &container : array)
                         {
-                            if (container.contains("State") && container["State"].get<std::string>() == "running")
+                            if (container.contains("State") && container["State"].template get<std::string>() == "running")
                             {
                                 ImGui::TableNextRow();
                                 ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0,
@@ -74,7 +73,7 @@ struct docker_screen
                                 ImGui::TableNextRow();
                             }
 
-                            auto const container_id{container["ID"].get<std::string>()};
+                            auto const container_id{container["ID"].template get<std::string>()};
                             ImGui::PushID(container_id.c_str());
                             
                             ImGui::TableNextColumn();
@@ -93,7 +92,7 @@ struct docker_screen
                                 ImGui::TableNextColumn();
                                 if (container.contains(column_name))
                                 {
-                                    ImGui::Text("%s", container[column_name].get<std::string>().c_str());
+                                    ImGui::Text("%s", container[column_name].template get<std::string>().c_str());
                                 }
                                 else
                                 {

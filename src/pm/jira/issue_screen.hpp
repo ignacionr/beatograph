@@ -7,7 +7,7 @@
 
 #include <nlohmann/json.hpp>
 #include <imgui.h>
-#include <cppgpt/cppgpt.hpp>
+#include "../../../external/cppgpt/cppgpt.hpp"
 #include "../../structural/views/json.hpp"
 #include "../../structural/views/cached_view.hpp"
 #include "colors.hpp"

@@ -8,6 +8,7 @@
 
 #include "../../structural/text_command/host.hpp"
 #include "../../../external/cppgpt/cppgpt.hpp"
+#include "../../hosting/http/fetch.hpp"
 
 namespace cloud::cppgpt {
     struct command {

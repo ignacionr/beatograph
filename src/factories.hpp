@@ -16,6 +16,12 @@
 #include "pm/calendar/screen.hpp"
 #include "util/clocks/pomodoro_screen.hpp"
 
+#include "pm/toggl/toggl_client.hpp"
+#include "pm/toggl/toggl_screen.hpp"
+
+#include "pm/jira/host.hpp"
+#include "pm/jira/screen.hpp"
+
 
 struct screen_factories {
     static std::map<std::string, std::function<group_t(nlohmann::json::object_t const &)>> map(auto &menu_tabs, auto &menu_tabs_and, auto &notify_host, auto &radio_host, auto &localhost, auto &cache, auto &gpt, auto &toggl_screens_by_id, auto &ssh_all, auto &mappings)

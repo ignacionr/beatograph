@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 namespace cloud::twitter {
     struct host {
         std::string name;

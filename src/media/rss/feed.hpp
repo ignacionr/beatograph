@@ -4,12 +4,14 @@
 #include <format>
 #include <functional>
 #include <mutex>
+#include <set>
 #include <sstream>
 #include <string>
 #include <vector>
 
 #include <tinyxml2.h>
 #include "../../hosting/http/fetch.hpp"
+#include "../../registrar.hpp"
 
 namespace media::rss {
     struct feed {

@@ -53,7 +53,7 @@ namespace media::html
                         for (auto const &child : el.children) {
                             if (child->tag_name() == "tr") {
                                 // count the number of "td" elements
-                                int columns = std::accummulate(child->children.begin(), child->children.end(), 0, [](size_t count, auto const &el) {
+                                int columns = std::accumulate(child->children.begin(), child->children.end(), 0, [](size_t count, auto const &el) {
                                     return count + (el->tag_name() == "td" ? 1 : 0);
                                 });
                                 max_columns = std::max(max_columns, columns);
@@ -147,6 +147,7 @@ namespace media::html
                 }
                 s = pos->second(c);
             }
+            return render;
         }
         void render(std::string const &html) noexcept
         {

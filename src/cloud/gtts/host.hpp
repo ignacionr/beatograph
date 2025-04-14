@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <format>
 #include <fstream>
+#include <functional>
 #include <string>
 #include <unordered_map>
 
@@ -78,9 +79,10 @@ namespace gtts {
             // cut down to word boundaries up to 200 characters
             size_t slice_size;
             for (std::string_view slice = text; !slice.empty(); slice = slice.substr(slice_size)) {
-                slice_size = std::min(slice.size(), 200ull);
-                if (slice_size == 200ull) {
-                    while (std::isalpha(slice[slice_size - 1])|| std::isdigit(slice[slice_size - 1])) {
+                slice_size = slice.size();
+                if (slice_size > 200) {
+                    slice_size = 200;
+                    while (slice_size > 0 && slice[slice_size] != ' ') {
                         --slice_size;
                     }
                 }

@@ -15,7 +15,7 @@
 #include <time.h>
 
 #include "toggl_client.hpp"
-#include "../external/IconsMaterialDesign.h"
+#include "../../../external/IconsMaterialDesign.h"
 #include "../../registrar.hpp"
 #include "login/screen.hpp"
 #include "../../structural/config/file_config.hpp"

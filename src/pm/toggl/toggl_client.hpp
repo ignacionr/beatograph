@@ -41,6 +41,12 @@ namespace toggl
             login_ = login;
         }
 
+        auto getTimeEntries()
+        {
+            auto str = performRequest(std::format("{}me/time_entries", baseUrl), "GET");
+            return nlohmann::json::parse(str);
+        }
+
         void check_today(int seconds_target = 9 * 3600)
         {
             try
@@ -50,15 +56,21 @@ namespace toggl
                 auto const today = std::chrono::system_clock::now();
                 auto const today_start = std::chrono::floor<std::chrono::days>(today);
                 auto const today_end = today_start + std::chrono::hours(24);
-                auto today_entries = entries | std::views::filter([today_start, today_end](auto const &entry) {
-                    auto const start = conversions::date_time::from_string(entry["start"]);
-                    return start >= today_start && start < today_end; });
+                auto today_entries = entries | 
+                    std::views::filter([today_start, today_end](const auto &entry) {
+                        auto const start = conversions::date_time::from_string(entry["start"]);
+                        return start >= today_start && start < today_end;
+                    });
                 auto const today_seconds {std::accumulate(today_entries.begin(), 
                     today_entries.end(), 
                     0ll, 
                     [](auto acc, auto const &entry) {
-                        auto duration = entry["duration"].get<long long>();
-                        return acc + (duration < 0 ? std::chrono::system_clock::now().time_since_epoch().count() / 1000000ll - entry["start"].get<long long>() : duration); 
+                        auto duration = entry["duration"].template get<long long>();
+                        return acc + 
+                            (duration < 0 ? 
+                                std::chrono::system_clock::now().time_since_epoch().count() 
+                                / 1000000ll - entry["start"].template get<long long>() 
+                                : duration); 
                     })};
                 if (today_seconds < 1)
                 {
@@ -73,12 +85,6 @@ namespace toggl
             {
                 notifier_(std::format("Failed to get time entries: {}", e.what()));
             }
-        }
-
-        auto getTimeEntries()
-        {
-            auto str = performRequest(std::format("{}me/time_entries", baseUrl), "GET");
-            return nlohmann::json::parse(str);
         }
 
         std::string startTimeEntry(long long workspace_id, const std::string_view description_text)
@@ -101,8 +107,8 @@ namespace toggl
         {
             auto url = std::format("{}workspaces/{}/time_entries/{}",
                                    baseUrl,
-                                   entry["workspace_id"].get<long long>(),
-                                   entry["id"].get<long long>());
+                                   entry["workspace_id"].template get<long long>(),
+                                   entry["id"].template get<long long>());
             auto data = std::format("{{\"stop\":\"{}\"}}",
                                     std::format("{:%FT%T}Z", std::chrono::system_clock::now()));
             return performRequest(url, "PUT", data);
@@ -112,8 +118,8 @@ namespace toggl
         {
             auto url = std::format("{}workspaces/{}/time_entries/{}",
                                    baseUrl,
-                                   entry["workspace_id"].get<long long>(),
-                                   entry["id"].get<long long>());
+                                   entry["workspace_id"].template get<long long>(),
+                                   entry["id"].template get<long long>());
             performRequest(url, "DELETE");
         }
 

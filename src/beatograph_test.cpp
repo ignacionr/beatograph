@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
 // Include the header file for the module being tested
-#include "metrics/metrics_parser.hpp"
+#include "cloud/metrics/metrics_parser.hpp"
 
 TEST(metrics_parser_test, should_parse_help_line) {
   // Create an instance of the beatograph module

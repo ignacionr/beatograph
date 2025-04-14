@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <optional>
 
@@ -11,6 +12,7 @@
 #include "../../imgcache.hpp"
 #include "../../registrar.hpp"
 #include "location.hpp"
+#include "../../../external/IconsMaterialDesign.h"
 
 namespace radio
 {
@@ -112,11 +114,19 @@ namespace radio
                 auto target_x = currently_playing.has_value() ? (initial_pos.x + currently_playing.value() * x_unit + 4) : initial_pos.x;
                 if (dial_x < target_x)
                 {
-                    dial_x = std::min(target_x, dial_x + (target_x - dial_x) / 10 + 1);
+                    dial_x = dial_x + (target_x - dial_x) / 10 + 1;
+                    if (dial_x > target_x)
+                    {
+                        dial_x =target_x;
+                    }
                 }
                 else if (dial_x > target_x)
                 {
-                    dial_x = std::max(target_x, dial_x - (dial_x - target_x) / 10 - 1);
+                    dial_x = dial_x - (dial_x - target_x) / 10 - 1;
+                    if (dial_x < target_x)
+                    {
+                        dial_x = target_x;
+                    }
                 }
 
                 draw_list->AddLine({0, offset_y + y_center - 1}, {dial_width, offset_y + y_center - 1}, green);
@@ -149,8 +159,13 @@ namespace radio
                     ImGui::Indent();
                     unsigned long const start = static_cast<unsigned long>(ImGui::GetTime() * 2.0) % title.size();
                     draw_list->AddRectFilled({cursor_pos.x + 20, cursor_pos.y + 50}, {cursor_pos.x + 110, cursor_pos.y + 62}, IM_COL32(0, 0, 0, 190));
+                    size_t length {start + 10};
+                    if (length > title.size())
+                    {
+                        length = title.size();
+                    }
                     ImGui::TextUnformatted(title.data() + start,
-                                           title.data() + std::min(start + 10ul, static_cast<unsigned long>(title.size())));
+                                           title.data() + length);
                     ImGui::Unindent();
                 }
 

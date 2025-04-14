@@ -3,6 +3,7 @@
 #include <chrono>
 #include <filesystem>
 #include <fstream>
+#include <iostream>
 #include <map>
 #include <mutex>
 #include <string>
@@ -192,7 +193,7 @@ struct img_cache
         // obtain the url path plus filename part only (exclude querystring or hash)
         auto const pos_qs = url.find('?');
         auto const pos_hash = url.find('#');
-        auto const pos_end = std::min(pos_qs, pos_hash);
+        auto const pos_end = pos_qs < pos_hash ? pos_qs : pos_hash;
         auto const url_path = url.substr(0, pos_end);
 
         // get the url extension

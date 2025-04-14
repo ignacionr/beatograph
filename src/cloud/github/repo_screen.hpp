@@ -6,7 +6,7 @@
 
 #include <imgui.h>
 #include <nlohmann/json.hpp>
-#include <cppgpt/cppgpt.hpp>
+#include "../../../external/cppgpt/cppgpt.hpp"
 
 #include "../../imgcache.hpp"
 #include "../../registrar.hpp"

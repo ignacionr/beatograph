@@ -475,7 +475,11 @@ namespace radio
             {
                 return current_run_;
             }
-            auto diff = std::min(std::chrono::duration_cast<std::chrono::milliseconds>(now - current_packet_sent_), current_packet_length_);
+            auto diff = std::chrono::duration_cast<std::chrono::milliseconds>(now - current_packet_sent_);
+            if (diff > current_packet_length_)
+            {
+                diff = current_packet_length_;
+            }
             return current_run_ + diff;
         }
 

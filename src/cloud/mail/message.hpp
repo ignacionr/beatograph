@@ -5,7 +5,7 @@
 #include <string>
 #include "../../util/conversions/rfc2047.hpp"
 
-#include <cppgpt/cppgpt.hpp>
+#include "../../../external/cppgpt/cppgpt.hpp"
 
 namespace cloud::mail
 {

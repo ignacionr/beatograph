@@ -19,18 +19,6 @@ namespace hosting::db {
             }
         }
 
-        std::optional<std::string> get(std::string const& key) {
-            std::string value;
-            db_.exec(std::format("SELECT value FROM keyval WHERE key = '{}'", key), [&value](int, char **data, char **columns) {
-                value = data[0];
-                return 0;
-            });
-            if (value.empty()) {
-                return {};
-            }
-            return value;
-        }
-
         void scan_level(std::string_view name_base, auto sink) {
             db_.exec(std::format("SELECT key FROM keyval WHERE key LIKE '{}%'", name_base), [&sink](int, char **data, char **columns) {
                 sink(data[0]);
@@ -41,5 +29,3 @@ namespace hosting::db {
         sqlite db_;
     };
 }
-
-static_assert(KeyValue<hosting::db::sqlite_keyval>);

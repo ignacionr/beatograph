@@ -5,7 +5,8 @@
 #include <string>
 
 #include <imgui.h>
-#include "../external/cppgpt/cppgpt.hpp"
+#include "../../../external/cppgpt/cppgpt.hpp"
+#include "../../hosting/http/fetch.hpp"
 
 namespace cppgpt {
     struct screen {
