@@ -22,12 +22,31 @@
 #include "pm/jira/host.hpp"
 #include "pm/jira/screen.hpp"
 
+#include "cloud/deel/host.hpp"
+#include "cloud/deel/screen.hpp"
+
 
 struct screen_factories {
     static std::map<std::string, std::function<group_t(nlohmann::json::object_t const &)>> map(auto &menu_tabs, auto &menu_tabs_and, auto &notify_host, auto &radio_host, auto &localhost, auto &cache, auto &gpt, auto &toggl_screens_by_id, auto &ssh_all, auto &mappings)
     {
 
         return {
+        {"calendar",
+            [&menu_tabs, localhost](nlohmann::json::object_t const &cal)
+            { 
+                auto calendar_host {std::make_shared<calendar::host>(localhost->resolve_environment(cal.at("endpoint")))};
+                registrar::add(cal.at("title"), calendar_host);
+                return group_t{cal.at("title"),
+                                [cs = calendar::screen{calendar_host}]() mutable
+                                { cs.render(); },
+                                menu_tabs}; }},
+        {"deel",
+            [&menu_tabs](auto const &) {
+                auto host = std::make_shared<cloud::deel::host<http::fetch>>();
+                auto screen = std::make_shared<cloud::deel::screen>();
+                return group_t{ICON_MD_ACCOUNT_BALANCE " Deel",
+                               [screen, host] { screen->render(host); },
+                               menu_tabs}; }},
         {"github",
          [&menu_tabs](nlohmann::json::object_t const &node)
          {
@@ -36,15 +55,6 @@ struct screen_factories {
                 return group_t{ICON_MD_CODE " GitHub", 
                     [screen] { screen->render(); },
                     menu_tabs}; }},
-        {"calendar",
-         [&menu_tabs, localhost](nlohmann::json::object_t const &cal)
-         { 
-            auto calendar_host {std::make_shared<calendar::host>(localhost->resolve_environment(cal.at("endpoint")))};
-            registrar::add(cal.at("title"), calendar_host);
-            return group_t{cal.at("title"),
-                          [cs = calendar::screen{calendar_host}]() mutable
-                          { cs.render(); },
-                          menu_tabs}; }},
         {"pomodoro",
             [&menu_tabs](nlohmann::json::object_t const &pomodoro_item) {
                 return group_t{

@@ -1,6 +1,10 @@
 {
     "tabs": [
         {
+            "type": "deel",
+            "token": "${DEEL_TOKEN}"
+        },
+        {
             "type": "github",
             "title": "\uf09b GitHub",
             "login_name": "Personal"
