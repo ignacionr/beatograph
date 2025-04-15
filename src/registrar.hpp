@@ -59,13 +59,25 @@ public:
         getTypeMap().erase(key);
     }
 
-    struct call_fn_str {
-        std::string name;
-
+    class call_fn_str {
+    public:
+        call_fn_str(std::string const &name) : svc_{registrar::get<std::function<void(std::string const&)>>(name)} {}
         void operator()(std::string const &p) const {
-            auto service = registrar::get<std::function<void(std::string const &)>>(name);
-            (*service)(p);
+            (*svc_)(p);
         }
+    private:
+        std::shared_ptr<std::function<void(std::string const &)>> svc_;
+    };
+
+    class call_fn_ret_bool {
+    public:
+        call_fn_ret_bool(std::string const &name) : svc_{registrar::get<std::function<bool()>>(name)} {}
+
+        [[nodiscard]] bool operator()() const {
+            return (*svc_)();
+        }
+    private:
+        std::shared_ptr<std::function<bool()>> svc_;
     };
 
 private:
@@ -89,4 +101,8 @@ private:
 
 inline registrar::call_fn_str operator ""_sfn(const char* str, size_t) {
     return registrar::call_fn_str{std::string{str}};
+}
+
+inline registrar::call_fn_ret_bool operator ""_fnb(const char* str, size_t) {
+    return registrar::call_fn_ret_bool{std::string{str}};
 }

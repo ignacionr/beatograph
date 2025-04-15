@@ -64,7 +64,7 @@ namespace media::rss
         void add_feeds(std::vector<std::string> urls)
         {
             fetch_thread_ = std::jthread([this, urls] {
-                auto quit_job = registrar::get<std::function<bool()>>({"quitting"});
+                auto quit_job = "quitting"_fnb;
                 for (auto const &url_str : urls) {
                     try {
                         add_feed_sync(url_str, quit_job);
@@ -75,16 +75,16 @@ namespace media::rss
                     catch(...) {
                         "notify"_sfn(std::format("Failed to add feed {}\n", url_str));
                     }
-                    if ((*quit_job)()) break;
+                    if (quit_job()) break;
                 }
                 });
         }
 
-        std::shared_ptr<media::rss::feed> add_feed_sync(std::string_view url, std::shared_ptr<std::function<bool()>> quitting)
+        std::shared_ptr<media::rss::feed> add_feed_sync(std::string_view url, auto quitting)
         {
             auto feed_ptr = std::make_shared<media::rss::feed>(get_feed(url, system_runner_));
             {
-                if ((*quitting)()) return nullptr;
+                if (quitting()) return nullptr;
 
                 static std::mutex mutex;
                 std::lock_guard<std::mutex> lock(mutex);
