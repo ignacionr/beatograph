@@ -3,6 +3,7 @@
 #include "host_local.hpp"
 #include "../structural/views/cached_view.hpp"
 #include "../structural/views/json.hpp"
+#include "../structural/views/keyval_view.hpp"
 
 namespace hosting::local
 {
@@ -19,6 +20,17 @@ namespace hosting::local
             },
             [this](nlohmann::json::object_t const &location) {
                 json_viewer.render(location);
+            });
+            views::cached_view<std::map<std::string, std::string>>("Environment Variables",
+            [this]() {
+                std::map<std::string, std::string> env_vars;
+                host->scan_environment([&env_vars](std::string_view key, std::string_view value) {
+                    env_vars.emplace(std::string{key}, std::string{value});
+                });
+                return env_vars;
+            },
+            [this](std::map<std::string, std::string> const &env_vars) {
+                views::keyval(env_vars, "Var", "Value");
             });
         }
 

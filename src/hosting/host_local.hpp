@@ -35,6 +35,27 @@ namespace hosting::local
             return std::string{val, len - 1}; // len returns the count of all copied bytes, including the terminator
         }
 
+        void scan_environment(auto callback) const
+        {
+            // Scan the environment variables and call the callback for each one
+#if defined (_MSC_VER)
+            for (char **env = *__p__environ(); *env != nullptr; ++env)
+#else
+            extern char **environ;
+            for (char **env = environ; *env != nullptr; ++env)
+#endif
+            {
+                std::string_view env_var{*env};
+                size_t pos = env_var.find('=');
+                if (pos != std::string::npos)
+                {
+                    std::string_view key = env_var.substr(0, pos);
+                    std::string_view value = env_var.substr(pos + 1);
+                    callback(key, value);
+                }
+            }
+        }
+
         void set_env_variable(std::string const &key, std::string const &value)
         {
             _putenv_s(key.c_str(), value.c_str());
