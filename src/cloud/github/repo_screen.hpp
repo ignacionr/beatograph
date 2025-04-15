@@ -159,8 +159,7 @@ namespace github::repo
                                             }
                                             catch(std::exception &e) {
                                                 // notify the error
-                                                auto notify = registrar::get<std::function<void(std::string_view)>>({"notify"});
-                                                (*notify)(e.what());
+                                                "notify"_sfn(e.what());
                                             }
                                         }
                                         ImGui::PopID();

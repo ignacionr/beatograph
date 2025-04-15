@@ -12,7 +12,7 @@
 
 namespace cloud::cppgpt {
     struct command {
-        static structural::text_command::command_source create_source(std::shared_ptr<ignacionr::cppgpt> gpt, std::function<void(std::string_view const &)> notify_service) {
+        static structural::text_command::command_source create_source(std::shared_ptr<ignacionr::cppgpt> gpt) {
             return {
                 [](std::string const &partial, std::function<void(std::string const &)> callback) {
                     if (partial.starts_with("ai")) {

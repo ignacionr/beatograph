@@ -64,8 +64,7 @@ namespace cloud::deel
                     }
                 });
             if (ImGui::SmallButton("Open in Browser")) {
-                auto const openfn = registrar::get<std::function<void(std::string const &)>>("open");
-                (*openfn)("https://app.deel.com/");
+                "open"_sfn("https://app.deel.com/");
             }
         }
     };

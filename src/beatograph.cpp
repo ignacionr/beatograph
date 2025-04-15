@@ -283,7 +283,7 @@ int main()
 
         gtts::host gtts_host{"./gtts_cache"};
         notify::host notify_host;
-        auto notify_service = std::make_shared<std::function<void(std::string_view)>>([&notify_host](std::string_view text){ 
+        auto notify_service = std::make_shared<std::function<void(std::string const &)>>([&notify_host](std::string const &text){ 
             notify_host(text); 
         });
         registrar::add("notify", notify_service);
@@ -318,7 +318,7 @@ int main()
 
         notify::screen notify_screen{notify_host};
 
-        text_command_host->add_source(cloud::cppgpt::command::create_source(gpt, *notify_service));
+        text_command_host->add_source(cloud::cppgpt::command::create_source(gpt));
 
         radio::host radio_host;
         constexpr std::string_view lastplayed_key{"radio.last_played"};

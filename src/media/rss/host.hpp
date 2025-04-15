@@ -65,16 +65,15 @@ namespace media::rss
         {
             fetch_thread_ = std::jthread([this, urls] {
                 auto quit_job = registrar::get<std::function<bool()>>({"quitting"});
-                auto error_sink = registrar::get<std::function<void(std::string_view)>>({"notify"});
                 for (auto const &url_str : urls) {
                     try {
                         add_feed_sync(url_str, quit_job);
                     } 
                     catch(std::exception const &e) {
-                        (*error_sink)(std::format("Failed to add feed {}: {}\n", url_str, e.what()));
+                        "notify"_sfn(std::format("Failed to add feed {}: {}\n", url_str, e.what()));
                     }
                     catch(...) {
-                        (*error_sink)(std::format("Failed to add feed {}\n", url_str));
+                        "notify"_sfn(std::format("Failed to add feed {}\n", url_str));
                     }
                     if ((*quit_job)()) break;
                 }

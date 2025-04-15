@@ -59,6 +59,15 @@ public:
         getTypeMap().erase(key);
     }
 
+    struct call_fn_str {
+        std::string name;
+
+        void operator()(std::string const &p) const {
+            auto service = registrar::get<std::function<void(std::string const &)>>(name);
+            (*service)(p);
+        }
+    };
+
 private:
     // Type-erased storage for different service types
     template <typename T>
@@ -77,3 +86,7 @@ private:
         return mutex;
     }
 };
+
+inline registrar::call_fn_str operator ""_sfn(const char* str, size_t) {
+    return registrar::call_fn_str{std::string{str}};
+}
