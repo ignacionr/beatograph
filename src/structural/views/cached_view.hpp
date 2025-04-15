@@ -1,16 +1,18 @@
 #pragma once
 
 #include <atomic>
+#include <chrono>
 #include <expected>
 #include <functional>
 #include <memory>
 #include <optional>
 #include <string>
+#include <thread>
 #include <unordered_map>
 
 #include <imgui.h>
 
-#pragma execution_character_set("utf-8")
+#pragma execution_character_set(push, "utf-8")
 #include "../../../external/IconsMaterialDesign.h"
 
 namespace views {

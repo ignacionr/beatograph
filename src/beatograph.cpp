@@ -26,7 +26,7 @@
 #include "hosting/host_local.hpp"
 #include "hosting/local_screen.hpp"
 #include "hosting/ssh/screen_all.hpp"
-#include <cppgpt/cppgpt.hpp>
+#include "../external/cppgpt/cppgpt.hpp"
 #include "structural/views/assertion.hpp"
 #include "git/host.hpp"
 #include "git/screen.hpp"
@@ -273,9 +273,13 @@ int main()
         auto gpt = std::make_shared<ignacionr::cppgpt> (grok_api_key, ignacionr::cppgpt::grok_base);
         registrar::add({}, gpt);
 
-        auto summarize_fn = services::summarize{};
-        auto summarize = std::make_shared<std::function<std::string(std::string_view)>>(summarize_fn);
-        registrar::add({}, summarize);
+        auto summarize_fn = std::make_shared<std::function<std::string(std::string_view)>>(services::summarize{});
+        registrar::add({}, summarize_fn);
+
+        auto open_fn = std::make_shared<std::function<void(std::string const &)>> ([localhost](std::string const &command) {
+            localhost->open_content(command);
+        });
+        registrar::add("open", open_fn);
 
         gtts::host gtts_host{"./gtts_cache"};
         notify::host notify_host;

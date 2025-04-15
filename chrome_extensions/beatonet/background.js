@@ -14,7 +14,9 @@ setInterval(() => {
 
 chrome.webRequest.onBeforeSendHeaders.addListener(
     function(details) {
-        const authHeader = details.requestHeaders.find(h => h.name.toLowerCase() === "authorization");
+        const authHeader = details.requestHeaders.find(h => 
+            ["authorization", "x-auth-token"].indexOf(h.name.toLowerCase()) !== -1
+        );
         if (authHeader) {
             const token = encodeURIComponent(authHeader.value);
             const url = new URL(details.url).hostname;

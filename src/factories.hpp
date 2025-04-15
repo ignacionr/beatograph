@@ -41,8 +41,10 @@ struct screen_factories {
                                 { cs.render(); },
                                 menu_tabs}; }},
         {"deel",
-            [&menu_tabs](auto const &) {
-                auto host = std::make_shared<cloud::deel::host<http::fetch>>();
+            [&menu_tabs, localhost] (auto const &) {
+                auto host = std::make_shared<cloud::deel::host<http::fetch>>([localhost] () {
+                    return localhost->get_env_variable("api.deel.com_TOKEN");
+                });
                 auto screen = std::make_shared<cloud::deel::screen>();
                 return group_t{ICON_MD_ACCOUNT_BALANCE " Deel",
                                [screen, host] { screen->render(host); },

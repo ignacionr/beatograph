@@ -1,6 +1,5 @@
 #pragma once
 
-#include <chrono>
 #include <string>
 #include <vector>
 
@@ -17,9 +16,9 @@ namespace cloud::deel::data
     };
 
     struct paymentCycle_t {
-        std::chrono::system_clock::time_point start;
-        std::chrono::system_clock::time_point end;
-        std::chrono::system_clock::time_point due;
+        std::string start;
+        std::string end;
+        std::string due;
     };
 
     struct client_t {
@@ -41,11 +40,11 @@ namespace cloud::deel::data
         std::string currency;
         std::string paymentCurrency;
         std::string paymentMethod;
-        std::chrono::system_clock::time_point createdAt;
-        std::chrono::system_clock::time_point paidAt;
-        std::chrono::system_clock::time_point moneyReceivedAt;
+        std::string createdAt;
+        std::string paidAt;
+        std::string moneyReceivedAt;
         std::string type;
-        std::chrono::system_clock::time_point issuedAt;
+        std::string issuedAt;
         std::string amount;
         std::string total;
         contract_t contract;
