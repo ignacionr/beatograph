@@ -18,7 +18,8 @@
             "features": [
                 "avcodec",
                 "avformat",
-                "swresample"
+                "swresample",
+                "openssl"
             ]
         },
         "tinyxml2"

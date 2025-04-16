@@ -11,7 +11,7 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Find and link Linux libraries (using system's package manager or custom paths)
-find_package(FFMPEG REQUIRED)
+find_package(FFMPEG REQUIRED COMPONENTS avformat avcodec avutil swresample)
 find_package(PNG REQUIRED)
 find_package(SDL2 REQUIRED)
 find_package(SDL2_image REQUIRED)
@@ -22,8 +22,7 @@ find_package(nlohmann_json REQUIRED)
 find_package(tinyxml2 REQUIRED)
 find_package(libssh REQUIRED)
 
-# Manually specify the paths for imgui if find_package fails
-find_path(IMGUI_INCLUDE_DIR imgui.h PATHS /usr/include /usr/local/include /usr/local/include/imgui)
+set(IMGUI_INCLUDE_DIR /usr/include/imgui)
 set(IMGUI_LIBRARY /usr/lib/x86_64-linux-gnu/libimgui.a)
 
 if (IMGUI_INCLUDE_DIR AND IMGUI_LIBRARY)
@@ -31,7 +30,7 @@ if (IMGUI_INCLUDE_DIR AND IMGUI_LIBRARY)
   add_library(imgui::imgui UNKNOWN IMPORTED)
   set_target_properties(imgui::imgui PROPERTIES
     IMPORTED_LOCATION "${IMGUI_LIBRARY}"
-    INTERFACE_INCLUDE_DIRECTORIES "${IMGUI_INCLUDE_DIR}/imgui"
+    INTERFACE_INCLUDE_DIRECTORIES "${IMGUI_INCLUDE_DIR}"
   )
 else()
   if (NOT IMGUI_INCLUDE_DIR)
