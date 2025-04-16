@@ -59,5 +59,5 @@ private:
     std::vector<group_t> tabs;
     std::function<void(std::string_view)> current_menu{};
     std::string select_tab_{};
-    bool visible_;
+    bool visible_ {true};
 };

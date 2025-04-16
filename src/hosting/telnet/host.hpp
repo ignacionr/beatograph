@@ -24,6 +24,7 @@ namespace hosting::telnet
     class host
     {
     public:
+        static constexpr int port{10023};
         using handler_t = std::function<std::string(std::string_view)>;
         void run(std::function<bool()> quit, handler_t handler)
         {
@@ -42,7 +43,7 @@ namespace hosting::telnet
             sockaddr_in service;
             service.sin_family = AF_INET;
             service.sin_addr.s_addr = INADDR_ANY;
-            service.sin_port = htons(23);
+            service.sin_port = htons(port);
             if (bind(socket_, (SOCKADDR *)&service, sizeof(service)) == SOCKET_ERROR)
             {
                 // obtain the error description
@@ -156,7 +157,7 @@ namespace hosting::telnet
             sockaddr_in service;
             service.sin_family = AF_INET;
             service.sin_addr.s_addr = INADDR_ANY;
-            service.sin_port = htons(23);
+            service.sin_port = htons(port);
             if (bind(socket_, (struct sockaddr *)&service, sizeof(service)) == -1)
             {
                 throw std::runtime_error("bind failed");

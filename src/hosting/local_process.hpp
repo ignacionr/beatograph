@@ -176,7 +176,7 @@ namespace hosting::local
                 auto const res = waitpid(pid_, &exitCode_, WNOHANG);
                 if (res == -1)
                 {
-                    throw std::runtime_error("waitpid failed!");
+                    return -1;
                 }
             }
             return exitCode_;

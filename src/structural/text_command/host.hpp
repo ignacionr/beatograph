@@ -147,25 +147,39 @@ namespace structural::text_command {
             }
             return true;
 #else
+            // obtain the current executable file name
+            char buffer[PATH_MAX];
+            if (readlink("/proc/self/exe", buffer, sizeof(buffer)) == -1) {
+                throw std::runtime_error("Failed to get the current executable path");
+            }
+            std::string executable_path(buffer);
+
             // register the protocol on Linux
             // create a .desktop file in ~/.local/share/applications
-            std::string desktop_file = std::format("~/.local/share/applications/beatograph.desktop");
-            std::ofstream file(desktop_file, std::ios::out | std::ios::trunc);
-            if (!file.is_open()) {
-                throw std::runtime_error("Failed to open file: " + desktop_file);
+            std::string home_dir = std::getenv("HOME");
+            std::string desktop_file = std::format("{}/.local/share/applications/beatograph.desktop", home_dir);
+            {
+                std::ofstream file(desktop_file, std::ios::out | std::ios::trunc);
+                if (!file.is_open()) {
+                    throw std::runtime_error("Failed to open file: " + desktop_file);
+                }
+                file << "[Desktop Entry]\n";
+                file << "Name=Beatograph\n";
+                file << "Exec=" << executable_path << " %u\n";
+                file << "Type=Application\n";
+                file << "Terminal=false\n";
+                file << "MimeType=x-scheme-handler/beatograph\n";
+                file << "NoDisplay=true\n";
+                file << "X-GNOME-Autostart-enabled=true\n";
+                file << "X-GNOME-Autostart-Phase=Applications\n";
+                file << "X-GNOME-Autostart-Notify=true\n";
+                file << "X-GNOME-Autostart-Delay=0\n";
+                file << "X-GNOME-Autostart-Condition=GSettings org.gnome.desktop.interface enable-hot-corners\n";
             }
-            file << "[Desktop Entry]\n";
-            file << "Name=Beatograph\n";
-            file << "Exec=beatograph %u\n";
-            file << "Type=Application\n";
-            file << "Terminal=false\n";
-            file << "MimeType=x-scheme-handler/beatograph\n";
-            file << "NoDisplay=true\n";
-            file << "X-GNOME-Autostart-enabled=true\n";
-            file << "X-GNOME-Autostart-Phase=Applications\n";
-            file << "X-GNOME-Autostart-Notify=true\n";
-            file << "X-GNOME-Autostart-Delay=0\n";
-            file << "X-GNOME-Autostart-Condition=GSettings org.gnome.desktop.interface enable-hot-corners\n";
+            // now register the protocol
+            system("update-desktop-database ~/.local/share/applications");
+            system("xdg-mime install --mode user --novendor ~/.local/share/applications/beatograph.desktop");
+            system("xdg-mime default beatograph.desktop x-scheme-handler/beatograph");
             return true;
 #endif
         }

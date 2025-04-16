@@ -232,7 +232,7 @@ int main(int argc, char *argv[])
                 if (inet_pton(AF_INET, "127.0.0.1", &service.sin_addr) <= 0) {
                     throw std::runtime_error("inet_pton failed");
                 }
-                service.sin_port = htons(23);
+                service.sin_port = htons(hosting::telnet::host::port);
 #if defined(_WIN32)
                 if (connect(s, (SOCKADDR*)&service, sizeof(service)) == SOCKET_ERROR) {
                     closesocket(s);

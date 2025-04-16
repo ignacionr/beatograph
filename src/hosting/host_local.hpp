@@ -32,16 +32,19 @@ namespace hosting::local
         std::string get_env_variable(std::string const &key)
         {
             char *val = nullptr;
-            size_t len = 0;
 #if defined(_WIN32) || defined(_WIN64)
+            size_t len = 0;
             if (_dupenv_s(&val, &len, key.c_str()) || val == nullptr)
-#else 
-            if (getenv(key.c_str()) == nullptr)
-#endif
             {
                 return std::string{};
             }
             return std::string{val, len - 1}; // len returns the count of all copied bytes, including the terminator
+#else 
+            if (val = getenv(key.c_str()); val == nullptr) {
+                return std::string{};
+            }
+            return std::string{val};
+#endif
         }
 
         void scan_environment(auto callback) const
