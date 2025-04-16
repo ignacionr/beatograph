@@ -64,6 +64,31 @@
                 }
             ],
             "preLaunchTask": "CMake: build (Linux)"
+        },
+        {
+            "name": "Simulate External Launch",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/beatograph",
+            "args": ["beatograph:auth/api.deel.com/eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJwcm9maWxlIjoyNjIyOTgsInRlYW0iOm51bGwsIm9yZ2FuaXphdGlvbklkIjpudWxsLCJocmlzT3JnYW5pemF0aW9uSWQiOjMzNDgwLCJpc1RydXN0ZWREZXZpY2UiOmZhbHNlLCJoYXNMb2NhdGlvbiI6dHJ1ZSwidGltZXN0YW1wIjoxNzQ0ODMzNTc2ODM2LCJpZCI6MjM2MjY0LCJpYXQiOjE3NDQ4MzM1NzYsImV4cCI6MTc0NDgzNzE3NiwiYXVkIjoicHJvZCIsImlzcyI6ImFwaS1wcm9kLmxldHNkZWVsLmNvbSIsInN1YiI6ImFwaSJ9.lJHdifkn4EO-_afJpUCdC5QZjiqQcuFqBE7OsZ79oG6aL7YeMyYAc0sSCRDt5mVGFDadxPcIr788Y1oNWTjv4jDUlJ_MThlDzygrqq3UcfO8hRQcWQ5nI86oFKl-Dx4tjuGg6PZDKkRBas2p3Xwi97dNIUl3Ur1fOlKXh51GonEO28uYoRjkfg-6oMRCbIGajp8YxBGeBjGp_Tz-0cVId8fnGupxrWbBqIQ-3yyGePPPwRgxGuG7grZN0WXnNfL8a_zSLygPfMSByljQ-zVlrLaGlCVEByL0hgJb6dj6BnSpoE2OT8Rx_3qD59dm2ZZePYM6GsHkQz0M1ORP-XU3yg"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Set Disassembly Flavor to Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "CMake: build (Linux)"
         }
 
     ]
