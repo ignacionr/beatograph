@@ -76,6 +76,7 @@ namespace structural::text_command {
             }
         }
 
+#if defined(_WIN32) || defined(_WIN64)
         struct win_error: public std::runtime_error {
             win_error(std::string_view prefix, LSTATUS code): std::runtime_error("Win32 error") {
                 LPVOID lpMsgBuf;
@@ -89,10 +90,10 @@ namespace structural::text_command {
         private:
             std::string description_;
         };
+#endif
 
         bool register_custom_url_protocol() {
-            // request elevation
-            
+#if defined(_WIN32) || defined(_WIN64)
             // use the Windows Registry to register a beatograph: protocol schema
             HKEY hkey_beatograph;
             auto ret = ::RegCreateKey(HKEY_CLASSES_ROOT, TEXT("beatograph"), &hkey_beatograph);
@@ -145,6 +146,28 @@ namespace structural::text_command {
                 throw win_error{"RegSetValueEx failed", ret};
             }
             return true;
+#else
+            // register the protocol on Linux
+            // create a .desktop file in ~/.local/share/applications
+            std::string desktop_file = std::format("~/.local/share/applications/beatograph.desktop");
+            std::ofstream file(desktop_file, std::ios::out | std::ios::trunc);
+            if (!file.is_open()) {
+                throw std::runtime_error("Failed to open file: " + desktop_file);
+            }
+            file << "[Desktop Entry]\n";
+            file << "Name=Beatograph\n";
+            file << "Exec=beatograph %u\n";
+            file << "Type=Application\n";
+            file << "Terminal=false\n";
+            file << "MimeType=x-scheme-handler/beatograph\n";
+            file << "NoDisplay=true\n";
+            file << "X-GNOME-Autostart-enabled=true\n";
+            file << "X-GNOME-Autostart-Phase=Applications\n";
+            file << "X-GNOME-Autostart-Notify=true\n";
+            file << "X-GNOME-Autostart-Delay=0\n";
+            file << "X-GNOME-Autostart-Condition=GSettings org.gnome.desktop.interface enable-hot-corners\n";
+            return true;
+#endif
         }
     private:
         std::map<std::string, action_t> commands;

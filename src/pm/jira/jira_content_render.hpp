@@ -39,7 +39,11 @@ namespace jira{
                     ImGui::SameLine();
                     std::string const &url {el.at("attrs").at("url").get_ref<const std::string&>()};
                     if (ImGui::Selectable(url.c_str())) {
+#if defined(_WIN32) || defined(_WIN64)
                         ::ShellExecuteA(nullptr, "open", url.c_str(), nullptr, nullptr, SW_SHOW);
+#else
+                        system(std::format("xdg-open {}", url).c_str());
+#endif
                     }
                 }},
                 {"bulletList", render_subcontent},

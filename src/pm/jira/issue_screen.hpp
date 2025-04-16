@@ -15,7 +15,7 @@
 #include "jira_content_render.hpp"
 #include "../../registrar.hpp"
 #include "../../hosting/http/fetch.hpp"
-#include "../../util/imgui_markdown.hpp"
+// #include "../../util/imgui_markdown.hpp"
 
 namespace jira
 {
@@ -121,7 +121,11 @@ namespace jira
                 if (ImGui::SmallButton(ICON_MD_WEB))
                 {
                     auto const url = h.get_browse_url(key);
+#if defined(_WIN32) || defined(_WIN64)
                     ShellExecuteA(nullptr, "open", url.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+#else
+                    system(std::format("xdg-open {}", url).c_str());
+#endif
                 }
                 if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip))
                 {
@@ -213,19 +217,19 @@ namespace jira
                             "user", "grok-2-latest");
                         return reply["choices"][0]["message"]["content"].get<std::string>(); }, [](std::string const &summary)
                                                 { 
-                                                    // ImGui::TextWrapped("%s", summary.c_str()); 
-                                                    imgui_markdown_renderer markdown_renderer;
-                                                    markdown_renderer.boldFont = ImGui::GetIO().Fonts->Fonts[4];
-                                                    markdown_renderer.italicFont = ImGui::GetIO().Fonts->Fonts[3];
-                                                    markdown_renderer.headerFonts[0] = 
-                                                        markdown_renderer.headerFonts[1] =
-                                                        markdown_renderer.headerFonts[2] =
-                                                        markdown_renderer.headerFonts[3] =
-                                                        markdown_renderer.headerFonts[4] =
-                                                        markdown_renderer.headerFonts[5] =
-                                                        ImGui::GetIO().Fonts->Fonts[2];
-                                                    markdown_renderer.parse(summary);
-                                                    markdown_renderer.render_parsed();
+                                                    ImGui::TextWrapped("%s", summary.c_str()); 
+                                                    // imgui_markdown_renderer markdown_renderer;
+                                                    // markdown_renderer.boldFont = ImGui::GetIO().Fonts->Fonts[4];
+                                                    // markdown_renderer.italicFont = ImGui::GetIO().Fonts->Fonts[3];
+                                                    // markdown_renderer.headerFonts[0] = 
+                                                    //     markdown_renderer.headerFonts[1] =
+                                                    //     markdown_renderer.headerFonts[2] =
+                                                    //     markdown_renderer.headerFonts[3] =
+                                                    //     markdown_renderer.headerFonts[4] =
+                                                    //     markdown_renderer.headerFonts[5] =
+                                                    //     ImGui::GetIO().Fonts->Fonts[2];
+                                                    // markdown_renderer.parse(summary);
+                                                    // markdown_renderer.render_parsed();
                                                 });
                 if (show_json_details)
                 {

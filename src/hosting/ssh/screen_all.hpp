@@ -42,11 +42,19 @@ namespace ssh
                         auto name = command.substr(4);
                         if (auto it = std::find_if(hosts.begin(), hosts.end(), [name](auto const &entry) -> bool {return name == entry.first;}); 
                             it != hosts.end()) {
+#if defined(_WIN32) || defined(_WIN64)
                             // use the Windows API with a simple shell command
                             if (auto result = reinterpret_cast<long long>(ShellExecuteA(NULL, "open", "cmd", std::format("/c {}", command).c_str(), NULL, SW_SHOW)); result <= 32)
                             {
                                 throw std::runtime_error(std::format("ShellExecute failed with error code {}", result));
                             }
+#else
+                            // use the Linux API with a simple shell command
+                            if (auto result = system(command.data()); result != 0)
+                            {
+                                throw std::runtime_error(std::format("System call failed with error code {}", result));
+                            }
+#endif
                             return "OK";
                         }
                     }
@@ -56,6 +64,7 @@ namespace ssh
         }
 
         static const std::string configure_file_path() {
+#if defined(_WIN32) || defined(_WIN64)
             // get the Windows user home directory
             char home[MAX_PATH];
             if (SUCCEEDED(SHGetFolderPathA(NULL, CSIDL_PROFILE, NULL, 0, home)))
@@ -70,6 +79,15 @@ namespace ssh
             std::string message(messageBuffer);
             LocalFree(messageBuffer);
             throw std::runtime_error(std::format("SHGetFolderPath failed with error code {}: {}", error, message));
+#else
+            // get the Linux user home directory
+            const char *home = getenv("HOME");
+            if (home)
+            {
+                return std::format("{}/.ssh/config", home);
+            }
+            throw std::runtime_error("HOME environment variable not set");
+#endif
         }
         
         void read_hosts() {
@@ -105,10 +123,18 @@ namespace ssh
             {
                 last_error_.clear();
                 // use the Windows API with a simple shell command
+#ifdef _WIN32
                 if (auto result = reinterpret_cast<long long>(ShellExecuteA(NULL, "open", "code", configure_file_path().c_str(), NULL, SW_SHOW)); result <= 32)
                 {
                     last_error_ = std::format("ShellExecute failed with error code {}", result);
                 }
+#else
+                // use the Linux API with a simple shell command
+                if (auto result = system(std::format("code {}", configure_file_path()).c_str()); result != 0)
+                {
+                    last_error_ = std::format("System call failed with error code {}", result);
+                }
+#endif
             }
             if (!last_error_.empty())
             {

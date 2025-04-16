@@ -9,7 +9,7 @@
 
 
 // Third-party Includes
-#include "imgui.h" // Include ImGui after standard library
+#include <imgui/imgui.h> // Include ImGui after standard library
 
 // Sundown Includes (C Libraries) - Wrap in extern "C"
 extern "C" {

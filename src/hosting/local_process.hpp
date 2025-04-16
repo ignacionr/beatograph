@@ -4,6 +4,13 @@
 #include <functional>
 
 #include "ssh_execute.hpp"
+#if defined(_WIN32) || defined(_WIN64)
+#else
+    #include <unistd.h>
+    #include <sys/types.h>
+    #include <sys/wait.h>
+    #include <signal.h>
+#endif
 
 
 namespace hosting::local
@@ -15,6 +22,7 @@ namespace hosting::local
 
         running_process(std::string_view command, environment_getter_t env, bool include_stderr = true)
         {
+#if defined(_WIN32) || defined(_WIN64)
             ZeroMemory(&pi, sizeof(pi));
             pi.hProcess = INVALID_HANDLE_VALUE;
             pi.hThread = INVALID_HANDLE_VALUE;
@@ -64,11 +72,41 @@ namespace hosting::local
 
             // Close the write end of the pipe in the parent process
             CloseHandle(hWritePipe), hWritePipe = INVALID_HANDLE_VALUE;
+#else
+            // Posix
+            // Create a pipe for the child process to write to
+            if (pipe(pipefd_) == -1)
+            {
+                throw std::runtime_error("Pipe failed!");
+            }
+            // Fork the process
+            pid_ = fork();
+            if (pid_ == -1)
+            {
+                throw std::runtime_error("Fork failed!");
+            }
+            else if (pid_ == 0)
+            {
+                // Child process
+                dup2(pipefd_[1], STDOUT_FILENO);
+                dup2(pipefd_[1], STDERR_FILENO);
+                close(pipefd_[0]);
+                close(pipefd_[1]);
+                execlp(command.data(), command.data(), NULL);
+                _exit(EXIT_FAILURE); // If execlp fails
+            }
+            else
+            {
+                // Parent process
+                close(pipefd_[1]);
+            }
+#endif
         }
 
         ~running_process()
         {
             close_pipes();
+#if defined(_WIN32) || defined(_WIN64)
             if (pi.hProcess != INVALID_HANDLE_VALUE)
             {
                 CloseHandle(pi.hProcess), pi.hProcess = INVALID_HANDLE_VALUE;
@@ -77,10 +115,19 @@ namespace hosting::local
             {
                 CloseHandle(pi.hThread), pi.hThread = INVALID_HANDLE_VALUE;
             }
+#else
+            if (pid_ > 0)
+            {
+                close(pipefd_[0]);
+                kill(pid_, SIGTERM);
+                waitpid(pid_, &exitCode_, 0);
+            }
+#endif
         }
 
         void close_pipes()
         {
+#if defined(_WIN32) || defined(_WIN64)
             if (hReadPipe != INVALID_HANDLE_VALUE)
             {
                 try
@@ -97,10 +144,21 @@ namespace hosting::local
             {
                 CloseHandle(hWritePipe), hWritePipe = INVALID_HANDLE_VALUE;
             }
+#else
+            if (pipefd_[0] != -1)
+            {
+                close(pipefd_[0]), pipefd_[0] = -1;
+            }
+            if (pipefd_[1] != -1)
+            {
+                close(pipefd_[1]), pipefd_[1] = -1;
+            }
+#endif
         }
 
-        DWORD wait(DWORD milliseconds = INFINITE)
+        auto wait(unsigned int milliseconds = 3600000)
         {
+#if defined(_WIN32) || defined(_WIN64)
             if (pi.hProcess != INVALID_HANDLE_VALUE)
             {
                 auto const res = WaitForSingleObject(pi.hProcess, milliseconds);
@@ -112,10 +170,22 @@ namespace hosting::local
                 CloseHandle(pi.hProcess), pi.hProcess = INVALID_HANDLE_VALUE;
             }
             return exitCode;
+#else
+            if (pid_ > 0)
+            {
+                auto const res = waitpid(pid_, &exitCode_, WNOHANG);
+                if (res == -1)
+                {
+                    throw std::runtime_error("waitpid failed!");
+                }
+            }
+            return exitCode_;
+#endif
         }
 
         void stop()
         {
+#if defined(_WIN32) || defined(_WIN64)
             if (pi.hProcess != INVALID_HANDLE_VALUE)
             {
                 close_pipes();
@@ -129,18 +199,37 @@ namespace hosting::local
                     throw std::runtime_error(std::format("TerminateProcess failed! Error code: {} Error description: {}", error, error_description));
                 }
             }
+#else
+            if (pid_ > 0)
+            {
+                close_pipes();
+                kill(pid_, SIGKILL);
+            }
+#endif
         }
 
-        void sendQuitSignal(DWORD code = CTRL_BREAK_EVENT)
+        void sendQuitSignal(
+#if defined(_WIN32) || defined(_WIN64) 
+            unsigned int code = CTRL_BREAK_EVENT
+#endif
+        )
         {
+#if defined(_WIN32) || defined(_WIN64)
             if (pi.hProcess != INVALID_HANDLE_VALUE)
             {
                 GenerateConsoleCtrlEvent(code, pi.dwProcessId);
             }
+#else
+            if (pid_ > 0)
+            {
+                kill(pid_, SIGINT);
+            }
+#endif
         }
 
-        void read_all(sink_t sink, DWORD timeout = 5000)
+        void read_all(sink_t sink, unsigned int timeout = 5000)
         {
+#if defined(_WIN32) || defined(_WIN64)
             // Read from the pipe
             char buffer[128];
             DWORD bytesRead;
@@ -173,7 +262,6 @@ namespace hosting::local
                         if (ReadFile(hReadPipe, buffer, sizeof(buffer), &bytesRead, NULL) && bytesRead != 0)
                         {
                             auto contents{std::string_view{buffer, bytesRead}};
-//                            std::cerr << std::format("Proces@{} received << \n{}\n >>\n({} bytes)\n", reinterpret_cast<void *>(this), std::string{contents}, bytesRead);
                             sink(contents);
                         }
                         else
@@ -193,11 +281,41 @@ namespace hosting::local
             }
             // Close the read end of the pipe
             CloseHandle(hReadPipe), hReadPipe = INVALID_HANDLE_VALUE;
+#else
+            // Posix
+            char buffer[128];
+            ssize_t bytesRead;
+            for (;;)
+            {
+                bytesRead = read(pipefd_[0], buffer, sizeof(buffer));
+                if (bytesRead == -1)
+                {
+                    throw std::runtime_error("Read failed!");
+                }
+                else if (bytesRead == 0)
+                {
+                    break; // No more data to read
+                }
+                else
+                {
+                    auto contents{std::string_view{buffer, static_cast<size_t>(bytesRead)}};
+                    sink(contents);
+                }
+            }
+            // Close the read end of the pipe
+            close(pipefd_[0]), pipefd_[0] = -1;
+#endif
         }
 
     private:
+#if defined(_WIN32) || defined(_WIN64)
         PROCESS_INFORMATION pi;
         HANDLE hReadPipe{INVALID_HANDLE_VALUE}, hWritePipe{INVALID_HANDLE_VALUE};
         DWORD exitCode{};
+#else
+        pid_t pid_{};
+        int pipefd_[2]{};
+        int exitCode_{};
+#endif
     };
 }

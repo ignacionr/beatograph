@@ -96,7 +96,7 @@ namespace media::rss
                         }
                     }
                     if (ImGui::CollapsingHeader(std::format("Summary##{}", item.title).c_str())) {
-                        ImGui::TextWrapped(item.summary().data());
+                        ImGui::TextWrapped("%s", item.summary().data());
                     }
                     ImGui::TableNextColumn();
                     auto updated = std::format("{:%Y-%m-%d %H:%M}", item.updated);

@@ -32,7 +32,11 @@ namespace calendar
             // determine what day of the week the first day of the month is
             auto const now_time = std::chrono::system_clock::to_time_t(date);
             std::tm tm;
+#if defined(_WIN32) || defined(_WIN64)
             localtime_s(&tm, &now_time);
+#else
+            localtime_r(&now_time, &tm);
+#endif
             current_month_ = tm.tm_mon;
             current_year_ = 1900 + tm.tm_year;
             tm.tm_mday = 1;

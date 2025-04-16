@@ -28,7 +28,7 @@ namespace views
             if (ImGui::SmallButton(ICON_MD_CONTENT_COPY " Copy"))
             {
                 ImGui::LogToClipboard();
-                ImGui::LogText(json.dump(4).c_str());
+                ImGui::LogText("%s", json.dump(4).c_str());
                 ImGui::LogFinish();
             }
             for (auto const &action : actions)

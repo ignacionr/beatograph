@@ -19,6 +19,8 @@ find_package(CURL REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(nlohmann_json REQUIRED)
+find_package(tinyxml2 REQUIRED)
+find_package(libssh REQUIRED)
 
 # Manually specify the paths for imgui if find_package fails
 find_path(IMGUI_INCLUDE_DIR imgui.h PATHS /usr/include /usr/local/include /usr/local/include/imgui)
@@ -61,5 +63,7 @@ target_link_libraries(beatograph PRIVATE
   nlohmann_json::nlohmann_json
   ${PNG_LIBRARY}
   ZLIB::ZLIB
-  sundown
+  tinyxml2::tinyxml2
+  ${FFMPEG_LIBRARIES}
+  ssh
 )

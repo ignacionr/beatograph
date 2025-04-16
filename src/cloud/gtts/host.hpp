@@ -43,7 +43,11 @@ namespace gtts {
             CURL *curl = curl_easy_init();
             if (curl) {
                 FILE *file = nullptr;
+#if defined(_WIN32) || defined(_WIN64)
                 if (fopen_s(&file, file_name.c_str(), "wb") == 0 && file) {
+#else
+                if (file = fopen(file_name.c_str(), "wb"); file) {
+#endif
                     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
                     curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
                     auto res = curl_easy_perform(curl);

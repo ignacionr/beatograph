@@ -9,6 +9,12 @@
 
 #include <imgui.h>
 
+#if defined(_WIN32) || defined(_WIN64)
+#include <windows.h>
+#else
+constexpr auto MAX_PATH = 4096;
+#endif
+
 #include "../registrar.hpp"
 #include "../structural/text_command/host.hpp"
 

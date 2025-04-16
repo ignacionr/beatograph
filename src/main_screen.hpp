@@ -203,6 +203,7 @@ private:
                     {
                         show_stats = !show_stats;
                     }
+                    #if defined (WIN32)
                     if (ImGui::MenuItem("Debug")) {
                         // attach a console, so I can check what comes out of std::cerr
                         AllocConsole();
@@ -210,6 +211,7 @@ private:
                         freopen_s(&out, "CONOUT$", "w", stderr);
                         freopen_s(&err, "CONOUT$", "w", stdout);
                     }
+                    #endif // WIN32
                     if (ImGui::MenuItem("Full Screen", "F11", is_fullscreen))
                     {
                         toggle_fullscreen();

@@ -62,7 +62,7 @@ namespace hosting::ssh
                 }
                 ImGui::NextColumn();
                 views::cached_view<std::string>("OS Release",
-                    [host, localhost] {return host->get_os_release(localhost).c_str(); },
+                    [host, localhost] {return host->get_os_release(localhost); },
                     [](std::string const &data) { ImGui::TextUnformatted(data.c_str()); });
                 ImGui::NextColumn();
                 if (ImGui::CollapsingHeader("Performance Metrics"))
@@ -298,10 +298,17 @@ namespace hosting::ssh
                     // just spawn a new process
                     std::string command = std::format("ssh {}", host->name());
                     // use the Windows API with a simple shell command
+#ifdef _WIN32
                     if (auto result = reinterpret_cast<long long>(ShellExecuteA(NULL, "open", "cmd", std::format("/c {}", command).c_str(), NULL, SW_SHOW)); result <= 32)
                     {
                         last_error_ = std::format("ShellExecute failed with error code {}", result);
                     }
+#else
+                    if (auto result = system(command.c_str()); result != 0)
+                    {
+                        last_error_ = std::format("System call failed with error code {}", result);
+                    }
+#endif
                 }
                 if (!last_error_.empty())
                 {

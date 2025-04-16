@@ -56,6 +56,7 @@ struct host {
         if (shell.empty()) {
             return;
         }
+#if defined(_WIN32) || defined(_WIN64)
         auto cmd = std::format("/c ssh -t {} sudo docker exec -it {} {}", host_name_, container_id, shell);
         ShellExecuteA(nullptr, 
             "open", 
@@ -63,9 +64,14 @@ struct host {
             cmd.c_str(), 
             nullptr, 
             SW_SHOW);
+#else
+        auto cmd = std::format("ssh -t {} sudo docker exec -it {} {}", host_name_, container_id, shell);
+        localhost->run(cmd.c_str());
+#endif
     }
 
     void open_logs(std::string const &container_id) const {
+#if defined(_WIN32) || defined(_WIN64)
         auto cmd = std::format("/c ssh {} sudo docker logs -f {} && pause", host_name_, container_id);
         ShellExecuteA(nullptr, 
             "open", 
@@ -73,6 +79,10 @@ struct host {
             cmd.c_str(), 
             nullptr, 
             SW_SHOW);
+#else
+        auto cmd = std::format("ssh {} sudo docker logs -f {}", host_name_, container_id);
+        system(cmd.c_str());
+#endif
     }
 
     std::string logs(std::string const &container_id, std::shared_ptr<::hosting::local::host> localhost) const {

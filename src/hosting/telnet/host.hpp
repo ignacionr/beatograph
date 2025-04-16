@@ -3,7 +3,20 @@
 #include <format>
 #include <functional>
 #include <stdexcept>
+#include <string>
 #include <thread>
+
+#if defined(_WIN32) || defined(_WIN64)
+#include <winsock2.h>
+#else
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <fcntl.h>
+using SOCKET = int;
+#endif
+
 #include "options.hpp"
 
 namespace hosting::telnet
@@ -14,6 +27,7 @@ namespace hosting::telnet
         using handler_t = std::function<std::string(std::string_view)>;
         void run(std::function<bool()> quit, handler_t handler)
         {
+#if defined(_WIN32) || defined(_WIN64)
             // bind to telnet port
             WSADATA wsaData;
             if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
@@ -132,20 +146,142 @@ namespace hosting::telnet
                     }).detach();
                     }
                 } });
+#else
+            // bind to telnet port
+            socket_ = socket(AF_INET, SOCK_STREAM, 0);
+            if (socket_ == -1)
+            {
+                throw std::runtime_error("socket failed");
+            }
+            sockaddr_in service;
+            service.sin_family = AF_INET;
+            service.sin_addr.s_addr = INADDR_ANY;
+            service.sin_port = htons(23);
+            if (bind(socket_, (struct sockaddr *)&service, sizeof(service)) == -1)
+            {
+                throw std::runtime_error("bind failed");
+            }
+            thread_ = std::jthread([this, quit, handler]()
+                                   {
+                listen(socket_, 5);
+                while (!quit())
+                {
+                    fd_set readfds;
+                    FD_ZERO(&readfds);
+                    FD_SET(socket_, &readfds);
+                    timeval timeout;
+                    timeout.tv_sec = 2; // 2 seconds timeout
+                    timeout.tv_usec = 0;
+                    int result = select(socket_ + 1, &readfds, NULL, NULL, &timeout);
+                    if (result == -1 || result == 0) {
+                        continue; // timeout or error, continue to next iteration
+                    }
+                    SOCKET acceptSocket = accept(socket_, NULL, NULL);
+                    if (acceptSocket != -1)
+                    {
+                        std::thread([acceptSocket, handler]() {
+                            // first negotiate telnet options
+                            option_group options;
+                            options.add(std::make_unique<option_echo>());
+                            options.add(std::make_unique<option_binary>());
+                            options.add(std::make_unique<option_terminal_type>());
+                            auto const initiate {options.initiate()};
+                            send(acceptSocket, initiate.c_str(), static_cast<int>(initiate.size()), 0);
+                            std::string line; // Buffer for incoming data
+                            std::string echo;
+                            option_terminal_type& terminal_type = *static_cast<option_terminal_type*>(options[option_terminal_type::code()].get());
+                            for (;;) {
+                                char buffer[1024];
+                                int bytesReceived = recv(acceptSocket, buffer, sizeof(buffer), 0);
+                                if (bytesReceived == -1)
+                                {
+                                    std::cerr << "recv failed" << std::endl;
+                                    close(acceptSocket);
+                                    return;
+                                }
+                                auto received = std::string_view{buffer, static_cast<size_t>(bytesReceived)};
+                                // are these negotiation bytes?
+                                std::string negotiation_reply;
+                                while (received.size() >= 3
+                                       && received[0] == '\xFF')
+                                {
+                                    // yes, handle
+                                    size_t skip;
+                                    negotiation_reply += options.reply(received.data(), skip);
+                                    received.remove_prefix(skip);
+                                }
+                                if (!negotiation_reply.empty())
+                                {
+                                    send(acceptSocket, negotiation_reply.c_str(), static_cast<int>(negotiation_reply.size()), 0);
+                                }
+                                for (char c : received)
+                                {
+                                    if (c == '\b' && !line.empty())
+                                    {
+                                        line.pop_back();
+                                        continue;
+                                    }
+                                    line += c;
+                                }
+                                if (terminal_type.terminal_type_ == "ANSI")
+                                {
+                                    echo = std::format("{}{}{}>", 
+                                        ansi::clear_line(),
+                                        ansi::cursor_position(1, 1),
+                                        line);
+                                    send(acceptSocket, echo.c_str(), static_cast<int>(echo.size()), 0);
+                                }
+                                else if (options[option_echo::code()]->enabled_) {
+                                    echo = std::format("{}", line);
+                                    // send backspaces to erase the line
+                                    for (size_t i = 0; i < line.size(); ++i)
+                                    {
+                                        echo += '\b';
+                                    }
+                                    send(acceptSocket, echo.c_str(), static_cast<int>(echo.size()), 0);
+                                }
+                                if (!line.empty() && line.back() == '\n')
+                                {
+                                    line.pop_back();
+                                    if (!line.empty() && line.back() == '\r')
+                                    {
+                                        line.pop_back();
+                                    }
+                                    break;
+                                }
+                            }
+                            std::string message = handler(line);
+                            send(acceptSocket, message.c_str(), static_cast<int>(message.size()), 0);
+                            close(acceptSocket);
+                        }).detach();
+                    }
+                } });
+#endif
         }
         ~host()
         {
+#if defined(_WIN32) || defined(_WIN64)
             if (INVALID_SOCKET != socket_)
             {
                 closesocket(socket_);
                 socket_ = INVALID_SOCKET;
             }
             WSACleanup();
+#else
+            if (socket_ != -1)
+            {
+                close(socket_);
+                socket_ = -1;
+            }
+#endif
         }
 
     private:
+#if defined(_WIN32) || defined(_WIN64)
         SOCKET socket_;
-        std::function<bool()> quit_;
+#else
+        int socket_;
+#endif
         std::jthread thread_;
     };
 }

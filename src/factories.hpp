@@ -53,7 +53,7 @@ struct screen_factories {
          [&menu_tabs](nlohmann::json::object_t const &node)
          {
                 auto host = std::make_shared<github::host>();
-                auto screen = std::make_shared<github::screen>(host, node.at("login_name").get_ref<const std::string&>());
+                auto screen = std::make_shared<github::screen>(host, node.at("login_name").template get_ref<const std::string&>());
                 return group_t{ICON_MD_CODE " GitHub", 
                     [screen] { screen->render(); },
                     menu_tabs}; }},
@@ -90,7 +90,7 @@ struct screen_factories {
                 }
                 auto ts {
                     std::make_shared<toggl::screen>(toggle_client, 
-                    static_cast<int>(node.at("daily_goal").get<float>() * 3600),
+                    static_cast<int>(node.at("daily_goal").template get<float>() * 3600),
                     login_name)};
                 if (node.contains("id")) {
                     toggl_screens_by_id[node.at("id")] = ts;
@@ -115,8 +115,8 @@ struct screen_factories {
                     for (std::string const &action : node.at("integrate")) {
                         actions[ICON_MD_PUNCH_CLOCK " Start Toggl"] = [js, ts = toggl_screens_by_id.at(action)](nlohmann::json const &entry) {
                             auto const activity_description {std::format("{} - {}", 
-                                entry.at("fields").at("summary").get<std::string>(), 
-                                entry.at("key").get<std::string>())};
+                                entry.at("fields").at("summary").template get<std::string>(), 
+                                entry.at("key").template get<std::string>())};
                             ts->start_time_entry(activity_description);
                         };
                     }
@@ -129,9 +129,12 @@ struct screen_factories {
                      ImVec4(0.5f, 0.5f, 1.0f, 1.0f)}; }},
         {"git-repositories",
          [&cache, localhost, &menu_tabs](nlohmann::json::object_t const &node) mutable
-         { return group_t{
+         { 
+            auto git_host = std::make_shared<git::host>(localhost, node.at("root").template get<std::string>());
+            auto git_screen = std::make_shared<git::screen>(git_host);
+            return group_t{
                ICON_MD_CODE " Git Repositories",
-               [git_screen = std::make_shared<git::screen>(std::make_shared<git::host>(localhost, node.at("root")))]
+               [git_screen]
                {
                    git_screen->render();
                },
@@ -198,8 +201,8 @@ struct screen_factories {
              {
                  auto const local_data{localhost->get_my_ip_and_geolocation()};
                  host->add_city(std::format("{}, {}",
-                                            local_data.at("city").get_ref<std::string const &>(),
-                                            local_data.at("region").get_ref<std::string const &>()));
+                                            local_data.at("city").template get_ref<std::string const &>(),
+                                            local_data.at("region").template get_ref<std::string const &>()));
              }
              catch (const std::exception &e)
              {
@@ -208,19 +211,19 @@ struct screen_factories {
              for (auto const &city : node.at("cities"))
              {
                 if (city.is_string()) {
-                    host->add_city(city.get_ref<std::string const &>());
+                    host->add_city(city.template get_ref<std::string const &>());
                 }
                 else {
                     ImVec4 background_color{0.0f, 0.0f, 0.0f, 0.0f};
                     // "background_color": "#e0e000"
                     if (city.contains("background_color")) {
-                        auto const &color = city.at("background_color").get_ref<std::string const &>();
+                        auto const &color = city.at("background_color").template get_ref<std::string const &>();
                         background_color = ImVec4{std::stoi(color.substr(1, 2), nullptr, 16) / 255.0f,
                                                   std::stoi(color.substr(3, 2), nullptr, 16) / 255.0f,
                                                   std::stoi(color.substr(5, 2), nullptr, 16) / 255.0f,
                                                   0.25f};
                     }
-                    host->add_city(city.at("place").get_ref<std::string const &>(), background_color);
+                    host->add_city(city.at("place").template get_ref<std::string const &>(), background_color);
                 }
              }
              auto clocks_screen = std::make_shared<clocks::screen>(

@@ -1,18 +1,41 @@
-#include "pch.h"
 #pragma execution_character_set(push, "utf-8")
 #include "../external/IconsMaterialDesign.h"
 #include <algorithm>
-#include <numeric>
+#include <filesystem>
 #include <format>
 #include <fstream>
-#include <filesystem>
 #include <iostream>
+#include <numeric>
+#include <print>
 #include <ranges>
-#include <string>
 #include <stdexcept>
+#include <string>
 #include <unordered_map>
 
+#if defined(_WIN32) || defined(_WIN64)
+#include <windows.h>
+#include <shellapi.h>
+#include <shlwapi.h>
+#else
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <signal.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <fcntl.h>
+using SOCKET = int;
+#endif
+
 #include <imgui/imgui.h>
+#define STB_TRUETYPE_IMPLEMENTATION
+#define STB_RECT_PACK_IMPLEMENTATION
+// #include <imgui/imstb_truetype.h>
+// #include <imgui/imstb_rectpack.h>
+
+#include <stb/stb_rect_pack.h>
+#include <stb/stb_truetype.h>
 
 #include "main_screen.hpp"
 #include "screen_tabs.hpp"
@@ -153,11 +176,23 @@ void save_services(auto config, auto key_base)
 int WinMain(HINSTANCE, HINSTANCE, LPSTR szArguments, int)
 {
 #else
-int main()
+int main(int argc, char *argv[])
 {
 #endif
     {
+#if defined(_WIN32)
         std::string args {szArguments};
+#else
+        // get the arguments from the command line
+        std::string args;
+        for (int i = 1; i < argc; ++i) {
+            args += argv[i];
+            args += ' ';
+        }
+        if (!args.empty()) {
+            args.pop_back();
+        }
+#endif
         if (!args.empty()) {
             try {
                 if (args.front() == '"') {
@@ -175,42 +210,72 @@ int main()
                     args.replace(pos, 3, " ");
                 }
                 // initialize sockets
+#if defined(_WIN32)
                 WSADATA wsaData;
                 if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
                     throw std::runtime_error("WSAStartup failed");
                 }
+#endif
                 // connect to localhost port 23
                 SOCKET s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+#if defined(_WIN32)
                 if (s == INVALID_SOCKET) {
                     throw std::runtime_error("socket failed");
                 }
+#else
+                if (s == -1) {
+                    throw std::runtime_error("socket failed");
+                }
+#endif
                 sockaddr_in service;
                 service.sin_family = AF_INET;
                 if (inet_pton(AF_INET, "127.0.0.1", &service.sin_addr) <= 0) {
                     throw std::runtime_error("inet_pton failed");
                 }
                 service.sin_port = htons(23);
+#if defined(_WIN32)
                 if (connect(s, (SOCKADDR*)&service, sizeof(service)) == SOCKET_ERROR) {
                     closesocket(s);
                     throw std::runtime_error("connect failed");
                 }
+#else 
+                if (connect(s, (struct sockaddr*)&service, sizeof(service)) == -1) {
+                    close(s);
+                    throw std::runtime_error("connect failed");
+                }
+#endif
                 // send the command
                 std::string command {args};
                 command += "\n";
+#if defined(_WIN32)
                 if (send(s, command.c_str(), static_cast<int>(command.size()), 0) == SOCKET_ERROR) {
                     closesocket(s);
                     throw std::runtime_error("send failed");
                 }
+#else
+                if (send(s, command.c_str(), static_cast<int>(command.size()), 0) == -1) {
+                    close(s);
+                    throw std::runtime_error("send failed");
+                }
+#endif
                 // receive the response
                 std::string response;
                 for (;;) {
                     char buffer[1024];
                     int bytesReceived = recv(s, buffer, sizeof(buffer), 0);
+#if defined(_WIN32)
                     if (bytesReceived == SOCKET_ERROR) {
                         std::cerr << "recv failed" << std::endl;
                         closesocket(s);
                         return 1;
                     }
+#else 
+                    if (bytesReceived == -1) {
+                        std::cerr << "recv failed" << std::endl;
+                        close(s);
+                        return 1;
+                    }
+#endif
                     else if (bytesReceived == 0) {
                         break;
                     }
@@ -222,7 +287,7 @@ int main()
                 }
             }
             catch(std::exception const &e) {
-                ::MessageBoxA(nullptr, e.what(), "Error", MB_OK|MB_ICONERROR);
+                std::println("Error: {}", e.what());
             }
             return 0;
         }
@@ -458,6 +523,7 @@ int main()
         ssh::screen_all ssh_all{};
 
         auto factories = screen_factories::map(menu_tabs, menu_tabs_and, notify_host, radio_host, localhost, cache, gpt, toggl_screens_by_id, ssh_all, mappings);
+        // auto factories = screen_factories::map(menu_tabs, menu_tabs_and, notify_host, radio_host, localhost, cache, gpt, toggl_screens_by_id, ssh_all, mappings);
 
         for (nlohmann::json::object_t const &tab : all_tabs_json.at("tabs"))
         {

@@ -1,12 +1,13 @@
 #pragma once
 
-#include <imgui.h>
+#include <imgui/imgui.h>
 
 #include "host.hpp"
 
 #include "../../structural/views/cached_view.hpp"
 #include "classifier.hpp"
 #include "autotext.hpp"
+#include "../../registrar.hpp"
 
 namespace cloud::whatsapp
 {
@@ -19,7 +20,7 @@ namespace cloud::whatsapp
                     ImGui::Image(reinterpret_cast<ImTextureID>(texture_id), ImVec2{345.0f, 345.0f});
                 }
                 catch(const std::exception &e) {
-                    ::MessageBoxA(nullptr, e.what(), "Error", MB_ICONERROR);
+                    "notify"_sfn(e.what());
                 }
             }
             views::cached_view<nlohmann::json>("whatsapp", [&h] {
@@ -102,7 +103,7 @@ namespace cloud::whatsapp
                                             new_message.clear();
                                         }
                                         catch(const std::exception &e) {
-                                            ::MessageBoxA(nullptr, e.what(), "Error", MB_ICONERROR);
+                                            "notify"_sfn(e.what());
                                         }
                                     }
                                     if (ImGui::SameLine(); ImGui::SmallButton("Reply last")) {
@@ -112,7 +113,7 @@ namespace cloud::whatsapp
                                             new_message.clear();
                                         }
                                         catch(const std::exception &e) {
-                                            ::MessageBoxA(nullptr, e.what(), "Error", MB_ICONERROR);
+                                            "notify"_sfn(e.what());
                                         }
                                     }
                                     if (ImGui::SameLine(); ImGui::SmallButton("Reply from Clipboard")) {
@@ -122,7 +123,7 @@ namespace cloud::whatsapp
                                             new_message.clear();
                                         }
                                         catch(const std::exception &e) {
-                                            ::MessageBoxA(nullptr, e.what(), "Error", MB_ICONERROR);
+                                            "notify"_sfn(e.what());
                                         }
                                     }
                                     if (ImGui::SameLine(); ImGui::SmallButton("Copy Chat ID")) {

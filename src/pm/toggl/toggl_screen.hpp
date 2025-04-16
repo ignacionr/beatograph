@@ -107,7 +107,7 @@ namespace toggl
                     if (ImGui::SmallButton(ICON_MD_COPY_ALL)) {
                         std::ostringstream oss;
                         for (auto const &entry : todays_entries) {
-                            oss << "- " << entry->at("description").get<std::string>() << std::endl;
+                            oss << "- " << entry->at("description").template get<std::string>() << std::endl;
                         }
                         ImGui::SetClipboardText(oss.str().c_str());
                     }
@@ -132,7 +132,7 @@ namespace toggl
             ImGui::PushID(&entry);
             struct std::tm tm = {};
             {
-                std::istringstream ss(entry["start"].get_ref<std::string const&>());
+                std::istringstream ss(entry["start"].template get_ref<std::string const&>());
                 ss >> std::get_time(&tm, "%Y-%m-%dT%H:%M:%S");
             }
             auto start_utc = std::chrono::system_clock::from_time_t(std::mktime(&tm));
@@ -148,11 +148,11 @@ namespace toggl
                 current_day = day_start;
                 render_day_summary(current_day_seconds, current_day, its_today, todays_entries);
             }
-            auto description = entry["description"].get<std::string>();
+            auto description = entry["description"].template get<std::string>();
             auto local_start = std::chrono::current_zone()->to_local(start);
             auto start_formatted = std::format("{:%H:%M}", local_start);
             std::string duration_formatted;
-            auto duration_in_seconds = entry["duration"].get<long long>();
+            auto duration_in_seconds = entry["duration"].template get<long long>();
             bool const is_running{duration_in_seconds < 0};
             if (is_running)
             {
@@ -295,6 +295,7 @@ namespace toggl
                     .detach();
 
                 std::time_t currentTime = std::time(nullptr);
+#ifdef _WIN32
                 // Get the UTC time
                 std::tm utcTime;
                 gmtime_s(&utcTime, &currentTime);
@@ -302,6 +303,14 @@ namespace toggl
                 // Get the local time
                 std::tm localTime;
                 localtime_s(&localTime, &currentTime);
+#else
+                // Get the UTC time
+                std::tm utcTime;
+                gmtime_r(&currentTime, &utcTime);
+                // Get the local time
+                std::tm localTime;
+                localtime_r(&currentTime, &localTime);
+#endif
 
                 // Calculate the difference in seconds
                 std::time_t utcTimeInSeconds = std::mktime(&utcTime);
@@ -335,13 +344,25 @@ namespace toggl
                     ImGui::Columns(2);
                     if (ImGui::Button("Open Web"))
                     {
+#ifdef _WIN32
                         ShellExecuteA(nullptr, "open", "https://track.toggl.com/", nullptr, nullptr, SW_SHOW);
+#else
+                        system("xdg-open https://track.toggl.com/");
+#endif
                     }
                     if (ImGui::SameLine(); ImGui::Button("Report: Last Month")) {
+#ifdef _WIN32
                         ShellExecuteA(nullptr, "open", "https://track.toggl.com/reports/detailed/8957518/period/prevMonth", nullptr, nullptr, SW_SHOW);
+#else
+                        system("xdg-open https://track.toggl.com/reports/detailed/8957518/period/prevMonth");
+#endif
                     }
                     if (ImGui::SameLine(); ImGui::Button("Report: Current Month")) {
+#ifdef _WIN32
                         ShellExecuteA(nullptr, "open", "https://track.toggl.com/reports/detailed/8957518/period/thisMonth", nullptr, nullptr, SW_SHOW);
+#else
+                        system("xdg-open https://track.toggl.com/reports/detailed/8957518/period/thisMonth");
+#endif
                     }
                     ImGui::NextColumn();
                     if (new_description.reserve(256); ImGui::InputText("New Task", new_description.data(), new_description.capacity(), ImGuiInputTextFlags_EnterReturnsTrue))

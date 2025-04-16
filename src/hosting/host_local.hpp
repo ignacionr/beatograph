@@ -14,6 +14,11 @@
 #include <nlohmann/json.hpp>
 #include <curl/curl.h>
 
+#if defined(_WIN32) || defined(_WIN64)
+#else
+#include <unistd.h>
+#endif
+
 #include "ssh_execute.hpp"
 #include "local_process.hpp"
 
@@ -28,7 +33,11 @@ namespace hosting::local
         {
             char *val = nullptr;
             size_t len = 0;
+#if defined(_WIN32) || defined(_WIN64)
             if (_dupenv_s(&val, &len, key.c_str()) || val == nullptr)
+#else 
+            if (getenv(key.c_str()) == nullptr)
+#endif
             {
                 return std::string{};
             }
@@ -41,7 +50,6 @@ namespace hosting::local
 #if defined (_MSC_VER)
             for (char **env = *__p__environ(); *env != nullptr; ++env)
 #else
-            extern char **environ;
             for (char **env = environ; *env != nullptr; ++env)
 #endif
             {
@@ -58,7 +66,14 @@ namespace hosting::local
 
         void set_env_variable(std::string const &key, std::string const &value)
         {
+#if defined(_WIN32) || defined(_WIN64)
             _putenv_s(key.c_str(), value.c_str());
+#else
+            if (setenv(key.c_str(), value.c_str(), 1) != 0)
+            {
+                throw std::runtime_error(std::format("Failed to set environment variable: {}", key));
+            }
+#endif
         }
 
         std::string resolve_environment(std::string source) {
@@ -91,7 +106,11 @@ namespace hosting::local
 
         void open_content(std::string const &content)
         {
+#if defined(_WIN32) || defined(_WIN64)
             ShellExecuteA(nullptr, "open", content.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+#else
+            system(std::format("xdg-open {}", content).c_str());
+#endif
         }
 
         std::string ssh(std::string_view command, std::string_view host_name, unsigned int timeout_seconds = 5)
@@ -126,6 +145,7 @@ namespace hosting::local
 
         bool IsPortInUse(unsigned short port) const
         {
+#if defined(_WIN32) || defined(_WIN64)
             WSADATA wsaData;
             SOCKET TestSocket = INVALID_SOCKET;
             struct sockaddr_in service;
@@ -180,6 +200,27 @@ namespace hosting::local
             closesocket(TestSocket);
             WSACleanup();
             return false; // Port is not in use
+#else
+            // POSIX implementation
+            std::string command = std::format("lsof -i :{}", port);
+            FILE *fp = popen(command.c_str(), "r");
+            if (fp == nullptr)
+            {
+                throw std::runtime_error("Failed to run command");
+            }
+            char buffer[128];
+            bool in_use = false;
+            while (fgets(buffer, sizeof(buffer), fp) != nullptr)
+            {
+                if (strstr(buffer, "LISTEN") != nullptr)
+                {
+                    in_use = true;
+                    break;
+                }
+            }
+            pclose(fp);
+            return in_use;
+#endif
         }
 
         std::string HostName()

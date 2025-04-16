@@ -12,6 +12,7 @@ namespace cloud::whatsapp {
     struct autotext {
 
         static std::string ANSIToUTF8(const std::string& ansiStr) {
+#if defined(_WIN32) || defined(_WIN64)
             // Step 1: Convert ANSI to Wide Character (UTF-16)
             int wideCharLen = MultiByteToWideChar(CP_ACP, 0, ansiStr.c_str(), -1, NULL, 0);
             if (wideCharLen == 0) {
@@ -31,6 +32,11 @@ namespace cloud::whatsapp {
             WideCharToMultiByte(CP_UTF8, 0, wideStr.c_str(), -1, &utf8Str[0], utf8Len, NULL, NULL);
 
             return utf8Str;
+#else
+            // For non-Windows platforms, you can use the iconv library or similar
+            // to convert from ANSI to UTF-8. This is a placeholder implementation.
+            return ansiStr; // Placeholder: replace with actual conversion logic
+#endif
         }
 
         nlohmann::json reduce_sample(nlohmann::json const &sample, int count = 20) const {
@@ -56,6 +62,7 @@ namespace cloud::whatsapp {
             gpt.add_instructions("You are a friendly chat user. Create a fresh short reply to the last message of the conversation that the user gives you, that adjusts to the language, style and tone, and the contents of the conversation; never repeat previous messages. Reply with the text only.");
             std::string clipboard;
             if (consume_clipboard) {
+#if defined(_WIN32) || defined(_WIN64)
                 if (OpenClipboard(nullptr)) {
                     HANDLE hData = GetClipboardData(CF_TEXT);
                     size_t cbData = GlobalSize(hData);
@@ -68,6 +75,11 @@ namespace cloud::whatsapp {
                     }
                     CloseClipboard();
                 }
+#else
+                // For non-Windows platforms, you can use the X11 library or similar
+                // to access the clipboard. This is a placeholder implementation.
+                clipboard = ""; // Placeholder: replace with actual clipboard access logic
+#endif
             }
             if (!new_message.empty()) {
                 gpt.add_instructions(std::format("Use the following instructions (copy or adapt the message): {}", new_message));

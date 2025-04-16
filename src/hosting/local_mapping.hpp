@@ -46,10 +46,15 @@ namespace hosting::local
         ~mapping()
         {
             std::cerr << "Stopping port mapping for " << hostname_ << " port " << mapped_port_ << std::endl;
+#if defined(_WIN32) || defined(_WIN64)
             process_->sendQuitSignal(CTRL_C_EVENT);
             process_->wait(400);
             process_->sendQuitSignal(CTRL_BREAK_EVENT);
             process_->wait(400);
+#else
+            process_->sendQuitSignal();
+            process_->wait(1000);
+#endif
             process_->stop();
             process_->wait(1000);
         }
