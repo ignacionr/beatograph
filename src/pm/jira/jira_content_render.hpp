@@ -6,7 +6,10 @@
 
 #include <imgui.h>
 #include <nlohmann/json.hpp>
+
+#if defined(_WIN32) || defined(_WIN64)
 #include <Windows.h>
+#endif
 
 namespace jira{
     struct content {

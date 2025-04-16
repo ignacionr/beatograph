@@ -3,7 +3,7 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <GL/glew.h>
-#include <imgui.h>
+#include <imgui/imgui.h>
 #include "metric.hpp"
 #include "metric_value.hpp"
 #include "metric_view_config.hpp"

@@ -9,3 +9,4 @@ beatograph.ini
 rss.db
 *.db-journal
 tests
+vcpkg

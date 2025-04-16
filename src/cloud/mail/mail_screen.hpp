@@ -9,7 +9,7 @@
 #include "../../structural/views/cached_view.hpp"
 #include "message.hpp"
 #include "../../registrar.hpp"
-#include <cppgpt/cppgpt.hpp>
+#include "../../../external/cppgpt/cppgpt.hpp"
 
 namespace cloud::mail {
     class screen {

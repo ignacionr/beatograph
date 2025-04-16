@@ -28,7 +28,55 @@
         },
         {
             "type": "shell",
+            "label": "CMake: configure (Linux)",
+            "command": "cmake",
+            "args": [
+                "-S", "${workspaceFolder}",
+                "-B", "${workspaceFolder}/build",
+                "-G", "Ninja",
+                "-DCMAKE_BUILD_TYPE=Debug",
+                "-DCMAKE_TOOLCHAIN_FILE=~/src/vcpkg/scripts/buildsystems/vcpkg.cmake",
+                "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+                "-DVCPKG_TARGET_TRIPLET=x64-linux",
+                "-DCMAKE_MAKE_PROGRAM=ninja",
+                "-DCMAKE_C_COMPILER=/usr/bin/clang-19",
+                "-DCMAKE_CXX_COMPILER=/usr/bin/clang++-19",
+                "-DCMAKE_CXX_COMPILER_CLANG_SCAN_DEPS=/usr/bin/clang-scan-deps-19"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "problemMatcher": [],
+            "detail": "CMake configure",
+            "options": {
+                "cwd": "${workspaceFolder}/build",
+                "env": {
+                    "CMAKE_MODULE_PATH": "../vcpkg_installed/vcpkg/pkgs/ffmpeg_x64-windows/share/ffmpeg"
+                }
+            }
+        },
+        {
+            "type": "shell",
             "label": "CMake: build",
+            "command": "cmake",
+            "args": [
+                "--build", "${workspaceFolder}/build",
+                "--parallel"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "problemMatcher": [],
+            "options": {
+                "cwd": "${workspaceFolder}/build"
+            },
+            "detail": "CMake build"
+        },
+        {
+            "type": "shell",
+            "label": "CMake: build (Linux)",
             "command": "cmake",
             "args": [
                 "--build", "${workspaceFolder}/build",

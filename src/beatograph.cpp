@@ -12,7 +12,7 @@
 #include <stdexcept>
 #include <unordered_map>
 
-#include <imgui.h>
+#include <imgui/imgui.h>
 
 #include "main_screen.hpp"
 #include "screen_tabs.hpp"
@@ -51,7 +51,7 @@
 #include "registrar.hpp"
 #include "pm/toggl/login/host.hpp"
 #include "cloud/github/login_host.hpp"
-#include "util\clocks\pomodoro_screen.hpp"
+#include "util/clocks/pomodoro_screen.hpp"
 #include "structural/text_command/host.hpp"
 #include "structural/text_command/screen.hpp"
 #include "hosting/telnet/host.hpp"

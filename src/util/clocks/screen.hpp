@@ -19,7 +19,7 @@
 #include "../../structural/views/json.hpp"
 #include "../../imgcache.hpp"
 #include "../../registrar.hpp"
-#include "../external/cppgpt/cppgpt.hpp"
+#include "../../../external/cppgpt/cppgpt.hpp"
 #include "host.hpp"
 
 namespace clocks

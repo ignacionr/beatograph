@@ -1,23 +1,7 @@
 {
     "dependencies": [
         "curl",
-        "sdl2",
-        {
-            "name": "sdl2-image",
-            "features": [
-                "libjpeg-turbo",
-                "libwebp"
-            ]
-        },
         "glew",
-        {
-            "name": "imgui",
-            "features": [
-                "sdl2-binding",
-                "sdl2-renderer-binding",
-                "opengl3-binding"
-            ]
-        },
         "gperf",
         "openssl",
         "gtest",

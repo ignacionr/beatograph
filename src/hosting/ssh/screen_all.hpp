@@ -6,9 +6,12 @@
 #include <map>
 #include <string>
 
+#if defined(_WIN32) || defined(_WIN64)
 #include <Windows.h>
 #include <Shlobj.h>
 #include <Shlobj_core.h>
+#endif
+
 #include "../host_local.hpp"
 #include "../host.hpp"
 #include "../ssh_screen.hpp"
