@@ -100,6 +100,10 @@ struct main_screen
 
     void set_title(std::string_view title)
     {
+        if (title.size() > 4 && title[0] < 0 && title[3] == ' ') {
+            // remove the leading icon
+            title.remove_prefix(4);
+        }
         SDL_SetWindowTitle(window, std::format("{} - Beatograph", title).c_str());
     }
 
