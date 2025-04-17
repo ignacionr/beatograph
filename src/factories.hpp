@@ -1,33 +1,30 @@
 #pragma once
 
-#include <map>
-#include <string>
 #include <functional>
+#include <map>
 #include <memory>
+#include <string>
+
 #include <nlohmann/json.hpp>
 #include <imgui.h>
 
 #include "group_t.hpp"
 #include "registrar.hpp"
 #include "names.hpp"
-
 #include "cloud/github/host.hpp"
 #include "cloud/github/screen.hpp"
 #include "pm/calendar/screen.hpp"
 #include "util/clocks/pomodoro_screen.hpp"
-
 #include "pm/toggl/toggl_client.hpp"
 #include "pm/toggl/toggl_screen.hpp"
-
 #include "pm/jira/host.hpp"
 #include "pm/jira/screen.hpp"
-
 #include "cloud/deel/host.hpp"
 #include "cloud/deel/screen.hpp"
-
+#include "hosting/ssh/screen_all.hpp"
 
 struct screen_factories {
-    static std::map<std::string, std::function<group_t(nlohmann::json::object_t const &)>> map(auto &menu_tabs, auto &menu_tabs_and, auto &notify_host, auto &radio_host, auto &localhost, auto &cache, auto &gpt, auto &toggl_screens_by_id, auto &ssh_all, auto &mappings)
+    static std::map<std::string, std::function<group_t(nlohmann::json::object_t const &)>> map(auto &menu_tabs, auto &menu_tabs_and, auto &notify_host, auto &radio_host, auto &localhost, auto &cache, auto &gpt, auto &toggl_screens_by_id, auto &mappings)
     {
 
         return {
@@ -69,11 +66,11 @@ struct screen_factories {
             }
         },
         {"ssh-hosts",
-         [&menu_tabs, localhost, &ssh_all](nlohmann::json::object_t const &)
+         [&menu_tabs, localhost](nlohmann::json::object_t const &)
          { return group_t{ICON_MD_SETTINGS_REMOTE " SSH Hosts",
-                          [localhost, &ssh_all]
-                          { 
-                            ssh_all.render(localhost);
+                          [localhost, ssh_all = std::make_shared<ssh::screen_all>()]()
+                          {
+                            ssh_all->render(localhost);
                         },
                           menu_tabs}; }},
         {"toggl",

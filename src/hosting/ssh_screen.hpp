@@ -19,7 +19,7 @@ namespace hosting::ssh
 {
     struct screen
     {
-        void render(host::ptr host, std::shared_ptr<local::host> localhost) noexcept
+        void render(host::ptr host, std::shared_ptr<local::host> localhost) const noexcept
         {
             if (!host)
             {
@@ -323,8 +323,8 @@ namespace hosting::ssh
     private:
         metric_view metric_view_;
         docker_screen docker_screen_;
-        std::string systemctl_filter_;
-        std::string process_filter_;
-        std::string last_error_;
+        mutable std::string systemctl_filter_;
+        mutable std::string process_filter_;
+        mutable std::string last_error_;
     };
 }

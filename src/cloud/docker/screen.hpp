@@ -13,7 +13,7 @@
 
 struct docker_screen
 {
-    void render(auto getter, std::shared_ptr<::hosting::local::host> localhost) noexcept
+    void render(auto getter, std::shared_ptr<::hosting::local::host> localhost) const noexcept
     {
         if (ImGui::CollapsingHeader("Containers"))
         {
@@ -124,5 +124,5 @@ struct docker_screen
         }
     }
 
-    bool only_running{true};
+    mutable bool only_running{true};
 };

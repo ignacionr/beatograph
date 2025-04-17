@@ -48,7 +48,6 @@ using SOCKET = int;
 #include "hosting/host.hpp"
 #include "hosting/host_local.hpp"
 #include "hosting/local_screen.hpp"
-#include "hosting/ssh/screen_all.hpp"
 #include "../external/cppgpt/cppgpt.hpp"
 #include "structural/views/assertion.hpp"
 #include "git/host.hpp"
@@ -437,11 +436,7 @@ int main(int argc, char *argv[])
             }
         }
 
-
-        ssh::screen_all ssh_all{};
-
-        auto factories = screen_factories::map(menu_tabs, menu_tabs_and, notify_host, radio_host, localhost, cache, gpt, toggl_screens_by_id, ssh_all, mappings);
-        // auto factories = screen_factories::map(menu_tabs, menu_tabs_and, notify_host, radio_host, localhost, cache, gpt, toggl_screens_by_id, ssh_all, mappings);
+        auto factories = screen_factories::map(menu_tabs, menu_tabs_and, notify_host, radio_host, localhost, cache, gpt, toggl_screens_by_id, mappings);
 
         for (nlohmann::json::object_t const &tab : all_tabs_json.at("tabs"))
         {

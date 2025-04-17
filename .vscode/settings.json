@@ -91,7 +91,14 @@
         "future": "cpp",
         "queue": "cpp",
         "expected": "cpp",
-        "complex": "cpp"
+        "complex": "cpp",
+        "cwctype": "cpp",
+        "memory_resource": "cpp",
+        "numbers": "cpp",
+        "print": "cpp",
+        "semaphore": "cpp",
+        "text_encoding": "cpp",
+        "cinttypes": "cpp"
     },
     "cmake.automaticReconfigure": false,
     "C_Cpp.default.cppStandard": "c++23",

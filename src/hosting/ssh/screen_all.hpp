@@ -106,7 +106,7 @@ namespace ssh
             }
         }
 
-        void render(std::shared_ptr<hosting::local::host> localhost) noexcept
+        void render(std::shared_ptr<hosting::local::host> localhost) const noexcept
         {
             for (auto const &[name, host] : hosts)
             {
@@ -117,7 +117,7 @@ namespace ssh
             }
             if (ImGui::SmallButton(ICON_MD_REFRESH " Refresh"))
             {
-                read_hosts();
+                const_cast<screen_all*>(this)->read_hosts();
             }
             if (ImGui::SameLine(); ImGui::SmallButton(ICON_MD_EDIT " Edit"))
             {
@@ -145,6 +145,6 @@ namespace ssh
     private:
         std::map<std::string, hosting::ssh::host::ptr> hosts;
         hosting::ssh::screen host_screen_;
-        std::string last_error_;
+        mutable std::string last_error_;
     };
 }
