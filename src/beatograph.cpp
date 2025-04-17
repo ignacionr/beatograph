@@ -86,91 +86,9 @@ using SOCKET = int;
 #include "factories.hpp"
 #include "names.hpp"
 #include "services/summarize.hpp"
-
-void setup_fonts()
-{
-    auto &io{ImGui::GetIO()};
-    float baseFontSize = 13.5f;
-    ImFontGlyphRangesBuilder builder;
-    builder.AddRanges(io.Fonts->GetGlyphRangesDefault());   // Default ASCII
-    builder.AddRanges(io.Fonts->GetGlyphRangesCyrillic());  // Cyrillic
-    builder.AddChar(static_cast<ImWchar>(0x1F4C5));  // Unicode Calendar 📅 (U+1F4C5)
-    builder.AddChar(static_cast<ImWchar>(0x2019));   // Special apostrophe (Right Single Quotation Mark ’ U+2019)
-    builder.AddChar(static_cast<ImWchar>(0x2603));   // Unicode Snowman ☃ (U+2603)
-
-    static ImVector<ImWchar> glyphRanges;
-    builder.BuildRanges(&glyphRanges);
-    io.Fonts->AddFontFromFileTTF("assets/fonts/NotoSansMono-Regular.ttf", baseFontSize, nullptr, glyphRanges.Data);
-
-    float iconFontSize = baseFontSize * 3.0f / 3.0f;
-
-    // merge in icons from Font Awesome
-    static const ImWchar icons_ranges[] = {
-        static_cast<ImWchar>(ICON_MIN_MD),
-        static_cast<ImWchar>(ICON_MAX_MD), 0};
-    ImFontConfig icons_config;
-    icons_config.MergeMode = true;
-    icons_config.GlyphOffset.y = 3;
-    io.Fonts->AddFontFromFileTTF("assets/fonts/MaterialIcons-Regular.ttf", iconFontSize, &icons_config, icons_ranges);
-
-    // font[1] for important content text
-    io.Fonts->AddFontFromFileTTF("assets/fonts/Montserrat-Regular.ttf", 16.0f, nullptr, io.Fonts->GetGlyphRangesCyrillic());
-    // font[2] for titles
-    io.Fonts->AddFontFromFileTTF("assets/fonts/Montserrat-Bold.ttf", 23.0f, nullptr, io.Fonts->GetGlyphRangesCyrillic());
-    // font[3] for italics
-    io.Fonts->AddFontFromFileTTF("assets/fonts/Montserrat-Italic.ttf", iconFontSize, nullptr, io.Fonts->GetGlyphRangesCyrillic());
-    // font[4] for bold
-    io.Fonts->AddFontFromFileTTF("assets/fonts/Montserrat-Bold.ttf", iconFontSize, nullptr, io.Fonts->GetGlyphRangesCyrillic());
-}
-
-void load_panels(auto tabs, auto &loaded_panels, auto localhost, auto menu_tabs)
-{
-    // remove previously loaded panels
-    while (!loaded_panels.empty())
-    {
-        tabs->remove(loaded_panels.back());
-        loaded_panels.pop_back();
-    }
-    std::filesystem::path panel_dir{"panels"};
-    if (std::filesystem::exists(panel_dir) && std::filesystem::is_directory(panel_dir))
-    {
-        for (auto const &entry : std::filesystem::directory_iterator{panel_dir})
-        {
-            if (entry.is_regular_file() && entry.path().extension() == ".json")
-            {
-                std::ifstream file{entry.path()};
-                nlohmann::json panel;
-                file >> panel;
-                auto config = std::make_shared<panel::config>(
-                    panel.at("contents").get<nlohmann::json::array_t>(), localhost);
-                auto const &panel_name = panel.at("title").get_ref<std::string const &>();
-                loaded_panels.push_back(panel_name);
-                tabs->add({panel_name,
-                           [config]
-                           { config->render(); },
-                           menu_tabs});
-            }
-        }
-    }
-}
-
-template <typename T>
-void load_services(auto config, auto key_base)
-{
-    config->scan_level(key_base, [config, key_base](auto const &subkey)
-                       {
-        auto login = std::make_shared<T>();
-        login->load_from([config, key_base, subkey](std::string_view k){ return config->get(std::format("{}{}.{}", key_base, subkey,k)); });
-        registrar::add<T>(subkey, login); });
-}
-
-template <typename T>
-void save_services(auto config, auto key_base)
-{
-    registrar::all<T>([config, key_base](std::string const &key, auto login)
-                      { login->save_to([config, key, key_base](std::string_view k, std::string v)
-                                       { config->set(std::format("{}{}.{}", key_base, key, k), v); }); });
-}
+#include "font_setup.hpp"
+#include "panel_loader.hpp"
+#include "service_utils.hpp"
 
 #if defined(_WIN32)
 int WinMain(HINSTANCE, HINSTANCE, LPSTR szArguments, int)
