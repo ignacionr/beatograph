@@ -16,8 +16,8 @@
         {
             "type": "shell-execute",
             "title": "Open flipaclip-core in VSCode",
-            "command": "cmd.exe",
-            "args": "/c code --remote ssh-remote+dev.ignacio /Users/administrator/src/flipaclip-core"
+            "command": "code",
+            "args": "--remote ssh-remote+dev.ignacio /Users/administrator/src/flipaclip-core"
         },
         {
             "type": "ssh-host",
