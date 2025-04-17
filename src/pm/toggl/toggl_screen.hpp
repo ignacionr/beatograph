@@ -344,25 +344,13 @@ namespace toggl
                     ImGui::Columns(2);
                     if (ImGui::Button("Open Web"))
                     {
-#ifdef _WIN32
-                        ShellExecuteA(nullptr, "open", "https://track.toggl.com/", nullptr, nullptr, SW_SHOW);
-#else
-                        system("xdg-open https://track.toggl.com/");
-#endif
+                        "open"_sfn("https://track.toggl.com/");
                     }
                     if (ImGui::SameLine(); ImGui::Button("Report: Last Month")) {
-#ifdef _WIN32
-                        ShellExecuteA(nullptr, "open", "https://track.toggl.com/reports/detailed/8957518/period/prevMonth", nullptr, nullptr, SW_SHOW);
-#else
-                        system("xdg-open https://track.toggl.com/reports/detailed/8957518/period/prevMonth");
-#endif
+                        "open"_sfn("https://track.toggl.com/reports/detailed/8957518/period/prevMonth");
                     }
                     if (ImGui::SameLine(); ImGui::Button("Report: Current Month")) {
-#ifdef _WIN32
-                        ShellExecuteA(nullptr, "open", "https://track.toggl.com/reports/detailed/8957518/period/thisMonth", nullptr, nullptr, SW_SHOW);
-#else
-                        system("xdg-open https://track.toggl.com/reports/detailed/8957518/period/thisMonth");
-#endif
+                        "open"_sfn("https://track.toggl.com/reports/detailed/8957518/period/thisMonth");
                     }
                     ImGui::NextColumn();
                     if (new_description.reserve(256); ImGui::InputText("New Task", new_description.data(), new_description.capacity(), ImGuiInputTextFlags_EnterReturnsTrue))

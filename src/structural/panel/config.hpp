@@ -215,11 +215,7 @@ namespace panel {
                     auto command = element.at("command").get<std::string>();
                     return [command, title = element.at("title").get<std::string>()]{
                         if (ImGui::Button(title.c_str())) {
-#if defined(_WIN32) || defined(_WIN64)
-                            ShellExecuteA(nullptr, "open", command.c_str(), nullptr, nullptr, SW_SHOW);
-#else
-                            system(std::format("xdg-open {}", command).c_str());
-#endif
+                            "open"_sfn(command);
                         }
                     };
                 }},

@@ -121,11 +121,7 @@ namespace jira
                 if (ImGui::SmallButton(ICON_MD_WEB))
                 {
                     auto const url = h.get_browse_url(key);
-#if defined(_WIN32) || defined(_WIN64)
-                    ShellExecuteA(nullptr, "open", url.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
-#else
-                    system(std::format("xdg-open {}", url).c_str());
-#endif
+                    "open"_sfn(url);
                 }
                 if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip))
                 {
