@@ -126,8 +126,11 @@ struct screen_factories {
                      ImVec4(0.5f, 0.5f, 1.0f, 1.0f)}; }},
         {"git-repositories",
          [&cache, localhost, &menu_tabs](nlohmann::json::object_t const &node) mutable
-         { 
-            auto git_host = std::make_shared<git::host>(localhost, node.at("root").template get<std::string>());
+         {
+            auto const root_path {
+                localhost->resolve_environment(node.at("root"))
+            };
+            auto git_host {std::make_shared<git::host>(localhost, root_path)};
             auto git_screen = std::make_shared<git::screen>(git_host);
             return group_t{
                ICON_MD_CODE " Git Repositories",

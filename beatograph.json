@@ -11,7 +11,7 @@
         },
         {
             "type": "git-repositories",
-            "root": "C:\\src"
+            "root": "${HOME}/src"
         },
         {
             "type": "toggl",
