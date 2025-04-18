@@ -119,41 +119,52 @@ struct main_screen
         running = true;
         while (running.load())
         {
+            bool some_event{false};
             while (SDL_PollEvent(&event))
             {
+                some_event = true;
                 if (event.type == SDL_QUIT)
                 {
                     running.store(false);
                 }
                 ImGui_ImplSDL2_ProcessEvent(&event);
             }
-            auto &io = ImGui::GetIO();
-            if (io.DeltaTime < (1.0f / 60.0f)) {
-                // If the delta time is too small, we assume that the window is not visible
-                // and we don't want to waste CPU cycles on rendering.
+            static int wait_count{0};
+            wait_count++;
+            wait_count %= 60;
+            if (some_event || wait_count == 0) {
+                auto &io = ImGui::GetIO();
+                if (io.DeltaTime < (1.0f / 60.0f)) {
+                    // If the delta time is too small, we assume that the window is not visible
+                    // and we don't want to waste CPU cycles on rendering.
+                    std::this_thread::sleep_for(std::chrono::milliseconds(15));
+                }    
+                ImGui_ImplOpenGL3_NewFrame();
+                ImGui_ImplSDL2_NewFrame();
+                ImGui::NewFrame();
+                try {
+                    do_frame(pre_frame);
+                }
+                catch (std::exception const &e) {
+                    notifier(e.what());
+                }
+                catch (...) {
+                    notifier("Unknown exception");
+                }
+                ImGui::Render();
+
+                auto const ds {ImGui::GetIO().DisplaySize};
+                glViewport(0, 0, (int)ds.x, (int)ds.y);
+                glClearColor(0.45f, 0.55f, 0.60f, 1.00f);
+                glClear(GL_COLOR_BUFFER_BIT);
+                ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+                SDL_GL_SwapWindow(window);
+            }
+            else {
+                // no events, sleep for a while
                 std::this_thread::sleep_for(std::chrono::milliseconds(15));
-            }    
-            ImGui_ImplOpenGL3_NewFrame();
-            ImGui_ImplSDL2_NewFrame();
-            ImGui::NewFrame();
-            try {
-                do_frame(pre_frame);
             }
-            catch (std::exception const &e) {
-                notifier(e.what());
-            }
-            catch (...) {
-                notifier("Unknown exception");
-            }
-            ImGui::Render();
-
-            auto const ds {ImGui::GetIO().DisplaySize};
-            glViewport(0, 0, (int)ds.x, (int)ds.y);
-            glClearColor(0.45f, 0.55f, 0.60f, 1.00f);
-            glClear(GL_COLOR_BUFFER_BIT);
-            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-            SDL_GL_SwapWindow(window);
         }
     }
 
