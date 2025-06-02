@@ -205,10 +205,15 @@ private:
                     }
                     if (ImGui::MenuItem("Debug")) {
                         // attach a console, so I can check what comes out of std::cerr
+#ifdef _WIN32
                         AllocConsole();
                         FILE *out, *err;
                         freopen_s(&out, "CONOUT$", "w", stderr);
                         freopen_s(&err, "CONOUT$", "w", stdout);
+#else
+                        // On macOS/Unix, output already goes to terminal
+                        std::cerr << "Debug mode enabled - output goes to terminal" << std::endl;
+#endif
                     }
                     if (ImGui::MenuItem("Full Screen", "F11", is_fullscreen))
                     {

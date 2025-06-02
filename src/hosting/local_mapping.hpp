@@ -7,7 +7,9 @@
 #include <stdexcept>
 #include "host_local.hpp"
 
+#ifdef _WIN32
 #pragma comment(lib, "ws2_32.lib")
+#endif
 
 namespace hosting::local
 {
@@ -46,9 +48,15 @@ namespace hosting::local
         ~mapping()
         {
             std::cerr << "Stopping port mapping for " << hostname_ << " port " << mapped_port_ << std::endl;
+#ifdef _WIN32
             process_->sendQuitSignal(CTRL_C_EVENT);
             process_->wait(400);
             process_->sendQuitSignal(CTRL_BREAK_EVENT);
+#else
+            process_->sendQuitSignal(SIGTERM);
+            process_->wait(400);
+            process_->sendQuitSignal(SIGKILL);
+#endif
             process_->wait(400);
             process_->stop();
             process_->wait(1000);

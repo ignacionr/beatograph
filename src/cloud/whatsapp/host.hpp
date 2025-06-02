@@ -9,9 +9,6 @@
 #include "../../hosting/http/fetch.hpp"
 #include "../../hosting/local_mapping.hpp"
 
-using namespace std::string_literals;
-using namespace std::chrono_literals;
-
 namespace cloud::whatsapp
 {
     struct host
@@ -33,7 +30,7 @@ namespace cloud::whatsapp
                     // try to reconnect
                     mapping_ = std::make_shared<hosting::local::mapping>(mapping_->mapped_port(), mapping_->hostname(), mapping_->localhost());
                     // give it one second before retrying
-                    std::this_thread::sleep_for(1s);
+                    std::this_thread::sleep_for(std::chrono::seconds(1));
                     result = fn();
                 }
                 throw;

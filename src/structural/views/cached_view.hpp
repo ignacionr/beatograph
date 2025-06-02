@@ -2,7 +2,7 @@
 
 #include <atomic>
 #include <chrono>
-#include <expected>
+// #include <expected>  // Temporarily disabled due to macOS compilation issues
 #include <functional>
 #include <memory>
 #include <optional>
@@ -12,7 +12,9 @@
 
 #include <imgui.h>
 
+#ifdef _WIN32
 #pragma execution_character_set(push, "utf-8")
+#endif
 #include "../../../external/IconsMaterialDesign.h"
 
 namespace views {
@@ -24,7 +26,7 @@ namespace views {
         std::optional<std::chrono::system_clock::duration> autorefresh_seconds = std::nullopt,
         std::function<void(std::string_view)> const &on_error = {})
     {
-        using cached_item_t = std::expected<cached_t, std::string>;
+        using cached_item_t = std::optional<cached_t>;
         using ptr_t = std::shared_ptr<cached_item_t>;
         using envelope_t = std::pair<std::atomic<ptr_t>, std::chrono::system_clock::time_point>;
 
@@ -33,14 +35,14 @@ namespace views {
         auto const item_id {ImGui::GetID(name.c_str())};
         auto reload = [&name, &factory, item_id, on_error] {
                 cache[item_id].second = std::chrono::system_clock::now();
-                cache[item_id].first.store(std::make_shared<cached_item_t>(std::unexpected("Loading...")));
+                cache[item_id].first.store(std::make_shared<cached_item_t>(std::nullopt));
                 std::thread([factory, item_id, on_error] {
                     ptr_t contents;
                     try {
                         contents = std::make_shared<cached_item_t>(factory());
                     }
                     catch(std::exception const &ex) {
-                        contents = std::make_shared<cached_item_t>(std::unexpected(ex.what()));
+                        contents = std::make_shared<cached_item_t>(std::nullopt);
                         if (on_error) on_error(ex.what());
                     }
                     cache[item_id].first.store(contents);
@@ -66,14 +68,9 @@ namespace views {
                     renderer(item_ptr->value());
                 }
                 else {
-                    auto const err{item_ptr->error()};
-                    if (err == "Loading...") {
-                        ImGui::TextUnformatted(ICON_MD_DOWNLOADING);
-                    }
-                    else {
-                        constexpr ImVec4 red {ImVec4(1.0f, 0.0f, 0.0f, 1.0f)};
-                        ImGui::TextColored(red, ICON_MD_ERROR " %s", err.c_str());
-                    }
+                    // For optional, we can't get error message, just show generic loading message
+                    ImGui::TextUnformatted("Loading...");
+                    ImGui::TextUnformatted(ICON_MD_DOWNLOADING);
                 }
                 if (ImGui::SmallButton(ICON_MD_REFRESH)) {
                     cache.erase(item_id);

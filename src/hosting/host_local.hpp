@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cstdio> // for popen and pclose
+#include <cstdio>
 #include <format>
 #include <functional>
 #include <iostream>
@@ -10,6 +10,16 @@
 #include <string>
 #include <string_view>
 #include <vector>
+
+#ifdef _WIN32
+#include <Windows.h>
+#else
+#include <unistd.h>
+#include <cstdlib>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#endif
 
 #include <nlohmann/json.hpp>
 #include <curl/curl.h>
@@ -26,6 +36,7 @@ namespace hosting::local
 
         std::string get_env_variable(std::string const &key)
         {
+#ifdef _WIN32
             char *val = nullptr;
             size_t len = 0;
             if (_dupenv_s(&val, &len, key.c_str()) || val == nullptr)
@@ -33,6 +44,10 @@ namespace hosting::local
                 return std::string{};
             }
             return std::string{val, len - 1}; // len returns the count of all copied bytes, including the terminator
+#else
+            const char* value = getenv(key.c_str());
+            return value ? std::string(value) : "";
+#endif
         }
 
         void scan_environment(auto callback) const
@@ -58,7 +73,11 @@ namespace hosting::local
 
         void set_env_variable(std::string const &key, std::string const &value)
         {
+#ifdef _WIN32
             _putenv_s(key.c_str(), value.c_str());
+#else
+            setenv(key.c_str(), value.c_str(), 1);
+#endif
         }
 
         std::string resolve_environment(std::string source) {
@@ -91,7 +110,12 @@ namespace hosting::local
 
         void open_content(std::string const &content)
         {
+#ifdef _WIN32
             ShellExecuteA(nullptr, "open", content.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+#else
+            std::string command = "open \"" + content + "\"";
+            system(command.c_str());
+#endif
         }
 
         std::string ssh(std::string_view command, std::string_view host_name, unsigned int timeout_seconds = 5)
@@ -126,6 +150,7 @@ namespace hosting::local
 
         bool IsPortInUse(unsigned short port) const
         {
+#ifdef _WIN32
             WSADATA wsaData;
             SOCKET TestSocket = INVALID_SOCKET;
             struct sockaddr_in service;
@@ -180,6 +205,26 @@ namespace hosting::local
             closesocket(TestSocket);
             WSACleanup();
             return false; // Port is not in use
+#else
+            // macOS/Unix implementation
+            int sock = socket(AF_INET, SOCK_STREAM, 0);
+            if (sock < 0) {
+                return false; // Socket creation failed, assume port is not in use
+            }
+
+            struct sockaddr_in server_addr;
+            server_addr.sin_family = AF_INET;
+            server_addr.sin_port = htons(port);
+            if (inet_pton(AF_INET, "127.0.0.1", &server_addr.sin_addr) <= 0) {
+                close(sock);
+                return false; // Address conversion failed, assume port is not in use
+            }
+
+            int result = connect(sock, (struct sockaddr*)&server_addr, sizeof(server_addr));
+            close(sock);
+            
+            return (result == 0); // Port is in use if connection succeeds
+#endif
         }
 
         std::string HostName()

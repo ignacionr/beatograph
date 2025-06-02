@@ -1,6 +1,28 @@
 {
     "configurations": [
         {
+            "name": "Mac",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/src",
+                "${workspaceFolder}/external",
+                "${workspaceFolder}/vcpkg_installed/x64-osx/include",
+                "/usr/local/include",
+                "/opt/homebrew/include"
+            ],
+            "defines": [
+                "CHAR_UNSIGNED"
+            ],
+            "macFrameworkPath": [
+                "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks"
+            ],
+            "compilerPath": "/usr/bin/clang++",
+            "cStandard": "c17",
+            "cppStandard": "c++23",
+            "intelliSenseMode": "macos-clang-x64",
+            "configurationProvider": "ms-vscode.cmake-tools"
+        },
+        {
             "name": "Win32",
             "includePath": [
                 "${workspaceFolder}/**"
@@ -8,13 +30,15 @@
             "defines": [
                 "_DEBUG",
                 "UNICODE",
-                "_UNICODE"
+                "_UNICODE",
+                "CHAR_UNSIGNED"
             ],
             "windowsSdkVersion": "10.0.22621.0",
             "compilerPath": "cl.exe",
             "cStandard": "c17",
+            "cppStandard": "c++23",
             "intelliSenseMode": "windows-msvc-x64",
-            "compileCommands": "${workspaceFolder}/build/vcpkg_installed/vcpkg/blds/pkgconf/x64-windows-dbg/compile_commands.json"
+            "configurationProvider": "ms-vscode.cmake-tools"
         }
     ],
     "version": 4

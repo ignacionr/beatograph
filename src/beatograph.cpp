@@ -1,5 +1,7 @@
 #include "pch.h"
+#ifdef _WIN32
 #pragma execution_character_set(push, "utf-8")
+#endif
 #include "../external/IconsMaterialDesign.h"
 #include <algorithm>
 #include <numeric>

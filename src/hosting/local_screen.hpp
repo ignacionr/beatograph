@@ -29,7 +29,7 @@ namespace hosting::local
                 });
                 return env_vars;
             },
-            [this](std::map<std::string, std::string> const &env_vars) {
+            [](std::map<std::string, std::string> const &env_vars) {
                 views::keyval(env_vars, "Var", "Value");
             });
         }

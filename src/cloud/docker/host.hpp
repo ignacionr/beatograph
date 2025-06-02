@@ -3,8 +3,27 @@
 #include <format>
 #include <nlohmann/json.hpp>
 
+#ifdef _WIN32
+#include <shellapi.h>
+#else
+#include <cstdlib>
+#endif
+
 #include "../../hosting/host_local.hpp"
+
 namespace docker {
+
+// Helper function to open command cross-platform
+inline void open_command(const std::string& command) {
+#ifdef _WIN32
+    ShellExecuteA(nullptr, "open", "cmd.exe", command.c_str(), nullptr, SW_SHOW);
+#else
+    // On macOS/Linux, we can use Terminal or appropriate terminal emulator
+    std::string term_command = "osascript -e 'tell application \"Terminal\" to do script \"" + command + "\"'";
+    std::system(term_command.c_str());
+#endif
+}
+
 struct host {
     host(std::string const &host_name) : host_name_{host_name} {}
 
@@ -35,11 +54,14 @@ struct host {
         if (json_array.size() > 1) json_array.pop_back();
         json_array += "]";
         
-        docker_ps_.store(std::make_shared<nlohmann::json>(nlohmann::json::parse(json_array)));
+        docker_ps_mutex_.lock();
+        docker_ps_ = std::make_shared<nlohmann::json>(nlohmann::json::parse(json_array));
+        docker_ps_mutex_.unlock();
     }
 
     std::shared_ptr<nlohmann::json> ps() const {
-        return docker_ps_.load();
+        std::lock_guard<std::mutex> lock(docker_ps_mutex_);
+        return docker_ps_;
     }
 
     void open_shell(std::string const &container_id, std::shared_ptr<::hosting::local::host> localhost) const {
@@ -57,22 +79,12 @@ struct host {
             return;
         }
         auto cmd = std::format("/c ssh -t {} sudo docker exec -it {} {}", host_name_, container_id, shell);
-        ShellExecuteA(nullptr, 
-            "open", 
-            "cmd.exe", 
-            cmd.c_str(), 
-            nullptr, 
-            SW_SHOW);
+        open_command(cmd);
     }
 
     void open_logs(std::string const &container_id) const {
         auto cmd = std::format("/c ssh {} sudo docker logs -f {} && pause", host_name_, container_id);
-        ShellExecuteA(nullptr, 
-            "open", 
-            "cmd.exe", 
-            cmd.c_str(), 
-            nullptr, 
-            SW_SHOW);
+        open_command(cmd);
     }
 
     std::string logs(std::string const &container_id, std::shared_ptr<::hosting::local::host> localhost) const {
@@ -130,6 +142,7 @@ struct host {
     }
 private:
     std::string host_name_;
-    std::atomic<std::shared_ptr<nlohmann::json>> docker_ps_;
+    mutable std::mutex docker_ps_mutex_;
+    std::shared_ptr<nlohmann::json> docker_ps_;
 };
 }

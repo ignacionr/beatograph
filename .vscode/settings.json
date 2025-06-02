@@ -91,12 +91,18 @@
         "future": "cpp",
         "queue": "cpp",
         "expected": "cpp",
-        "complex": "cpp"
+        "complex": "cpp",
+        "__hash_table": "cpp",
+        "__tree": "cpp"
     },
     "cmake.automaticReconfigure": false,
     "C_Cpp.default.cppStandard": "c++23",
     "cmake.configureOnEdit": false,
-    "cmake.configureOnOpen": false,
+    "cmake.configureOnOpen": true,
+    "cmake.preferredGenerators": [
+        "Unix Makefiles"
+    ],
+    "cmake.generator": "Unix Makefiles",
     "clang-tidy.buildPath": "build",
     "clang-tidy.compilerArgs": [
         "-Ibuild/vcpkg_installed/x64-windows/include",

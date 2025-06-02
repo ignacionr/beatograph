@@ -6,7 +6,7 @@
 #include "metrics_model.hpp"
 
 struct metrics_screen {
-    metrics_screen(metrics_model& model) : model{model}, menu{model} {}
+    metrics_screen(metrics_model& model) : menu{model}, model{model} {}
 
     void render() noexcept {
         if (ImGui::BeginChild("MetricsMenu", ImVec2(ImGui::GetWindowWidth(), 230))) {

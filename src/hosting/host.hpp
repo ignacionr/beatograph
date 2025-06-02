@@ -42,12 +42,12 @@ namespace hosting::ssh
 
     private:
         host(std::string_view name) : name_{name} {
-            hosting::local::host localhost{};
+            ::hosting::local::host localhost{};
             resolve_from_ssh_conf(localhost);
         }
 
     public:
-        void resolve_from_ssh_conf(local::host &localhost)
+        void resolve_from_ssh_conf(::hosting::local::host &localhost)
         {
             std::string all_lines = localhost.execute_command(("ssh -G " + name_).c_str());
             std::string line;
@@ -61,10 +61,13 @@ namespace hosting::ssh
                     properties->emplace(line.substr(0, pos), line.substr(pos + 1));
                 }
             }
-            properties_.store(std::move(properties));
+            {
+                std::lock_guard<std::mutex> lock(properties_mutex_);
+                properties_ = std::move(properties);
+            }
         }
 
-        void upload_file(std::string const &local_path, std::string const &remote_path, local::host &localhost)
+        void upload_file(std::string const &local_path, std::string const &remote_path, ::hosting::local::host &localhost)
         {
             localhost.execute_command(std::format("scp {} {}:{}", local_path, name_, remote_path).c_str());
         }
@@ -73,11 +76,11 @@ namespace hosting::ssh
 
         properties_t const &properties() const
         {
-            auto p = properties_.load();
-            return *p;
+            std::lock_guard<std::mutex> lock(properties_mutex_);
+            return *properties_;
         }
 
-        auto metrics(std::shared_ptr<local::host> localhost)
+        auto metrics(std::shared_ptr<::hosting::local::host> localhost)
         {
             auto const now = std::chrono::system_clock::now();
             if ((now - last_metrics_fetch_) > std::chrono::seconds(30))
@@ -96,18 +99,31 @@ namespace hosting::ssh
                     .detach();
                 last_metrics_fetch_ = now;
             }
-            return metrics_.load();
+            {
+                std::lock_guard<std::mutex> lock(metrics_mutex_);
+                return metrics_;
+            }
         }
 
-        void fetch_metrics(std::shared_ptr<local::host> localhost)
+        void fetch_metrics(std::shared_ptr<::hosting::local::host> localhost)
         {
-            if (!nodeexporter_mapping_.load())
             {
-                nodeexporter_mapping_.store(std::make_shared<local::mapping>(9100, name_, localhost));
+                std::lock_guard<std::mutex> lock(nodeexporter_mapping_mutex_);
+                if (!nodeexporter_mapping_)
+                {
+                    nodeexporter_mapping_ = std::make_shared<::hosting::local::mapping>(9100, name_, localhost);
+                }
             }
-            auto url = std::format("http://localhost:{}/metrics", nodeexporter_mapping_.load()->local_port());
+            std::string url;
+            {
+                std::lock_guard<std::mutex> lock(nodeexporter_mapping_mutex_);
+                url = std::format("http://localhost:{}/metrics", nodeexporter_mapping_->local_port());
+            }
             auto metrics = metrics_from_url::fetch(url);
-            metrics_.store(std::make_shared<metrics_model>(std::move(metrics)));
+            {
+                std::lock_guard<std::mutex> lock(metrics_mutex_);
+                metrics_ = std::make_shared<metrics_model>(std::move(metrics));
+            }
         }
 
         auto &docker()
@@ -119,12 +135,12 @@ namespace hosting::ssh
             return *docker_host_;
         }
 
-        std::string execute_command(std::string const &command, std::shared_ptr<local::host> localhost, bool use_sudo = true)
+        std::string execute_command(std::string const &command, std::shared_ptr<::hosting::local::host> localhost, bool use_sudo = true)
         {
             return docker().execute_command(command, localhost, use_sudo);
         }
 
-        std::string get_os_release(std::shared_ptr<local::host> localhost)
+        std::string get_os_release(std::shared_ptr<::hosting::local::host> localhost)
         {
             if (os_release_.empty())
             {
@@ -142,9 +158,12 @@ namespace hosting::ssh
 
         std::string name_;
         std::string os_release_;
-        std::atomic<std::shared_ptr<properties_t>> properties_ = std::make_shared<properties_t>();
-        std::atomic<std::shared_ptr<local::mapping>> nodeexporter_mapping_;
-        std::atomic<std::shared_ptr<metrics_model>> metrics_;
+        mutable std::mutex properties_mutex_;
+        std::shared_ptr<properties_t> properties_ = std::make_shared<properties_t>();
+        mutable std::mutex nodeexporter_mapping_mutex_;
+        std::shared_ptr<::hosting::local::mapping> nodeexporter_mapping_;
+        mutable std::mutex metrics_mutex_;
+        std::shared_ptr<metrics_model> metrics_;
         std::unique_ptr<docker::host> docker_host_;
         std::chrono::system_clock::time_point last_metrics_fetch_;
     };

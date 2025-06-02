@@ -6,9 +6,16 @@
 #include <format>
 #include <iomanip>
 #include <memory>
+#include <mutex>
 #include <sstream>
 #include <string>
 #include <thread>
+
+#ifdef _WIN32
+#include <shellapi.h>
+#else
+#include <cstdlib>
+#endif
 
 #include <imgui.h>
 #include <nlohmann/json.hpp>
@@ -23,10 +30,39 @@
 
 namespace toggl
 {
+    // Helper function to open URLs cross-platform
+    inline void open_url(const char* url) {
+#ifdef _WIN32
+        ShellExecuteA(nullptr, "open", url, nullptr, nullptr, SW_SHOW);
+#else
+        std::string command = "open ";
+        command += url;
+        std::system(command.c_str());
+#endif
+    }
+
     struct screen
     {
-        screen(std::shared_ptr<client> client_ptr, int daily_second_target, std::string const &login_name) 
-        : client_{client_ptr}, seconds_daily_target_{daily_second_target}, login_name_{login_name} {}
+    private:
+        std::shared_ptr<client> client_;
+        std::chrono::system_clock::time_point last_update;
+        std::shared_ptr<nlohmann::json> time_entries;
+        std::mutex time_entries_mutex;
+        time_t utc_offset_seconds{};
+        std::string new_description;
+        int seconds_daily_target_;
+        bool config_mode_{};
+        bool new_login_{};
+        std::string login_name_;
+        std::string whatsapp_report_chat_id_;
+        std::unique_ptr<login::screen> login_screen_;
+
+    public:
+        screen(std::shared_ptr<client> client_ptr, int daily_second_target, std::string const &login_name) {
+            client_ = client_ptr;
+            seconds_daily_target_ = daily_second_target;
+            login_name_ = login_name;
+        }
 
         void report(std::string_view event, std::vector<nlohmann::json const *> &entries) {
             if (whatsapp_report_chat_id_.empty()) {
@@ -62,7 +98,8 @@ namespace toggl
             whatsapp->send_message(whatsapp_report_chat_id_, oss.str());
         }
 
-        void render_day_summary(auto& current_day_seconds, auto &current_day, bool its_today, auto &todays_entries) {
+        // Simplified non-template methods for debugging
+        void render_day_summary(time_t& current_day_seconds, std::chrono::time_point<std::chrono::system_clock, std::chrono::days> &current_day, bool its_today, std::vector<const nlohmann::json *> &todays_entries) {
             if (current_day_seconds > 0) // only days with at least one entry
             {
                 auto duration = std::chrono::seconds(current_day_seconds);
@@ -107,7 +144,7 @@ namespace toggl
                     if (ImGui::SmallButton(ICON_MD_COPY_ALL)) {
                         std::ostringstream oss;
                         for (auto const &entry : todays_entries) {
-                            oss << "- " << entry->at("description").get<std::string>() << std::endl;
+                            oss << "- " << entry->at("description").template get<std::string>() << std::endl;
                         }
                         ImGui::SetClipboardText(oss.str().c_str());
                     }
@@ -127,12 +164,12 @@ namespace toggl
             ImGui::TableNextColumn();
         }
 
-        void render_entry(auto const &entry, auto &current_day, auto &current_day_seconds, auto &todays_entries, auto const today)
+        void render_entry(const nlohmann::json &entry, std::chrono::time_point<std::chrono::system_clock, std::chrono::days> &current_day, time_t &current_day_seconds, std::vector<const nlohmann::json *> &todays_entries, const std::chrono::time_point<std::chrono::system_clock, std::chrono::days> today)
         {
             ImGui::PushID(&entry);
             struct std::tm tm = {};
             {
-                std::istringstream ss(entry["start"].get_ref<std::string const&>());
+                std::istringstream ss(entry["start"].template get_ref<std::string const&>());
                 ss >> std::get_time(&tm, "%Y-%m-%dT%H:%M:%S");
             }
             auto start_utc = std::chrono::system_clock::from_time_t(std::mktime(&tm));
@@ -148,15 +185,19 @@ namespace toggl
                 current_day = day_start;
                 render_day_summary(current_day_seconds, current_day, its_today, todays_entries);
             }
-            auto description = entry["description"].get<std::string>();
+            auto description = entry["description"].template get<std::string>();
+#ifdef _WIN32
             auto local_start = std::chrono::current_zone()->to_local(start);
+#else
+            // For macOS/Unix, just use UTC + offset for now
+            auto local_start = start;
+#endif
             auto start_formatted = std::format("{:%H:%M}", local_start);
             std::string duration_formatted;
-            auto duration_in_seconds = entry["duration"].get<long long>();
+            auto duration_in_seconds = entry["duration"].template get<long long>();
             bool const is_running{duration_in_seconds < 0};
             if (is_running)
             {
-                auto utc_now = std::chrono::system_clock::now();
                 duration_in_seconds = std::chrono::duration_cast<std::chrono::seconds>(
                                           std::chrono::system_clock::now() - start)
                                           .count();
@@ -217,6 +258,7 @@ namespace toggl
         {
             try
             {
+                std::lock_guard<std::mutex> lock(time_entries_mutex);
                 time_entries = std::make_shared<nlohmann::json>(client_->getTimeEntries());
             }
             catch (const client::config_error &) {
@@ -224,6 +266,7 @@ namespace toggl
             }
             catch (const std::exception &e)
             {
+                std::lock_guard<std::mutex> lock(time_entries_mutex);
                 time_entries = std::make_shared<nlohmann::json>(nlohmann::json::string_t(e.what()));
             }
         }
@@ -231,6 +274,24 @@ namespace toggl
         void start_time_entry(std::string_view description) {
             client_->startTimeEntry(current_workspace_id(), description);
             query();
+        }
+
+        long long current_workspace_id()
+        {
+            std::lock_guard<std::mutex> lock(time_entries_mutex);
+            if (!time_entries) {
+                lock.~lock_guard();
+                query();
+                std::lock_guard<std::mutex> lock2(time_entries_mutex);
+                if (time_entries && time_entries->is_array() && !time_entries->empty()) {
+                    return time_entries->front()["workspace_id"].template get<long long>();
+                }
+                return 0;
+            }
+            if (time_entries->is_array() && !time_entries->empty()) {
+                return time_entries->front()["workspace_id"].template get<long long>();
+            }
+            return 0;
         }
 
         std::string report_key() const {
@@ -297,11 +358,19 @@ namespace toggl
                 std::time_t currentTime = std::time(nullptr);
                 // Get the UTC time
                 std::tm utcTime;
+#ifdef _WIN32
                 gmtime_s(&utcTime, &currentTime);
+#else
+                gmtime_r(&currentTime, &utcTime);
+#endif
 
                 // Get the local time
                 std::tm localTime;
+#ifdef _WIN32
                 localtime_s(&localTime, &currentTime);
+#else
+                localtime_r(&currentTime, &localTime);
+#endif
 
                 // Calculate the difference in seconds
                 std::time_t utcTimeInSeconds = std::mktime(&utcTime);
@@ -310,11 +379,13 @@ namespace toggl
             }
             // entries look like this:
             // {"id":3653218672,"workspace_id":8741535,"project_id":205625477,"task_id":null,"billable":false,"start":"2024-10-20T06:00:00+00:00","stop":"2024-10-20T08:14:51+00:00","duration":8091,"description":"Company Meeting","duronly":true,"at":"2024-10-20T08:14:54+00:00","user_id":11300927,"uid":11300927}
-            if (time_entries.load())
             {
-                auto entries = time_entries.load();
-                if (entries->is_array())
+                std::lock_guard<std::mutex> lock(time_entries_mutex);
+                if (time_entries)
                 {
+                    auto entries = time_entries;
+                    if (entries->is_array())
+                    {
                     if (ImGui::BeginTable("TimeEntriesTable", 3, ImGuiTableFlags_NoBordersInBody | ImGuiTableFlags_RowBg))
                     {
                         ImGui::TableSetupColumn("Time", ImGuiTableColumnFlags_WidthFixed, 150.0f);
@@ -335,13 +406,13 @@ namespace toggl
                     ImGui::Columns(2);
                     if (ImGui::Button("Open Web"))
                     {
-                        ShellExecuteA(nullptr, "open", "https://track.toggl.com/", nullptr, nullptr, SW_SHOW);
+                        open_url("https://track.toggl.com/");
                     }
                     if (ImGui::SameLine(); ImGui::Button("Report: Last Month")) {
-                        ShellExecuteA(nullptr, "open", "https://track.toggl.com/reports/detailed/8957518/period/prevMonth", nullptr, nullptr, SW_SHOW);
+                        open_url("https://track.toggl.com/reports/detailed/8957518/period/prevMonth");
                     }
                     if (ImGui::SameLine(); ImGui::Button("Report: Current Month")) {
-                        ShellExecuteA(nullptr, "open", "https://track.toggl.com/reports/detailed/8957518/period/thisMonth", nullptr, nullptr, SW_SHOW);
+                        open_url("https://track.toggl.com/reports/detailed/8957518/period/thisMonth");
                     }
                     ImGui::NextColumn();
                     if (new_description.reserve(256); ImGui::InputText("New Task", new_description.data(), new_description.capacity(), ImGuiInputTextFlags_EnterReturnsTrue))
@@ -363,7 +434,7 @@ namespace toggl
                 else
                 {
                     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.0f, 0.0f, 1.0f)); // Red color
-                    ImGui::TextUnformatted(time_entries.load()->dump().c_str());
+                    ImGui::TextUnformatted(time_entries->dump().c_str());
                     ImGui::PopStyleColor();
                 }
             }
@@ -374,25 +445,5 @@ namespace toggl
             ImGui::Columns();
         }
 
-        long long current_workspace_id()
-        {
-            if (!time_entries.load()) {
-                query();
-            }
-            return time_entries.load()->front()["workspace_id"].get<long long>();
-        }
-
-    private:
-        std::shared_ptr<client> client_;
-        std::chrono::system_clock::time_point last_update;
-        std::atomic<std::shared_ptr<nlohmann::json>> time_entries;
-        time_t utc_offset_seconds{};
-        std::string new_description;
-        int seconds_daily_target_;
-        bool config_mode_{};
-        bool new_login_{};
-        std::string login_name_;
-        std::string whatsapp_report_chat_id_;
-        std::unique_ptr<login::screen> login_screen_;
-    };
-}
+    }; // इंश्योर सेमीकॉलन यहाँ है
+} // namespace toggl

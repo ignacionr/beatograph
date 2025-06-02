@@ -3,8 +3,8 @@
 #include <format>
 #include <functional>
 
+#ifdef _WIN32
 #include "ssh_execute.hpp"
-
 
 namespace hosting::local
 {
@@ -201,3 +201,7 @@ namespace hosting::local
         DWORD exitCode{};
     };
 }
+
+#else
+#include "local_process_macos.hpp"
+#endif

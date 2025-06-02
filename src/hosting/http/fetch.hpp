@@ -32,8 +32,13 @@ namespace http {
                 curl_easy_setopt(curl, CURLOPT_TIMEOUT, timeout_);
                 curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 15L);
                 char *pproxy_str = nullptr;
+#ifdef _WIN32
                 size_t len = 0;
                 if (!_dupenv_s(&pproxy_str, &len, "HTTP_PROXY") && pproxy_str != nullptr) {
+#else
+                pproxy_str = getenv("HTTP_PROXY");
+                if (pproxy_str != nullptr) {
+#endif
                     curl_easy_setopt(curl, CURLOPT_PROXY, pproxy_str);
                 }
                 if (header_client) {
@@ -86,8 +91,13 @@ namespace http {
                 curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data.c_str());
                 curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, data.size());
                 char *pproxy_str = nullptr;
+#ifdef _WIN32
                 size_t len = 0;
                 if (!_dupenv_s(&pproxy_str, &len, "HTTP_PROXY") && pproxy_str != nullptr) {
+#else
+                pproxy_str = getenv("HTTP_PROXY");
+                if (pproxy_str != nullptr) {
+#endif
                     curl_easy_setopt(curl, CURLOPT_PROXY, pproxy_str);
                 }
                 if (header_client) {

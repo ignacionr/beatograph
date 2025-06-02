@@ -6,9 +6,15 @@
 #include <map>
 #include <string>
 
+#ifdef _WIN32
 #include <Windows.h>
 #include <Shlobj.h>
 #include <Shlobj_core.h>
+#else
+#include <unistd.h>
+#include <pwd.h>
+#include <sys/stat.h>
+#endif
 #include "../host_local.hpp"
 #include "../host.hpp"
 #include "../ssh_screen.hpp"

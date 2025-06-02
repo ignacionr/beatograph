@@ -56,7 +56,7 @@ public:
     template <typename T>
     static void remove(std::string const &key) {
         std::lock_guard<std::mutex> lock(getMutex());
-        getTypeMap().erase(key);
+        getTypeMap<T>().erase(key);
     }
 
     class call_fn_str {

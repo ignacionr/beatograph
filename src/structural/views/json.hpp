@@ -24,11 +24,12 @@ namespace views
 
         void render(nlohmann::json const &json, std::vector<additional_action> const &actions = {}, selector_t selector = {}) const noexcept
         {
+            (void)selector; // Mark as intentionally unused
             render_internal(json);
             if (ImGui::SmallButton(ICON_MD_CONTENT_COPY " Copy"))
             {
                 ImGui::LogToClipboard();
-                ImGui::LogText(json.dump(4).c_str());
+                ImGui::LogText("%s", json.dump(4).c_str());
                 ImGui::LogFinish();
             }
             for (auto const &action : actions)
@@ -55,7 +56,7 @@ namespace views
                 else if (json[0].is_object())
                 {
                     std::set<std::string> column_names;
-                    for (nlohmann::json::object_t const &row : json)
+                    for (const auto &row : json)
                     {
                         for (const auto &item : row)
                         {
